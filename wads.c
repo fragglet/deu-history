@@ -1,5 +1,8 @@
 /*
-   Doom Editor Utility, by Brendon Wyber. Use and Abuse!
+   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+
+   If you use any part of this code in one of your programs,
+   please make it clear that you borrowed it from here...
 
    WAD.C - Wad files routines.
 */
@@ -10,7 +13,7 @@
 /* global variables */
 WadPtr WadFileList = NULL;       /* linked list of wad files */
 MDirPtr MasterDir = NULL;        /* the master directory */
-
+int Registered = FALSE;          /* registered or shareware game? */
 
 
 /*
@@ -90,15 +93,24 @@ void OpenMainWad( char *filename)
       new->wadfile = wad;
       memcpy( &(new->dir), &(wad->directory[ n]), sizeof( struct Directory));
       if (MasterDir)
-         last->next = new;
+	 last->next = new;
       else
-         MasterDir = new;
+	 MasterDir = new;
       last = new;
    }
 
    /* check if registered version */
    if (FindMasterDir( MasterDir, "E2M2") == NULL)
-      ProgError( "shareware version not supported");
+   {
+      printf( "  *-------------------------------------------------*\n");
+      printf( "  | Warning: this is the shareware version of DOOM. |\n");
+      printf( "  |   You won't be allowed to save your changes.    |\n");
+      printf( "  |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
+      printf( "  *-------------------------------------------------*\n");
+      Registered = FALSE;
+   }
+   else
+      Registered = TRUE;
 }
 
 
@@ -208,7 +220,7 @@ MDirPtr FindMasterDir( MDirPtr from, char *name)
    while (from)
    {
       if (!strncmp( from->dir.name, name, 8))
-         break;
+	 break;
       from = from->next;
    }
    return from;
@@ -237,7 +249,7 @@ void ListMasterDirectory( FILE *file)
       fprintf( file, "%-8s  %-20s  %6ld  x%08lx\n", dataname, dir->wadfile->filename, dir->dir.size, dir->dir.start);
       if (file == stdout && lines++ > 21)
       {
-         lines = 0;
+	 lines = 0;
          printf( "[Q to abort, any other key to continue]");
          key = getch();
          printf( "\r                                       \r");
@@ -271,12 +283,12 @@ void ListFileDirectory( FILE *file, WadPtr wad)
       fprintf( file, "%-8s  %6ld  x%08lx  x%08lx\n", dataname, wad->directory[n].size, wad->directory[n].start, wad->directory[n].size + wad->directory[n].start - 1);
       if (file == stdout && lines++ > 21)
       {
-         lines = 0;
-         printf( "[Q to abort, any other key to continue]");
-         key = getch();
-         printf( "\r                                       \r");
-         if (key == 'Q' || key == 'q')
-            break;
+	 lines = 0;
+	 printf( "[Q to abort, any other key to continue]");
+	 key = getch();
+	 printf( "\r                                       \r");
+	 if (key == 'Q' || key == 'q')
+	    break;
       }
    }
 }
@@ -299,6 +311,8 @@ void BuildNewMainWad( char *filename)
 
    /* open the file and store signatures */
    printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
+   if (FindMasterDir( MasterDir, "E2M4") == NULL)
+      ProgError( "You were warned: you are not allowed to do this.");
    if ((file = fopen( filename, "wb")) == NULL)
       ProgError( "unable to open file \"%s\"", filename);
    WriteBytes( file, "IWAD", 4);
@@ -314,14 +328,14 @@ void BuildNewMainWad( char *filename)
       BasicWadSeek( cur->wadfile, cur->dir.start);
       while (size > 0x8000)
       {
-         BasicWadRead( cur->wadfile, data, 0x8000);
-         WriteBytes( file, data, 0x8000);
-         size -= 0x8000;
+	 BasicWadRead( cur->wadfile, data, 0x8000);
+	 WriteBytes( file, data, 0x8000);
+	 size -= 0x8000;
       }
       if (size)
       {
-         BasicWadRead( cur->wadfile, data, size);
-         WriteBytes( file, data, size);
+	 BasicWadRead( cur->wadfile, data, size);
+	 WriteBytes( file, data, size);
       }
       printf( "Size: %dK\r", counter / 1024);
    }
@@ -332,9 +346,9 @@ void BuildNewMainWad( char *filename)
    for (cur = MasterDir, dirnum = 0; cur; cur = cur->next, dirnum++)
    {
       if (dirnum % 100 == 0)
-         printf( "Outputting directory %04d...\r", dirnum);
+	 printf( "Outputting directory %04d...\r", dirnum);
       if (cur->dir.start)
-         WriteBytes( file, &counter, 4L);
+	 WriteBytes( file, &counter, 4L);
       else
          WriteBytes( file, &(cur->dir.start), 4L);
       WriteBytes( file, &(cur->dir.size), 4L);
@@ -360,8 +374,68 @@ void BuildNewMainWad( char *filename)
 
 void WriteBytes( FILE *file, void *addr, long size)
 {
+   if (! Registered)
+      return;
    if (fwrite( addr, 1, size, file) != size)
       ProgError( "error writing to file");
 }
+
+
+
+/*
+   dump a directory entry (* debug *)
+*/
+
+void DumpDirectoryEntry( FILE *file, char *entryname)
+{
+   MDirPtr entry;
+   char dataname[ 9];
+   char key;
+   int lines = 5;
+   long n, c, i;
+   unsigned char val;
+
+
+   c = 0;
+   entry = MasterDir;
+   while (entry)
+   {
+      if (!strnicmp( entry->dir.name, entryname, 8))
+      {
+	 strncpy( dataname, entry->dir.name, 8);
+	 dataname[ 8] = '\0';
+	 fprintf( file, "Contents of entry %s (size = 0x%08lx):\n", dataname, entry->dir.size);
+	 BasicWadSeek( entry->wadfile, entry->dir.start);
+	 for (c = 0; c < entry->dir.size; c += i)
+	 {
+	    for (i = 0; i < 16; i++)
+	    {
+	       BasicWadRead( entry->wadfile, &val, 1);
+	       fprintf( file, " %02X", val);
+	    }
+	    fprintf( file, "\n");
+	    if (file == stdout && lines++ > 21)
+	    {
+	       lines = 0;
+	       printf( "[Q to abort, S to skip this entry, any other key to continue]");
+	       key = getch();
+	       printf( "\r                                                             \r");
+	       if (key == 'S' || key == 's')
+		  break;
+	       if (key == 'Q' || key == 'q')
+		  return;
+	    }
+	 }
+      }
+      entry = entry->next;
+   }
+   if (! c)
+   {
+      printf( "[Entry not in master directory]\n");
+      return;
+   }
+}
+
+
 
 /* end of file */

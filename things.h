@@ -1,5 +1,8 @@
 /*
-   Doom Editor Utility, by Brendon Wyber. Use and Abuse!
+   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+
+   If you use any part of this code in one of your programs,
+   please make it clear that you borrowed it from here...
 
    THINGS.H - Doom thing type defines.
 */
@@ -9,6 +12,7 @@
 #define THING_PLAYER2         2
 #define THING_PLAYER3         3
 #define THING_PLAYER4         4
+#define THING_DEATHMATCH      11
 
 /* enhancements */
 #define THING_BLUECARD        5
@@ -59,6 +63,17 @@
 
 /* decorations */
 #define THING_BARREL          2035
+#define THING_LAMP            2028
+#define THING_CANDLE          34
+#define THING_CANDLESTICK     35
+#define THING_TORCH           46
 #define THING_TECHCOLUMN      48
+#define THING_BONES           10
+#define THING_BONES2          12
+#define THING_DEADBUDDY       15
+#define THING_POOLOFBLOOD     24
+
+/* not sure about this one */
+#define THING_TELEPORT        14
 
 /* end of file */

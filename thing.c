@@ -1,12 +1,15 @@
 /*
-   Doom Editor Utility, by Brendon Wyber. Use and Abuse!
+   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+
+   If you use any part of this code in one of your programs,
+   please make it clear that you borrowed it from here...
 
    THING.C - Thing name and type routines.
 */
 
 /* the includes */
 #include "deu.h"
-
+#include "things.h"
 
 
 /*
@@ -21,6 +24,7 @@ int GetThingColour( int type)
    case THING_PLAYER2:
    case THING_PLAYER3:
    case THING_PLAYER4:
+   case THING_DEATHMATCH:
       return GREEN;
    case THING_SARGEANT:
    case THING_TROOPER:
@@ -32,7 +36,40 @@ int GetThingColour( int type)
    case THING_COCADEMON:
    case THING_SPIDERBOSS:
    case THING_CYBERDEMON:
-      return RED;
+      return LIGHTRED;
+   case THING_BLUECARD:
+   case THING_YELLOWCARD:
+   case THING_REDCARD:
+   case THING_ARMBONUS1:
+   case THING_HLTBONUS1:
+   case THING_GREENARMOR:
+   case THING_BLUEARMOR:
+   case THING_SOULSPHERE:
+   case THING_MEDKIT:
+   case THING_STIMPACK:
+   case THING_RADSUIT:
+   case THING_MAP:
+   case THING_BLURSPHERE:
+   case THING_BESERK:
+   case THING_INVULN:
+   case THING_LITEAMP:
+      return LIGHTGREEN;
+   case THING_SHOTGUN:
+   case THING_CHAINSAW:
+   case THING_CHAINGUN:
+   case THING_LAUNCHER:
+   case THING_PLASMAGUN:
+   case THING_BFG9000:
+   case THING_AMMOCLIP:
+   case THING_AMMOBOX:
+   case THING_SHELLS:
+   case THING_SHELLBOX:
+   case THING_ROCKET:
+   case THING_ROCKETBOX:
+   case THING_ENERGYCELL:
+   case THING_ENERGYPACK:
+   case THING_BACKPACK:
+      return BROWN;
    }
    return WHITE;
 }
@@ -58,6 +95,8 @@ char *GetThingName( int type)
       return "Player 3 Start";
    case THING_PLAYER4:
       return "Player 4 Start";
+   case THING_DEATHMATCH:
+      return "DEATHMATCH Start";
 
    /* enhancements */
    case THING_BLUECARD:
@@ -66,8 +105,6 @@ char *GetThingName( int type)
       return "Yellow Card";
    case THING_REDCARD:
       return "Red Card";
-   case THING_BACKPACK:
-      return "Backpack";
    case THING_ARMBONUS1:
       return "Armour Helmet";
    case THING_HLTBONUS1:
@@ -124,12 +161,30 @@ char *GetThingName( int type)
       return "Energy Cell";
    case THING_ENERGYPACK:
       return "Energy Pack";
+   case THING_BACKPACK:
+      return "Backpack";
 
    /* decorations */
    case THING_BARREL:
       return "Barrel";
+   case THING_LAMP:
+      return "Lamp";
+   case THING_CANDLE:
+      return "Candle";
+   case THING_CANDLESTICK:
+      return "Candlestick";
+   case THING_TORCH:
+      return "Torch";
    case THING_TECHCOLUMN:
       return "Technical Column";
+   case THING_BONES:
+      return "Guts and Bones";
+   case THING_BONES2:
+      return "Guts and Bones 2";
+   case THING_DEADBUDDY:
+      return "Dead Guy (Green)";
+   case THING_POOLOFBLOOD:
+      return "Pool of Blood";
 
    /* enemies */
    case THING_SARGEANT:
