@@ -1,4 +1,4 @@
-Welcome the the NEW DOOM EDITOR UTILITY (version 4)
+Welcome the the NEW DOOM EDITOR UTILITY (version 4.1)
 By Brendon Wyber (b.wyber@csc.canterbury.ac.nz)
 And Raphael Quinet (quinet@montefiore.ulg.ac.be)
 ==================================================
@@ -25,6 +25,7 @@ The Source Code contains...
    GFX.C           Graphics Stuff
    MENUS.C         Menus and Other GUI Stuff
    MOUSE.C         Mouse Driver Interface
+   OBJECTS.C       Object Information & handling
    THINGS.C        Thing Information
    WADS.C          Wad File Processor Bit
    DEU.H           All Other Defines

@@ -100,8 +100,10 @@ void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
    scrYstart = scrYend + 2 * scrYoff;
    line( scrXstart - scrYoff, scrYstart + scrXoff, scrXend, scrYend);
    line( scrXstart + scrYoff, scrYstart - scrXoff, scrXend, scrYend);
+/*
    line( scrXstart - scrYoff, scrYstart + scrXoff, scrXend + scrXoff, scrYend + scrYoff);
    line( scrXstart + scrYoff, scrYstart - scrXoff, scrXend + scrXoff, scrYend + scrYoff);
+*/
 }
 
 

@@ -39,8 +39,8 @@ int main( int argc, char *argv[])
 void Credits( FILE *where)
 {
    fprintf( where, "New DEU: Doom Editor Utility, ver %s.\n", DEU_VERSION);
-   fprintf( where, "By Brendon J Wyber (b.wyber@csc.canterbury.ac.nz),\n");
-   fprintf( where, "and Rapha‰l Quinet (quinet@montefiore.ulg.ac.be).\n\n");
+   fprintf( where, "By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be).\n");
+   fprintf( where, "Based on DEU by Brendon J Wyber (b.wyber@csc.canterbury.ac.nz),\n\n");
 }
 
 
@@ -154,9 +154,7 @@ void MainLoop()
       {
 	 printf( "?                                 -- to display this text\n");
 	 printf( "B[uild] <WadFile>                 -- to build a new main WAD file\n");
-/*
 	 printf( "D[ump] <DirEntry> [outfile]       -- to dump a directory entry in hex\n");
-*/
 	 printf( "E[dit] <game> <level> <WadFile>   -- to edit a game level saving results to\n");
 	 printf( "                                          a patch wad file\n");
 	 printf( "L[ist] <WadFile> [outfile]        -- to list the directory of a wadfile\n");

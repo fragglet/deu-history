@@ -107,7 +107,7 @@ void OpenMainWad( char *filename)
       printf( "  |   You won't be allowed to save your changes.    |\n");
       printf( "  |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
       printf( "  *-------------------------------------------------*\n");
-      Registered = FALSE;
+      Registered = FALSE; /* If you change this, bad things will happen to you... */
    }
    else
       Registered = TRUE;
@@ -393,7 +393,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
    char key;
    int lines = 5;
    long n, c, i;
-   unsigned char val;
+   unsigned char buf[16];
 
 
    c = 0;
@@ -404,22 +404,33 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
       {
 	 strncpy( dataname, entry->dir.name, 8);
 	 dataname[ 8] = '\0';
-	 fprintf( file, "Contents of entry %s (size = 0x%08lx):\n", dataname, entry->dir.size);
+	 fprintf( file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
 	 BasicWadSeek( entry->wadfile, entry->dir.start);
+	 n = 0;
 	 for (c = 0; c < entry->dir.size; c += i)
 	 {
+	    fprintf( file, "%04X: ", n);
 	    for (i = 0; i < 16; i++)
 	    {
-	       BasicWadRead( entry->wadfile, &val, 1);
-	       fprintf( file, " %02X", val);
+	       BasicWadRead( entry->wadfile, &(buf[ i]), 1);
+	       fprintf( file, " %02X", buf[ i]);
+	       n++;
+	    }
+	    fprintf( file, "   ");
+	    for (i = 0; i < 16; i++)
+	    {
+	       if (buf[ i] >= 32)
+		  fprintf( file, "%c", buf[ i]);
+	       else
+		  fprintf( file, " ");
 	    }
 	    fprintf( file, "\n");
 	    if (file == stdout && lines++ > 21)
 	    {
 	       lines = 0;
-	       printf( "[Q to abort, S to skip this entry, any other key to continue]");
+	       printf( "[%d%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
 	       key = getch();
-	       printf( "\r                                                             \r");
+	       printf( "\r                                                                    \r");
 	       if (key == 'S' || key == 's')
 		  break;
 	       if (key == 'Q' || key == 'q')

@@ -21,7 +21,7 @@
    the version information
 */
 
-#define DEU_VERSION    "4.00"       /* the version number */
+#define DEU_VERSION    "4.10"       /* the version number */
 
 
 
@@ -84,22 +84,24 @@ struct MasterDirectory
 #define MAPX(x)               (OrigX + (x - 319) * Scale)
 #define MAPY(y)               (OrigY + (239 - y) * Scale)
 
-/* edit modes */
-#define EDIT_THINGS           1
-#define EDIT_LINEDEFS         2
-#define EDIT_SIDEDEFS         3
-#define EDIT_VERTEXES         4
-#define EDIT_SEGS             5
-#define EDIT_SSECTORS         -1 /* Not implemented */
-#define EDIT_NODES            -2 /* Not implemented */
-#define EDIT_SECTORS          6
-#define EDIT_REJECT           -3 /* Not implemented */
-#define EDIT_BLOCKMAP         -4 /* Not implemented */
+/* object types */
+#define OBJ_THINGS           1
+#define OBJ_LINEDEFS         2
+#define OBJ_SIDEDEFS         3
+#define OBJ_VERTEXES         4
+#define OBJ_SEGS             5
+#define OBJ_SSECTORS         -1 /* Not implemented */
+#define OBJ_NODES            -2 /* Not implemented */
+#define OBJ_SECTORS          6
+#define OBJ_REJECT           -3 /* Not implemented */
+#define OBJ_BLOCKMAP         -4 /* Not implemented */
 
 /* boolean constants */
 #define TRUE                  1
 #define FALSE                 0
 
+/* half the size of an object (Thing or Vertex) in map coords */
+#define OBJSIZE   10
 
 /*
    the interfile global variables
@@ -111,6 +113,12 @@ extern int Registered;        /* registered or shareware game? */
 /* from wads.c */
 extern WadPtr  WadFileList;   /* list of wad files */
 extern MDirPtr MasterDir;     /* the master directory */
+
+/* from edit.c */
+extern int NumTexture1;       /* number of wall textures */
+extern char **Texture1;       /* wall texture names */
+extern int NumFTexture;       /* number of floor/ceiling textures */
+extern char **FTexture;       /* floor/ceiling texture names */
 
 /* from gfx.c */
 extern int Scale;             /* scale to draw map 20 to 1 */
@@ -157,15 +165,14 @@ void EditLevel( int, int, char *);
 void ReadLevelData( int, int);
 void ForgetLevelData( void);
 void SaveLevelData( char *);
+void ReadTexture1Names( void);
+void ForgetFTextureNames( void);
+void ReadFTextureNames( void);
+void ForgetTexture1Names( void);
 void EditorLoop( void);
-void DrawMap( void);
+void DrawMap( int);
 void EditThingInfo( int *, int *, int *);
-void EditLineDefInfo( void);
-void EditSideDefInfo( void);
-void EditSectorInfo( void);
-void GetCurObject( void);
-void DeleteObject( int, int);
-void InsertObject( int);
+void EditObjectInfo( int, int);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -201,7 +208,16 @@ int DisplayMenuArray( int, int, char *, int, char *[ 30]);
 int DisplayMenu( int, int, char *, ...);
 int DisplayThingsMenu( int, int, char *, ...);
 int InputIntegerValue( int, int, int, int, int);
+void InputNameFromList( int, int, char *, int, char **, char *);
 void NotImplemented( void);
+
+/* from objects.c */
+char *GetObjectType( int);
+int GetCurObject( int);
+void HighlightObject( int, int);
+void DisplayObjectInfo( int, int);
+void DeleteObject( int, int);
+void InsertObject( int, int);
 
 
 /* end of file */

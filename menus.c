@@ -194,12 +194,14 @@ int DisplayThingsMenu( int x0, int y0, char *menutitle, ...)
 }
 
 
+
 /*
    ask for an integer value and check for minimum and maximum
 */
 int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 {
    int key, val, neg;
+   int ok;
 
    if (UseMouse)
       HideMousePointer();
@@ -213,9 +215,13 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
    val = neg ? -defv : defv;
    for (;;)
    {
+     ok = (neg ? -val : val) >= minv && (neg ? -val : val) <= maxv;
      setcolor( BLACK);
      DrawScreenBox( x0 + 11, y0 + 29, x0 + 70, y0 + 40);
-     setcolor( WHITE);
+     if (ok)
+	setcolor( WHITE);
+     else
+	setcolor( LIGHTGRAY);
      if (neg)
 	DrawScreenText( x0 + 13, y0 + 31, "-%d", val);
      else
@@ -227,11 +233,11 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 	val = val / 10;
      else if ((key & 0x00FF) == '-')
 	neg = !neg;
-     else if ((neg ? -val : val) >= minv && (neg ? -val : val) <= maxv && (key & 0x00FF) == 0x000D)
-	break;
+     else if (ok && (key & 0x00FF) == 0x000D)
+	break; /* return "val" */
      else if ((key & 0x00FF) == 0x001B)
      {
-	val = -32768;
+	val = -32768; /* return a value out of range */
 	break;
      }
      else
@@ -240,6 +246,81 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
    if (UseMouse)
       ShowMousePointer();
    return neg ? -val : val;
+}
+
+
+
+/*
+   ask for a name in a given list
+*/
+void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list, char *name)
+{
+   int key, n, l;
+   int maxlen, ok;
+
+   if (UseMouse)
+      HideMousePointer();
+   name[ 8] = '\0';
+   for (n = strlen(name); n < 9; n++)
+      name[ n] = '\0';
+   /* compute maxlen */
+   maxlen = 1;
+   for (n = 0; n < listsize; n++)
+      if (strlen( list[ n]) > maxlen)
+	 maxlen = strlen( list[ n]);
+   /* compute the minimum width of the dialog box */
+   l = maxlen;
+   if (strlen( prompt) - 13 > l)
+     l = strlen( prompt) - 13;
+   /* draw the dialog box */
+   DrawScreenBox3D( x0, y0, x0 + 120 + 8 * l, y0 + 85);
+   setcolor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt);
+   DrawScreenBox( x0 + 11, y0 + 29, x0 + 101, y0 + 41);
+   setcolor( DARKGRAY);
+   DrawScreenBox( x0 + 10, y0 + 28, x0 + 100, y0 + 40);
+   for (;;)
+   {
+     /* test if "name" is in the list */
+     for (n = 0; n < listsize; n++)
+	if (strcmp( name, list[ n]) <= 0)
+	   break;
+     ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
+     if (n > listsize - 5)
+	n = listsize - 5;
+     /* display the five next items in the list */
+     setcolor( LIGHTGRAY);
+     DrawScreenBox( x0 + 120, y0 + 30, x0 + 120 + 8 * maxlen, y0 + 80);
+     setcolor( BLACK);
+     for (l = 0; l < 5; l++)
+	DrawScreenText( x0 + 120, y0 + 30 + l * 10, list[ n + l]);
+     l = strlen( name);
+     setcolor( BLACK);
+     DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
+     if (ok)
+	setcolor( WHITE);
+     else
+	setcolor( LIGHTGRAY);
+     DrawScreenText( x0 + 13, y0 + 31, name);
+     key = bioskey( 0);
+     if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
+	name[ l] = key & 0x00FF + 'A' - 'a';
+     else if (l < maxlen && (key & 0x00FF) > ' ')
+	name[ l] = key & 0x00FF;
+     else if (l > 0 && (key & 0x00FF) == 0x0008)
+	name[ l - 1] = '\0';
+     else if (ok && (key & 0x00FF) == 0x000D)
+	break; /* return "name" */
+     else if ((key & 0x00FF) == 0x001B)
+     {
+	name[ 0] = '\0'; /* return an empty string */
+	break;
+     }
+     else
+	Beep();
+   }
+   if (UseMouse)
+      ShowMousePointer();
 }
 
 
