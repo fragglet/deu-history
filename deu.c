@@ -6,14 +6,22 @@
 
    DEU.C - Main program execution routines.
 
-   compile with command
-      tcc -Z -ml -r -G -O -f -enewdeu *.c \tc\lib\graphics.lib
+   Compile with command
+      tcc -Z -ml -r -G -O -f -edeu *.c \tc\lib\graphics.lib
+
+   Be sure to use the Large memory model when you compile...
 
 */
 
 /* the includes */
 #include "deu.h"
 
+/* global variables */
+int Registered = FALSE;		/* registered or shareware game? */
+int Debug = FALSE;		/* are we debugging? */
+int SwapButtons = FALSE;	/* swap right and middle mouse buttons */
+int Quiet = FALSE;		/* don't play a sound when an object is selected */
+int Expert = FALSE;		/* don't ask for confirmation for some operations */
 
 
 /*
@@ -23,9 +31,71 @@
 int main( int argc, char *argv[])
 {
    Credits( stdout);
-   OpenWadFiles( argc - 1, argv + 1);
+   argv++;
+   argc--;
+   /* parse the command line arguments */
+   while (argc && **argv == '-' && strcmp( *argv, "-file"))
+   {
+      if (!strcmp( *argv, "-d") || !strcmp( *argv, "-debug"))
+      {
+	 Debug = !Debug;
+	 if (Debug)
+	    printf( "Debug mode ON.\n");
+	 else
+	    printf( "Debug mode OFF.\n");
+      }
+      else if (!strcmp( *argv, "-sb") || !strcmp( *argv, "-swapbuttons"))
+      {
+	 SwapButtons = !SwapButtons;
+	 if (SwapButtons)
+	    printf( "Mouse buttons swapped.\n");
+	 else
+	    printf( "Mouse buttons restored.\n");
+      }
+      else if (!strcmp( *argv, "-q") || !strcmp( *argv, "-quiet"))
+      {
+	 Quiet = !Quiet;
+	 if (Quiet)
+	    printf( "Quiet mode ON.\n");
+	 else
+	    printf( "Quiet mode OFF.\n");
+      }
+      else if (!strcmp( *argv, "-e") || !strcmp( *argv, "-expert"))
+      {
+	 Expert = !Expert;
+	 if (Expert)
+	    printf( "Expert mode ON.\n");
+	 else
+	    printf( "Expert mode OFF.\n");
+      }
+      else
+	 ProgError( "Invalid argument: %s", *argv);
+      argv++;
+      argc--;
+   }
+   /* load the WAD files */
+   if (argc)
+   {
+      /* load the main wad file */
+      if (!strcmp( *argv, "-file"))
+      {
+	 OpenMainWad( "DOOM.WAD");
+	 if (argc <= 1)
+	    ProgError( "Missing patch wad after \"-file\"");
+      }
+      else
+	 OpenMainWad( strupr( *argv));
+      /* load the patch wad files */
+      for (argv++, argc--; argc; argv++, argc--)
+	 OpenPatchWad( strupr( *argv));
+   }
+   else
+      OpenMainWad( "DOOM.WAD");
+   /* sanity check */
    CloseUnusedWadFiles();
+   /* all systems go! */
    MainLoop();
+   /* that's all, folks! */
    CloseWadFiles();
    return 0;
 }
@@ -102,6 +172,34 @@ void *ResizeMemory( void *old, size_t size)
    void *ret = realloc( old, size);
    if (!ret)
       ProgError( "out of memory (cannot reallocate %u bytes)", size);
+   return ret;
+}
+
+
+
+/*
+   allocate memory from the far heap with error checking
+*/
+
+void far *GetFarMemory( unsigned long size)
+{
+   void far *ret = farmalloc( size);
+   if (!ret)
+      ProgError( "out of memory (cannot allocate %lu far bytes)", size);
+   return ret;
+}
+
+
+
+/*
+   reallocate memory from the far heap with error checking
+*/
+
+void far *ResizeFarMemory( void far *old, unsigned long size)
+{
+   void far *ret = farrealloc( old, size);
+   if (!ret)
+      ProgError( "out of memory (cannot reallocate %lu far bytes)", size);
    return ret;
 }
 

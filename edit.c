@@ -41,7 +41,7 @@ int MinY = 32767;		/* minimum Y value of map */
 int MoveSpeed = 20;		/* movement speed */
 int SaveChanges = FALSE;	/* save changes? */
 int MadeChanges = FALSE;	/* made changes? */
-int MadeMapChanges = FALSE;     /* made changes that need rebuilding? */
+int MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
 
 
 /*
@@ -60,6 +60,22 @@ void EditLevel( int episode, int level)
    CheckMouseDriver();
    if (episode < 1 || level < 1)
       SelectLevel( &episode, &level);
+
+   /* TEMPORARY */
+   if (episode == 2 && level == 7)
+   {
+      ClearScreen();
+      if (! Confirm( -1, -1, "WARNING: I still have a bug to fix here...  You may get stange results",
+			     "if you edit this level.  Do you want to continue anyway?"))
+      {
+	 TermGfx();
+	 ForgetWTextureNames();
+	 ForgetFTextureNames();
+	 printf( "Editing aborted...   This bug will be fixed in a future release.\n");
+	 return;
+      }
+   }
+
    if (episode > 0 && level > 0)
    {
       ClearScreen();
@@ -182,8 +198,8 @@ void ReadLevelData( int episode, int level)
 
    /* read in the things data */
    dir = FindMasterDir( Level, "THINGS");
-   NumThings = dir->dir.size / 10;
-   Things = GetMemory( NumThings * sizeof( struct Thing));
+   NumThings = (int) (dir->dir.size / 10L);
+   Things = GetFarMemory( (unsigned long) NumThings * sizeof( struct Thing));
    BasicWadSeek( dir->wadfile, dir->dir.start);
    for (n = 0; n < NumThings; n++)
    {
@@ -196,8 +212,8 @@ void ReadLevelData( int episode, int level)
 
    /* read in the line def information */
    dir = FindMasterDir( Level, "LINEDEFS");
-   NumLineDefs = dir->dir.size / 14;
-   LineDefs = GetMemory( NumLineDefs * sizeof( struct LineDef));
+   NumLineDefs = (int) (dir->dir.size / 14L);
+   LineDefs = GetFarMemory( (unsigned long) NumLineDefs * sizeof( struct LineDef));
    BasicWadSeek( dir->wadfile, dir->dir.start);
    for (n = 0; n < NumLineDefs; n++)
    {
@@ -212,8 +228,8 @@ void ReadLevelData( int episode, int level)
 
    /* read in the side def information */
    dir = FindMasterDir( Level, "SIDEDEFS");
-   NumSideDefs = dir->dir.size / 30;
-   SideDefs = GetMemory( NumSideDefs * sizeof( struct SideDef));
+   NumSideDefs = (int) (dir->dir.size / 30L);
+   SideDefs = GetFarMemory( (unsigned long) NumSideDefs * sizeof( struct SideDef));
    BasicWadSeek( dir->wadfile, dir->dir.start);
    for (n = 0; n < NumSideDefs; n++)
    {
@@ -227,8 +243,8 @@ void ReadLevelData( int episode, int level)
 
    /* read in the vertexes which are all the corners of the level */
    dir = FindMasterDir( Level, "VERTEXES");
-   NumVertexes = dir->dir.size / 4;
-   Vertexes = GetMemory( NumVertexes * sizeof( struct Vertex));
+   NumVertexes = (int) (dir->dir.size / 4L);
+   Vertexes = GetFarMemory( (unsigned long) NumVertexes * sizeof( struct Vertex));
    BasicWadSeek( dir->wadfile, dir->dir.start);
    for (n = 0; n < NumVertexes; n++)
    {
@@ -246,60 +262,71 @@ void ReadLevelData( int episode, int level)
       Vertexes[ n].y = val;
    }
 
-   /* read in the segments information */
-   dir = FindMasterDir( Level, "SEGS");
-   NumSegs = dir->dir.size / 12;
-   Segs = GetMemory( NumSegs * sizeof( struct Seg));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumSegs; n++)
+   if (Debug)
    {
-      BasicWadRead( dir->wadfile, &(Segs[ n].start), 2);
-      BasicWadRead( dir->wadfile, &(Segs[ n].end), 2);
-      BasicWadRead( dir->wadfile, &(Segs[ n].angle), 2);
-      BasicWadRead( dir->wadfile, &(Segs[ n].linedef), 2);
-      BasicWadRead( dir->wadfile, &(Segs[ n].flip), 2);
-      BasicWadRead( dir->wadfile, &(Segs[ n].dist), 2);
+      /* read in the segments information */
+      dir = FindMasterDir( Level, "SEGS");
+      NumSegs = (int) (dir->dir.size / 12L);
+      Segs = GetFarMemory( (unsigned long) NumSegs * sizeof( struct Seg));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumSegs; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(Segs[ n].start), 2);
+	 BasicWadRead( dir->wadfile, &(Segs[ n].end), 2);
+	 BasicWadRead( dir->wadfile, &(Segs[ n].angle), 2);
+	 BasicWadRead( dir->wadfile, &(Segs[ n].linedef), 2);
+	 BasicWadRead( dir->wadfile, &(Segs[ n].flip), 2);
+	 BasicWadRead( dir->wadfile, &(Segs[ n].dist), 2);
+      }
+
+      /* read in the subsectors information */
+      dir = FindMasterDir( Level, "SSECTORS");
+      NumSSectors = (int) (dir->dir.size / 4L);
+      SSectors = GetFarMemory( (unsigned long) NumSSectors * sizeof( struct SSector));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumSSectors; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(SSectors[ n].num), 2);
+	 BasicWadRead( dir->wadfile, &(SSectors[ n].first), 2);
+      }
+
+      /* read in the nodes information */
+      dir = FindMasterDir( Level, "NODES");
+      NumNodes = (int) (dir->dir.size / 28L);
+      Nodes = GetFarMemory( (unsigned long) NumNodes * sizeof( struct Node));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumNodes; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].x), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].y), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].dx), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].dy), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].miny1), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxy1), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].minx1), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxx1), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].miny2), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxy2), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].minx2), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxx2), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].tree1), 2);
+	 BasicWadRead( dir->wadfile, &(Nodes[ n].tree2), 2);
+      }
    }
-
-
-   /* read in the subsectors information */
-   dir = FindMasterDir( Level, "SSECTORS");
-   NumSSectors = dir->dir.size / 4;
-   SSectors = GetMemory( NumSSectors * sizeof( struct SSector));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumSSectors; n++)
+   else
    {
-      BasicWadRead( dir->wadfile, &(SSectors[ n].num), 2);
-      BasicWadRead( dir->wadfile, &(SSectors[ n].first), 2);
-   }
-
-   /* read in the nodes information */
-   dir = FindMasterDir( Level, "NODES");
-   NumNodes = dir->dir.size / 28;
-   Nodes = GetMemory( NumNodes * sizeof( struct Node));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumNodes; n++)
-   {
-      BasicWadRead( dir->wadfile, &(Nodes[ n].x), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].y), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].dx), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].dy), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].miny1), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].maxy1), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].minx1), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].maxx1), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].miny2), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].maxy2), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].minx2), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].maxx2), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].tree1), 2);
-      BasicWadRead( dir->wadfile, &(Nodes[ n].tree2), 2);
+      Segs = NULL;
+      NumSegs = 0;
+      SSectors = NULL;
+      NumSSectors = 0;
+      Nodes = NULL;
+      NumNodes = 0;
    }
 
    /* read in the sectors information */
    dir = FindMasterDir( Level, "SECTORS");
-   NumSectors = dir->dir.size / 26;
-   Sectors = GetMemory( NumSectors * sizeof( struct Sector));
+   NumSectors = (int) (dir->dir.size / 26L);
+   Sectors = GetFarMemory( (unsigned long) NumSectors * sizeof( struct Sector));
    BasicWadSeek( dir->wadfile, dir->dir.start);
    for (n = 0; n < NumSectors; n++)
    {
@@ -313,28 +340,6 @@ void ReadLevelData( int episode, int level)
    }
 
    /* ignore the last entries (reject & blockmap) */
-
-   /* compute the vertex1 and vertex2 fields for each node */
-   for (n = 0; n < NumNodes; n++)
-   {
-      Nodes[ n].vertex1 = 0;
-      Nodes[ n].vertex2 = 0;
-      for (m = 0; m < NumVertexes; m++)
-      {
-	 if (Nodes[ n].x == Vertexes[ m].x && Nodes[ n].y == Vertexes[ m].y)
-	 {
-	    Nodes[ n].vertex1 = m;
-	    if (Nodes[ n].vertex2 > 0)
-	       break;
-	 }
-	 if (Nodes[ n].x + Nodes[ n].dx == Vertexes[ m].x && Nodes[ n].y + Nodes[ n].dy == Vertexes[ m].y)
-	 {
-	    Nodes[ n].vertex2 = m;
-	    if (Nodes[ n].vertex1 > 0)
-	       break;
-	 }
-      }
-   }
 }
 
 
@@ -350,39 +355,47 @@ void ForgetLevelData()
 
    /* forget the things */
    NumThings = 0;
-   free( Things);
+   if (Things)
+      farfree( Things);
 
    /* forget the line defs */
    NumLineDefs = 0;
-   free( LineDefs);
+   if (LineDefs)
+      farfree( LineDefs);
 
    /* forget the side defs */
    NumSideDefs = 0;
-   free( SideDefs);
+   if (SideDefs)
+      farfree( SideDefs);
 
    /* forget the vertices */
    NumVertexes = 0;
-   free( Vertexes);
-   MaxX = 0;
-   MaxY = 0;
-   MinX = 0;
-   MinY = 0;
+   if (Vertexes)
+      farfree( Vertexes);
+   MaxX = -32768;
+   MaxY = -32768;
+   MinX = 32767;
+   MinY = 32767;
 
    /* forget the segments */
    NumSegs = 0;
-   free( Segs);
-
-   /* forget the nodes */
-   NumNodes = 0;
-   free( Nodes);
+   if (Segs)
+      farfree( Segs);
 
    /* forget the subsectors */
    NumSSectors = 0;
-   free( SSectors);
+   if (SSectors)
+      farfree( SSectors);
+
+   /* forget the nodes */
+   NumNodes = 0;
+   if (Nodes)
+      farfree( Nodes);
 
    /* forget the sectors */
    NumSectors = 0;
-   free( Sectors);
+   if (Sectors)
+      farfree( Sectors);
 }
 
 
@@ -463,48 +476,71 @@ void SaveLevelData( char *outfile)
    }
    dir = dir->next;
 
-   /* output the segs */
-   for (n = 0; n < NumSegs; n++)
+   if (Debug)
    {
-      WriteBytes( file, &(Segs[ n].start), 2L);
-      WriteBytes( file, &(Segs[ n].end), 2L);
-      WriteBytes( file, &(Segs[ n].angle), 2L);
-      WriteBytes( file, &(Segs[ n].linedef), 2L);
-      WriteBytes( file, &(Segs[ n].flip), 2L);
-      WriteBytes( file, &(Segs[ n].dist), 2L);
-      counter += 12L;
-   }
-   dir = dir->next;
+      /* output the segs */
+      for (n = 0; n < NumSegs; n++)
+      {
+	 WriteBytes( file, &(Segs[ n].start), 2L);
+	 WriteBytes( file, &(Segs[ n].end), 2L);
+	 WriteBytes( file, &(Segs[ n].angle), 2L);
+	 WriteBytes( file, &(Segs[ n].linedef), 2L);
+	 WriteBytes( file, &(Segs[ n].flip), 2L);
+	 WriteBytes( file, &(Segs[ n].dist), 2L);
+	 counter += 12L;
+      }
+      dir = dir->next;
 
-   /* output the ssectors */
-   for (n = 0; n < NumSSectors; n++)
-   {
-      WriteBytes( file, &(SSectors[ n].num), 2L);
-      WriteBytes( file, &(SSectors[ n].first), 2L);
-      counter += 4L;
-   }
-   dir = dir->next;
+      /* output the ssectors */
+      for (n = 0; n < NumSSectors; n++)
+      {
+	 WriteBytes( file, &(SSectors[ n].num), 2L);
+	 WriteBytes( file, &(SSectors[ n].first), 2L);
+	 counter += 4L;
+      }
+      dir = dir->next;
 
-   /* output the nodes */
-   for (n = 0; n < NumNodes; n++)
-   {
-      WriteBytes( file, &(Nodes[ n].x), 2L);
-      WriteBytes( file, &(Nodes[ n].y), 2L);
-      WriteBytes( file, &(Nodes[ n].dx), 2L);
-      WriteBytes( file, &(Nodes[ n].dy), 2L);
-      WriteBytes( file, &(Nodes[ n].miny1), 2L);
-      WriteBytes( file, &(Nodes[ n].maxy1), 2L);
-      WriteBytes( file, &(Nodes[ n].minx1), 2L);
-      WriteBytes( file, &(Nodes[ n].maxx1), 2L);
-      WriteBytes( file, &(Nodes[ n].miny2), 2L);
-      WriteBytes( file, &(Nodes[ n].maxy2), 2L);
-      WriteBytes( file, &(Nodes[ n].minx2), 2L);
-      WriteBytes( file, &(Nodes[ n].maxx2), 2L);
-      WriteBytes( file, &(Nodes[ n].tree1), 2L);
-      WriteBytes( file, &(Nodes[ n].tree2), 2L);
-      counter += 28L;
+      /* output the nodes */
+      for (n = 0; n < NumNodes; n++)
+      {
+	 WriteBytes( file, &(Nodes[ n].x), 2L);
+	 WriteBytes( file, &(Nodes[ n].y), 2L);
+	 WriteBytes( file, &(Nodes[ n].dx), 2L);
+	 WriteBytes( file, &(Nodes[ n].dy), 2L);
+	 WriteBytes( file, &(Nodes[ n].miny1), 2L);
+	 WriteBytes( file, &(Nodes[ n].maxy1), 2L);
+	 WriteBytes( file, &(Nodes[ n].minx1), 2L);
+	 WriteBytes( file, &(Nodes[ n].maxx1), 2L);
+	 WriteBytes( file, &(Nodes[ n].miny2), 2L);
+	 WriteBytes( file, &(Nodes[ n].maxy2), 2L);
+	 WriteBytes( file, &(Nodes[ n].minx2), 2L);
+	 WriteBytes( file, &(Nodes[ n].maxx2), 2L);
+	 WriteBytes( file, &(Nodes[ n].tree1), 2L);
+	 WriteBytes( file, &(Nodes[ n].tree2), 2L);
+	 counter += 28L;
+      }
+      dir = dir->next;
    }
-   dir = dir->next;
+   else
+   {
+      data = GetMemory( 0x8000 + 2);
+      for (n = 0; n < 3; n++)
+      {
+	 size = dir->dir.size;
+	 BasicWadSeek( dir->wadfile, dir->dir.start);
+	 while (size > 0x8000)
+	 {
+	    BasicWadRead( dir->wadfile, data, 0x8000);
+	    WriteBytes( file, data, 0x8000);
+	    size -= 0x8000;
+	 }
+	 BasicWadRead( dir->wadfile, data, size);
+	 WriteBytes( file, data, size);
+	 counter += size;
+	 dir = dir->next;
+      }
+      free( data);
+   }
 
    /* output the sectors */
    for (n = 0; n < NumSectors; n++)
@@ -536,10 +572,10 @@ void SaveLevelData( char *outfile)
    dir = dir->next;
    free( data);
 
-   if (MadeMapChanges && Confirm( -1, 270, "Do you want to rebuild the BLOCKMAP?", "(Notice: this function has some bugs...)"))
+   if (MadeMapChanges && (Expert || Confirm( -1, 270, "Do you want to rebuild the BLOCKMAP?", NULL)))
    {
       /* create and output the blockmap */
-      DisplayMessage( -1, -1, "Rebuilding the BLOCKMAP.  This may take a few seconds...");
+      DisplayMessage( -1, -1, "Rebuilding the BLOCKMAP.  Please wait a few seconds...");
       MinX = (int) (MinX / 8) * 8;
       WriteBytes( file, &MinX, 2L);
       MinY = (int) (MinY / 8) * 8;
@@ -566,8 +602,7 @@ void SaveLevelData( char *outfile)
 	       blocksize += 2L;
 	       blockcount++;
 	       for (n = 0; n < NumLineDefs; n++)
-		  if (IsLineDefInside( n, (double) (MinX + j * 128), (double) (MinY + i * 128),
-					  (double) (MinX + 127 + j * 128), (double) (MinY + 127 + i * 128)))
+		  if (IsLineDefInside( n, MinX + j * 128, MinY + i * 128, MinX + 127 + j * 128, MinY + 127 + i * 128))
 		  {
 		     WriteBytes( file, &n, 2L);
 		     counter += 2L;
@@ -646,26 +681,42 @@ void SaveLevelData( char *outfile)
    counter += size;
    dir = dir->next;
 
-   size = (long) NumSegs * 12L;
-   WriteBytes( file, &counter, 4L);
-   WriteBytes( file, &size, 4L);
-   WriteBytes( file, "SEGS\0\0\0\0", 8L);
-   counter += size;
-   dir = dir->next;
+   if (Debug)
+   {
+      size = (long) NumSegs * 12L;
+      WriteBytes( file, &counter, 4L);
+      WriteBytes( file, &size, 4L);
+      WriteBytes( file, "SEGS\0\0\0\0", 8L);
+      counter += size;
+      dir = dir->next;
 
-   size = (long) NumSSectors * 4L;
-   WriteBytes( file, &counter, 4L);
-   WriteBytes( file, &size, 4L);
-   WriteBytes( file, "SSECTORS", 8L);
-   counter += size;
-   dir = dir->next;
+      size = (long) NumSSectors * 4L;
+      WriteBytes( file, &counter, 4L);
+      WriteBytes( file, &size, 4L);
+      WriteBytes( file, "SSECTORS", 8L);
+      counter += size;
+      dir = dir->next;
 
-   size = (long) NumNodes * 28L;
-   WriteBytes( file, &counter, 4L);
-   WriteBytes( file, &size, 4L);
-   WriteBytes( file, "NODES\0\0\0", 8L);
-   counter += size;
-   dir = dir->next;
+      size = (long) NumNodes * 28L;
+      WriteBytes( file, &counter, 4L);
+      WriteBytes( file, &size, 4L);
+      WriteBytes( file, "NODES\0\0\0", 8L);
+      counter += size;
+      dir = dir->next;
+   }
+   else
+   {
+      for (n = 0; n < 3; n++)
+      {
+	 size = dir->dir.size;
+	 WriteBytes( file, &counter, 4L);
+	 WriteBytes( file, &size, 4L);
+	 WriteBytes( file, &(dir->dir.name), 8L);
+	 counter += size;
+	 dir = dir->next;
+      }
+   }
+
 
    size = (long) NumSectors * 26L;
    WriteBytes( file, &counter, 4L);
@@ -863,49 +914,65 @@ void ForgetFTextureNames()
    display the help screen
  */
 
-void DisplayHelp( int objtype)
+void DisplayHelp( int objtype, int grid)
 {
+   int x0 = 137;
+   int y0 = 50;
+
    if (UseMouse)
       HideMousePointer();
    /* put in the instructions */
-   DrawScreenBox3D( 140, 60, 500, 395);
+   DrawScreenBox3D( x0, y0, x0 + 364, y0 + 355);
    setcolor( LIGHTCYAN);
-   DrawScreenText( 240, 82, "Doom Editor Utility");
-   DrawScreenText( 272 - strlen(GetEditModeName( objtype)) * 4, 95, "- %s Editor -", GetEditModeName( objtype));
+   DrawScreenText( x0 + 100, y0 + 20, "Doom Editor Utility");
+   DrawScreenText( 269 - strlen(GetEditModeName( objtype)) * 4, y0 + 32, "- %s Editor -", GetEditModeName( objtype));
    setcolor( BLACK);
-   DrawScreenText( 150, 125, "Use the mouse or the cursor keys to move");
-   DrawScreenText( 150, 135, "around.  The map scrolls when the pointer");
-   DrawScreenText( 150, 145, "reaches the edge of the screen.");
-   DrawScreenText( 150, 165, "Other useful keys are:");
-   DrawScreenText( 150, 180, "Tab   - Switch to the next editing mode.");
-   DrawScreenText( 150, 190, "Space - Change the move/scroll speed.");
-   DrawScreenText( 150, 200, "Esc   - Exit without saving changes.");
+   DrawScreenText( x0 + 10, y0 + 60, "Use the mouse or the cursor keys to move");
+   DrawScreenText( -1, -1, "around.  The map scrolls when the pointer");
+   DrawScreenText( -1, -1, "reaches the edge of the screen.");
+   DrawScreenText( -1, y0 + 100, "Other useful keys are:");
    if (Registered)
-      DrawScreenText( 150, 210, "Q     - Quit, saving changes.");
+      DrawScreenText( -1, y0 + 115, "Q     - Quit, saving changes");
    else
    {
       setcolor( DARKGRAY);
-      DrawScreenText( 150, 210, "Q     - Quit without saving changes.");
+      DrawScreenText( -1, y0 + 115, "Q     - Quit without saving changes");
       setcolor( BLACK);
    }
-   DrawScreenText( 150, 220, "+/-   - Change the map scale (current: %d).", Scale);
+   DrawScreenText( -1, -1, "Esc   - Exit without saving changes");
+   DrawScreenText( -1, -1, "Tab   - Switch to the next editing mode");
+   DrawScreenText( -1, -1, "Space - Change the move/scroll speed");
+   DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", Scale);
+   DrawScreenText( -1, -1, "G     - Change the grid scale (cur.: %d)", grid);
    if (GetCurObject( objtype) >= 0)
       setcolor( DARKGRAY);
-   DrawScreenText( 150, 230, "N, >  - Jump to the next object.");
-   DrawScreenText( 150, 240, "P, <  - Jump to the previous object.");
-   DrawScreenText( 150, 250, "J, #  - Jump to a specific object (enter #)");
+   DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
+   DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
+   DrawScreenText( -1, -1, "J, #  - Jump to a specific object (enter #)");
    setcolor( BLACK);
-   DrawScreenText( 150, 260, "Ins   - Insert a new object or drag");
-   DrawScreenText( 150, 270, "        the current one.");
-   DrawScreenText( 150, 280, "Del   - Delete the selected object");
-   DrawScreenText( 150, 290, "Enter - Edit the default/selected object.");
-   /*--------------------------------------------------------------------*/
-   DrawScreenText( 150, 320, "Mouse buttons:");
-   DrawScreenText( 150, 335, "Left  - Insert or drag an object.");
-   DrawScreenText( 150, 345, "Middle- Edit the default/selected object.");
-   DrawScreenText( 150, 355, "Right - Delete the selected object.");
+   DrawScreenText( -1, -1, "M     - Mark/unmark current object (select)");
+   if (objtype == OBJ_THINGS || objtype == OBJ_VERTEXES)
+      DrawScreenText( -1, -1, "D     - Toggle drag mode");
+   else
+      DrawScreenText( -1, -1, "C     - Clear all marks and redraw map");
+   DrawScreenText( -1, -1, "Ins   - Insert a new object");
+   DrawScreenText( -1, -1, "Del   - Delete the current object");
+   DrawScreenText( -1, -1, "Enter - Edit the current/selected object(s)");
+   DrawScreenText( -1, y0 + 265, "Mouse buttons:");
+   if (SwapButtons)
+   {
+      DrawScreenText( -1, y0 + 280, "Left  - Edit the current/selected object(s)");
+      DrawScreenText( -1, -1, "Middle- Mark/unmark the current object.");
+   }
+   else
+   {
+      DrawScreenText( -1, y0 + 280, "Left  - Mark/unmark the current object");
+      DrawScreenText( -1, -1, "Middle- Edit the current/selected object(s)");
+   }
+   DrawScreenText( -1, -1, "Right - Drag the current/selected object(s)");
+   DrawScreenText( -1, y0 + 320, "Please read MANUAL.DOC for more information");
    setcolor( YELLOW);
-   DrawScreenText( 150, 380, "Press any key to return to the editor...");
+   DrawScreenText( -1, y0 + 340, "Press any key to return to the editor...");
    bioskey( 0);
    if (UseMouse)
       ShowMousePointer();
@@ -919,13 +986,15 @@ void DisplayHelp( int objtype)
 
 void EditorLoop()
 {
-   int EditMode = OBJ_THINGS;
-   int CurObject = -1;
-   int OldObject = -1;
-   int RedrawMap = TRUE;
-   int RedrawObj = FALSE;
-   int DragObject = FALSE;
-   int key, buttons, oldbuttons;
+   int    EditMode = OBJ_THINGS;
+   int    CurObject = -1;
+   int    OldObject = -1;
+   int    RedrawMap = TRUE;
+   int    RedrawObj = FALSE;
+   int    DragObject = FALSE;
+   int    key, buttons, oldbuttons;
+   int    GridScale = 0;
+   SelPtr Selected = NULL;
 
    OrigX = (MinX + MaxX) / 2;
    OrigY = (MinY + MaxY) / 2;
@@ -954,39 +1023,62 @@ void EditorLoop()
 	    switch (buttons)
 	    {
 	    case 1:
-	       if (! DragObject)
-		  key = 0x5200; /* Press left button = Ins */
+	       if (SwapButtons)
+		  key = 0x000D;
+	       else
+		  key = 'M'; /* Press left button = Mark/Unmark ('M') */
 	       break;
 	    case 2:
-	       key = 0x5300; /* Press right button = Del */
+	       DragObject = TRUE; /* Press right button = Drag */
 	       break;
 	    case 3:
 	    case 4:
-	       key = 0x000D; /* Press middle button = Enter */
+	       if (SwapButtons)
+		  key = 'M';
+	       else
+		  key = 0x000D;	/* Press middle button = Edit ('Enter') */
 	       break;
 	    default:
-	       if (DragObject)
-		  key = 0x5200; /* Release left button = Ins */
+	       DragObject = FALSE; /* Release right button = End Drag */
 	       break;
 	    }
 	 oldbuttons = buttons;
       }
 
+      /* drag object(s) */
       if (DragObject)
       {
-	 /* if we are dragging an object, move it */
-	 switch (EditMode)
+	 int forgetit = FALSE;
+
+	 if (IsSelected( Selected, CurObject) == FALSE)
+	    ForgetSelection( &Selected);
+	 else if (Selected->objnum != CurObject)
 	 {
-	    case OBJ_THINGS:
-	       Things[ CurObject].xpos  = MAPX(PointerX);
-	       Things[ CurObject].ypos  = MAPY(PointerY);
-	       break;
-	    case OBJ_VERTEXES:
-	       Vertexes[ CurObject].x = MAPX( PointerX);
-	       Vertexes[ CurObject].y = MAPY( PointerY);
-	       break;
+	    UnSelectObject( &Selected, CurObject);
+	    SelectObject( &Selected, CurObject);
 	 }
-	 RedrawMap = TRUE;
+	 if (Selected == NULL && CurObject >= 0)
+	 {
+	    SelectObject( &Selected, CurObject);
+	    forgetit = TRUE;
+	 }
+	 if (Selected)
+	 {
+	    if (GridScale > 0)
+	       MoveObjectToCoords( EditMode, Selected,
+				   (MAPX( PointerX) / GridScale) * GridScale,
+				   (MAPY( PointerY) / GridScale) * GridScale);
+	    else
+	       MoveObjectToCoords( EditMode, Selected, MAPX( PointerX), MAPY( PointerY));
+	    if (forgetit)
+	       ForgetSelection( &Selected);
+	    RedrawMap = TRUE;
+	 }
+	 else
+	 {
+	    Beep();
+	    DragObject = FALSE;
+	 }
       }
       else if (!RedrawObj)
       {
@@ -1003,12 +1095,13 @@ void EditorLoop()
       {
 	 if (UseMouse)
 	    HideMousePointer();
-	 DrawMap( EditMode);
+	 DrawMap( EditMode, GridScale);
+	 HighlightSelection( EditMode, Selected);
 	 if (UseMouse)
 	    ShowMousePointer();
       }
 
-      /* highlight the selected object and display the information box */
+      /* highlight the current object and display the information box */
       if (RedrawMap || CurObject != OldObject || RedrawObj)
       {
 	 RedrawObj = FALSE;
@@ -1018,9 +1111,12 @@ void EditorLoop()
 	    HighlightObject( EditMode, OldObject, YELLOW);
 	 if (CurObject != OldObject)
 	 {
-	    sound( 50);
-	    delay( 10);
-	    nosound();
+	    if (! Quiet)
+	    {
+	       sound( 50);
+	       delay( 10);
+	       nosound();
+	    }
 	    OldObject = CurObject;
 	 }
 	 if (CurObject >= 0)
@@ -1051,11 +1147,13 @@ void EditorLoop()
 	 /* user wants to exit */
 	 if ((key & 0x00FF) == 'Q' || (key & 0x00FF) == 'q')
 	 {
+	    ForgetSelection( &Selected);
 	    SaveChanges = Registered;
 	    break;
 	 }
 	 else if ((key & 0x00FF) == 0x001B)
 	 {
+	    ForgetSelection( &Selected);
 	    if (!MadeChanges || Confirm(90, 230, "You have unsaved changes.  Do you really want to quit?", NULL))
 	       break;
 	    RedrawMap = TRUE;
@@ -1064,19 +1162,27 @@ void EditorLoop()
 	 /* user is lost */
 	 else if ((key & 0xFF00) == 0x3B00)
 	 {
-	    DisplayHelp( EditMode);
+	    DisplayHelp( EditMode, GridScale);
 	    RedrawMap = TRUE;
 	 }
 
 	 /* user wants to change the scale */
 	 else if (((key & 0x00FF) == '+' || (key & 0x00FF) == '=') && Scale > 1)
 	 {
+	    OrigX += (PointerX - 319) * Scale;
+	    OrigY += (239 - PointerY) * Scale;
 	    Scale--;
+	    OrigX -= (PointerX - 319) * Scale;
+	    OrigY -= (239 - PointerY) * Scale;
 	    RedrawMap = TRUE;
 	 }
 	 else if (((key & 0x00FF) == '-' || (key & 0x00FF) == '_') && Scale < 20)
 	 {
+	    OrigX += (PointerX - 319) * Scale;
+	    OrigY += (239 - PointerY) * Scale;
 	    Scale++;
+	    OrigX -= (PointerX - 319) * Scale;
+	    OrigY -= (239 - PointerY) * Scale;
 	    RedrawMap = TRUE;
 	 }
 
@@ -1133,61 +1239,76 @@ void EditorLoop()
 	    MoveSpeed = MoveSpeed == 1 ? 20 : 1;
 
 	 /* user wants to change the edit mode */
-	 else if ((key & 0x00FF) == 0x0009)
+	 else if ((key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00
+	       || (key & 0x00FF) == 'T' || (key & 0x00FF) == 't'
+	       || (key & 0x00FF) == 'V' || (key & 0x00FF) == 'v'
+	       || (key & 0x00FF) == 'L' || (key & 0x00FF) == 'l'
+	       || (key & 0x00FF) == 'S' || (key & 0x00FF) == 's')
 	 {
-	    switch (EditMode)
+	    if ((key & 0x00FF) == 0x0009)
 	    {
-	    case OBJ_THINGS:
-	       EditMode = OBJ_LINEDEFS;
-	       break;
-	    case OBJ_LINEDEFS:
-	       EditMode = OBJ_SECTORS;
-	       break;
-	    case OBJ_SECTORS:
-	       EditMode = OBJ_VERTEXES;
-	       break;
-	    case OBJ_VERTEXES:
-	       EditMode = OBJ_SEGS;
-	       break;
-	    case OBJ_SEGS:
-	       EditMode = OBJ_NODES;
-	       break;
-	    case OBJ_NODES:
-	       EditMode = OBJ_THINGS;
-	       break;
+	       switch (EditMode)
+	       {
+	       case OBJ_THINGS:
+		  EditMode = OBJ_VERTEXES;
+		  break;
+	       case OBJ_VERTEXES:
+		  EditMode = OBJ_LINEDEFS;
+		  break;
+	       case OBJ_LINEDEFS:
+		  EditMode = OBJ_SECTORS;
+		  break;
+	       case OBJ_SECTORS:
+		  if (Debug)
+		     EditMode = OBJ_SEGS;
+		  else
+		     EditMode = OBJ_THINGS;
+		  break;
+	       case OBJ_SEGS:
+		  EditMode = OBJ_NODES;
+		  break;
+	       case OBJ_NODES:
+		  EditMode = OBJ_THINGS;
+		  break;
+	       }
 	    }
-	    if (GetMaxObjectNum( EditMode) >= 0)
-	       CurObject = 0;
-	    else
-	       CurObject = -1;
-	    OldObject = CurObject;
-	    DragObject = FALSE;
-	    RedrawMap = TRUE;
-	 }
-	 else if ((key & 0xFF00) == 0x0F00)
-	 {
-	    CurObject = -1;
-	    switch (EditMode)
+	    else if ((key & 0xFF00) == 0x0F00)
 	    {
-	    case OBJ_THINGS:
-	       EditMode = OBJ_NODES;
-	       break;
-	    case OBJ_LINEDEFS:
-	       EditMode = OBJ_THINGS;
-	       break;
-	    case OBJ_SECTORS:
-	       EditMode = OBJ_LINEDEFS;
-	       break;
-	    case OBJ_VERTEXES:
-	       EditMode = OBJ_SECTORS;
-	       break;
-	    case OBJ_SEGS:
-	       EditMode = OBJ_VERTEXES;
-	       break;
-	    case OBJ_NODES:
-	       EditMode = OBJ_SEGS;
-	       break;
+	       switch (EditMode)
+	       {
+	       case OBJ_THINGS:
+		  if (Debug)
+		     EditMode = OBJ_NODES;
+		  else
+		     EditMode = OBJ_SECTORS;
+		  break;
+	       case OBJ_VERTEXES:
+		  EditMode = OBJ_THINGS;
+		  break;
+	       case OBJ_LINEDEFS:
+		  EditMode = OBJ_VERTEXES;
+		  break;
+	       case OBJ_SECTORS:
+		  EditMode = OBJ_LINEDEFS;
+		  break;
+	       case OBJ_SEGS:
+		  EditMode = OBJ_SECTORS;
+		  break;
+	       case OBJ_NODES:
+		  EditMode = OBJ_SEGS;
+		  break;
+	       }
 	    }
+	    else if ((key & 0x00FF) == 'T' || (key & 0x00FF) == 't')
+	       EditMode = OBJ_THINGS;
+	    else if ((key & 0x00FF) == 'V' || (key & 0x00FF) == 'v')
+	       EditMode = OBJ_VERTEXES;
+	    else if ((key & 0x00FF) == 'L' || (key & 0x00FF) == 'l')
+	       EditMode = OBJ_LINEDEFS;
+	    else if ((key & 0x00FF) == 'S' || (key & 0x00FF) == 's')
+	       EditMode = OBJ_SECTORS;
+	    /* unselect all */
+	    ForgetSelection( &Selected);
 	    if (GetMaxObjectNum( EditMode) >= 0)
 	       CurObject = 0;
 	    else
@@ -1196,6 +1317,27 @@ void EditorLoop()
 	    DragObject = FALSE;
 	    RedrawMap = TRUE;
 	 }
+
+	 /* user wants to display or hide the grid */
+	 else if ((key & 0x00FF) == 'G' || (key & 0x00FF) == 'g')
+	 {
+	    if (GridScale == 0)
+	       GridScale = 256;
+	    else if (GridScale > 16)
+	       GridScale /= 2;
+	    else
+	       GridScale = 0;
+	    RedrawMap = TRUE;
+	 }
+	 else if ((key & 0x00FF) == 'H' || (key & 0x00FF) == 'h')
+	 {
+	    GridScale = 0;
+	    RedrawMap = TRUE;
+	 }
+
+	 /* user wants to toggle drag mode */
+	 else if ((key & 0x00FF) == 'D' || (key & 0x00FF) == 'd')
+	    DragObject = !DragObject;
 
 	 /* user wants to select the next or previous object */
 	 else if (((key & 0x00FF) == 'N' || (key & 0x00FF) == 'n' || (key & 0x00FF) == '>') && GetCurObject( EditMode) < 0)
@@ -1224,77 +1366,144 @@ void EditorLoop()
 	    RedrawMap = TRUE;
 	 }
 
-	 /* user wants to disable the mouse (*debug*) */
-	 else if ((key & 0x00FF) == 'K')
+	 /* user wants to disable the mouse (DEBUG) */
+	 else if (Debug && (key & 0x00FF) == 'K')
 	 {
 	    if (UseMouse)
-	      HideMousePointer();
+	       HideMousePointer();
 	    UseMouse = FALSE;
+	 }
+
+	 /* user wants to mark/unmark an object */
+	 else if (((key & 0x00FF) == 'M' || (key & 0x00FF) == 'm') && CurObject >= 0)
+	 {
+	    if (UseMouse)
+	       HideMousePointer();
+	    if (IsSelected( Selected, CurObject))
+	       UnSelectObject( &Selected, CurObject);
+	    else
+	       SelectObject( &Selected, CurObject);
+	    HighlightObject( EditMode, CurObject, GREEN);
+	    if (UseMouse)
+	       ShowMousePointer();
+	    if (! Quiet)
+	    {
+	       sound( 440);
+	       delay( 10);
+	       nosound();
+	    }
+	    DragObject = FALSE;
+	 }
+
+	 /* user wants to clear all marks and redraw the map */
+	 else if ((key & 0x00FF) == 'C' || (key & 0x00FF) == 'c')
+	 {
+	    ForgetSelection( &Selected);
+	    RedrawMap = TRUE;
+	    DragObject = FALSE;
 	 }
 
 	 /* user wants to edit the current object */
 	 else if ((key & 0x00FF) == 0x000D && CurObject >= 0)
 	 {
-	    EditObjectInfo( EditMode, CurObject);
+	    if (Selected)
+	       EditObjectInfo( EditMode, Selected);
+	    else
+	    {
+	       SelectObject( &Selected, CurObject);
+	       EditObjectInfo( EditMode, Selected);
+	       UnSelectObject( &Selected, CurObject);
+	    }
 	    RedrawMap = TRUE;
+	    DragObject = FALSE;
 	 }
 
 	 /* user wants to delete the current object */
 	 else if ((key & 0xFF00) == 0x5300 && CurObject >= 0)
 	 {
-	    MadeChanges = TRUE;
-	    DeleteObject( EditMode, CurObject);
+	    ForgetSelection( &Selected); /* (*should be changed!*) */
+	    if (EditMode == OBJ_LINEDEFS || EditMode == OBJ_VERTEXES || EditMode == OBJ_SECTORS)
+	    {
+	       if (Expert || Confirm( -1, -1, "Do you really want to delete this object?", "This will also delete the objects bound to it."))
+		  DeleteObject( EditMode, CurObject);
+	    }
+	    else
+	       DeleteObject( EditMode, CurObject);
 	    CurObject = -1;
 	    DragObject = FALSE;
 	    RedrawMap = TRUE;
 	 }
 
-	 /* user wants to insert a new object or drag the current one */
+	 /* user wants to insert a new object */
 	 else if ((key & 0xFF00) == 0x5200)
 	 {
-	    MadeChanges = TRUE;
-	    if ((EditMode == OBJ_THINGS || EditMode == OBJ_VERTEXES) && GetCurObject( EditMode) >= 0)
-	    {
-	       int n;
+	    SelPtr cur;
 
-	       if (EditMode == OBJ_VERTEXES && DragObject)
+	    /* first special case: if several Vertices are selected, add new LineDefs */
+	    if (EditMode == OBJ_VERTEXES && Selected != NULL && Selected->next != NULL)
+	    {
+	       EditMode = OBJ_LINEDEFS;
+	       for (cur = Selected; cur->next; cur = cur->next)
 	       {
-		  /* Adjust angles in Segs objects if a Vertex has moved */
-		  for (n = 0; n < NumSegs; n++)
-		     if (Segs[ n].start == CurObject || Segs[ n].end == CurObject)
-			Segs[ n].angle = ComputeAngle(Vertexes[ Segs[ n].end].x - Vertexes[ Segs[ n].start].x,
-						      Vertexes[ Segs[ n].end].y - Vertexes[ Segs[ n].start].y);
-		  /* Change positions of Nodes if a Vertex has moved */
-		  for (n = 0; n < NumNodes; n++)
-		     if (Nodes[ n].vertex1 == CurObject)
-		     {
-			Nodes[ n].x = Vertexes[ CurObject].x;
-			Nodes[ n].y = Vertexes[ CurObject].y;
-			Nodes[ n].dx = Vertexes[ Nodes[ n].vertex2].x - Nodes[ n].x;
-			Nodes[ n].dy = Vertexes[ Nodes[ n].vertex2].y - Nodes[ n].y;
-		     }
-		     else if (Nodes[ n].vertex2 == CurObject)
-		     {
-			Nodes[ n].dx = Vertexes[ CurObject].x - Nodes[ n].x;
-			Nodes[ n].dy = Vertexes[ CurObject].y - Nodes[ n].y;
-		     }
-		  MadeMapChanges = TRUE;
+		  InsertObject( EditMode, -1, GridScale);
+		  CurObject = GetMaxObjectNum( EditMode);
+		  LineDefs[ CurObject].start = cur->next->objnum;
+		  LineDefs[ CurObject].end = cur->objnum;
+		  cur->objnum = CurObject;
 	       }
-	       DragObject = !DragObject;
+	       UnSelectObject( &Selected, cur->objnum);
 	    }
+	    /* second special case: if several LineDefs are selected, add new SideDefs and one Sector */
+	    else if (EditMode == OBJ_LINEDEFS && Selected != NULL)
+	    {
+	       for (cur = Selected; cur; cur = cur->next)
+		  if (LineDefs[ cur->objnum].sidedef1 >= 0 && LineDefs[ cur->objnum].sidedef2 >= 0)
+		  {
+		     Beep();
+		     break;
+		  }
+	       if (cur == NULL)
+	       {
+		  EditMode = OBJ_SECTORS;
+		  InsertObject( EditMode, -1, GridScale);
+		  CurObject = GetMaxObjectNum( EditMode);
+		  for (cur = Selected; cur; cur = cur->next)
+		  {
+		     InsertObject( OBJ_SIDEDEFS, -1, GridScale);
+		     SideDefs[ NumSideDefs - 1].sector = CurObject;
+		     if (LineDefs[ cur->objnum].sidedef1 >= 0)
+			LineDefs[ cur->objnum].sidedef2 = NumSideDefs - 1;
+		     else
+			LineDefs[ cur->objnum].sidedef1 = NumSideDefs - 1;
+		  }
+		  ForgetSelection( &Selected);
+	       }
+	    }
+	    /* normal case: add a new object of the current type */
 	    else
 	    {
-	       InsertObject( EditMode, CurObject);
-	       DragObject = FALSE;
-	       RedrawMap = TRUE;
+	       ForgetSelection( &Selected);
+	       InsertObject( EditMode, CurObject, GridScale);
+	       CurObject = GetMaxObjectNum( EditMode);
+	       if (EditMode == OBJ_LINEDEFS)
+	       {
+		  if (! Input2VertexNumbers( -1, -1, "Choose the two vertices for the new LineDef",
+					     &(LineDefs[ CurObject].start), &(LineDefs[ CurObject].end)))
+		  {
+		     DeleteObject( EditMode, CurObject);
+		     CurObject = -1;
+		  }
+	       }
 	    }
+	    DragObject = FALSE;
+	    RedrawMap = TRUE;
 	 }
 
 	 /* user likes music */
 	 else
 	    Beep();
 
-	 /* draw the (keyboard) pointer */
+	 /* redraw the (keyboard) pointer */
 	 if (! UseMouse)
 	    DrawPointer();
       }
@@ -1349,13 +1558,23 @@ void EditorLoop()
    draw the actual game map
 */
 
-void DrawMap( int editmode)
+void DrawMap( int editmode, int grid)
 {
    int  n, m;
    char texname[9];
 
    /* clear the screen */
    ClearScreen();
+
+   /* draw the grid */
+   if (grid > 0)
+   {
+      setcolor( BLUE);
+      for (n = MinX; n <= MaxX; n += grid)
+	 DrawMapLine( n, MinY, n, MaxY);
+      for (n = MinY; n <= MaxY; n += grid)
+	 DrawMapLine( MinX, n, MaxX, n);
+   }
 
    /* draw the linedefs to form the map */
    if (editmode == OBJ_VERTEXES || editmode == OBJ_NODES)
@@ -1365,19 +1584,65 @@ void DrawMap( int editmode)
 	 DrawMapVector( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
 			Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
    }
-   else
-      if (editmode != OBJ_SEGS)
-	 for (n = 0; n < NumLineDefs; n++)
+   else if (editmode == OBJ_THINGS)
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (LineDefs[ n].flags & 1)
+	    setcolor( WHITE);
+	 else
+	    setcolor( LIGHTGRAY);
+	 DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+		      Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+      }
+   else if (editmode == OBJ_LINEDEFS)
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (LineDefs[ n].type > 0)
 	 {
-	    if (LineDefs[ n].flags & 1)
+	    if (LineDefs[ n].tag > 0)
+	       setcolor( LIGHTMAGENTA);
+	    else
+	       setcolor( LIGHTGREEN);
+	 }
+	 else if (LineDefs[ n].tag > 0)
+	    setcolor( LIGHTRED);
+	 else if (LineDefs[ n].flags & 1)
+	    setcolor( WHITE);
+	 else
+	    setcolor( LIGHTGRAY);
+	 DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+		      Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+      }
+   else if (editmode == OBJ_SECTORS)
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if ((m = LineDefs[ n].sidedef1) < 0 || (m = SideDefs[ m].sector) < 0)
+	    setcolor( LIGHTRED);
+	 else
+	 {
+	    if (Sectors[ m].tag > 0)
+	       setcolor( LIGHTGREEN);
+	    else if (Sectors[ m].special > 0)
+	       setcolor( LIGHTCYAN);
+	    else if (LineDefs[ n].flags & 1)
 	       setcolor( WHITE);
 	    else
 	       setcolor( LIGHTGRAY);
-	    DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
-			 Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+	    if ((m = LineDefs[ n].sidedef2) >= 0)
+	    {
+	       if ((m = SideDefs[ m].sector) < 0)
+		  setcolor( LIGHTRED);
+	       else if (Sectors[ m].tag > 0)
+		  setcolor( LIGHTGREEN);
+	       else if (Sectors[ m].special > 0)
+		  setcolor( LIGHTCYAN);
+	    }
 	 }
+	 DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+		      Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+      }
 
-   /* draw the segs */
+   /* draw the segs (DEBUG) */
    if (editmode == OBJ_SEGS)
    {
       for (n = 0; n < NumSegs; n++)
@@ -1385,7 +1650,7 @@ void DrawMap( int editmode)
 	 setcolor( LIGHTGREEN + (Segs[ n].flip & 1));
 	 DrawMapLine( Vertexes[ Segs[ n].start].x, Vertexes[ Segs[ n].start].y,
 		      Vertexes[ Segs[ n].end].x, Vertexes[ Segs[ n].end].y);
-	 /* (*debug*)
+	 /* (*TEST*)
 	 setcolor( LIGHTRED + (Segs[ n].flip & 1));
 	 DrawMapArrow( Vertexes[ Segs[ n].start].x, Vertexes[ Segs[ n].start].y,
 		       Segs[ n].angle);
@@ -1393,7 +1658,7 @@ void DrawMap( int editmode)
       }
    }
 
-   /* draw in the vertexes */
+   /* draw in the vertices */
    if (editmode == OBJ_VERTEXES || editmode == OBJ_SEGS)
    {
       setcolor( LIGHTGREEN);
@@ -1403,7 +1668,7 @@ void DrawMap( int editmode)
 	 DrawMapLine( Vertexes[ n].x + OBJSIZE, Vertexes[ n].y - OBJSIZE, Vertexes[ n].x - OBJSIZE, Vertexes[ n].y + OBJSIZE);
       }
    }
-   if (editmode == OBJ_LINEDEFS)
+   if (Debug && editmode == OBJ_LINEDEFS)
    {
       setcolor( LIGHTGREEN);
       for (n = 0; n < NumLineDefs; n++)
@@ -1436,19 +1701,12 @@ void DrawMap( int editmode)
    /* draw in the nodes */
    if (editmode == OBJ_NODES)
    {
-/*
-      for (n = 0; n < NumSSectors; n++)
-      {
-	 m = SSectors[ n].first;
-	 setcolor( LIGHTGREEN + (Segs[ m].flip & 1));
-	 DrawMapLine( Vertexes[ Segs[ m].start].x + 5, Vertexes[ Segs[ m].start].y + 5,
-		      Vertexes[ Segs[ m].end].x + 5, Vertexes[ Segs[ m].end].y + 5);
-      }
-*/
       for (n = 0; n < NumNodes; n++)
       {
+/*
 	 setcolor( LIGHTRED);
 	 DrawMapLine( Nodes[ n].x, Nodes[ n].y, Nodes[ n].x + Nodes[ n].dx, Nodes[ n].y + Nodes[n ].dy);
+*/
 	 setcolor( LIGHTGREEN);
 	 DrawMapLine( Nodes[ n].x - OBJSIZE, Nodes[ n].y - OBJSIZE, Nodes[ n].x + OBJSIZE, Nodes[ n].y + OBJSIZE);
 	 DrawMapLine( Nodes[ n].x + OBJSIZE, Nodes[ n].y - OBJSIZE, Nodes[ n].x - OBJSIZE, Nodes[ n].y + OBJSIZE);
@@ -1459,7 +1717,125 @@ void DrawMap( int editmode)
    DrawScreenBox3D( 0, 0, 639, 12);
    setcolor( WHITE);
    DrawScreenText( 5, 3, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
+   DrawScreenText( 320, 3, "Free mem: %lu", farcoreleft());
    DrawScreenText( 499, 3, "Press F1 for Help");
+}
+
+
+
+/*
+   highlight the selected objects
+*/
+
+void HighlightSelection( int objtype, SelPtr list)
+{
+   SelPtr cur;
+
+   if (list == NULL)
+      return;
+   for (cur = list; cur; cur = cur->next)
+      HighlightObject( objtype, cur->objnum, GREEN);
+}
+
+
+
+/*
+   test if an object is in the selection list
+*/
+
+int IsSelected( SelPtr list, int objnum)
+{
+   SelPtr cur;
+
+   for (cur = list; cur; cur = cur->next)
+      if (cur->objnum == objnum)
+	 return TRUE;
+   return FALSE;
+}
+
+
+
+/*
+   add an object to the selection list
+*/
+
+void SelectObject( SelPtr *list, int objnum)
+{
+   SelPtr cur;
+
+
+   if (objnum < 0) /* TEMPORARY */
+   {
+      Beep();
+      printf(" Error: SelectObject < 0\n");
+      sleep( 3);
+      Beep();
+   }
+   cur = GetMemory( sizeof( struct SelectionList));
+   cur->next = *list;
+   cur->objnum = objnum;
+   *list = cur;
+}
+
+
+
+/*
+   remove an object from the selection list
+*/
+
+void UnSelectObject( SelPtr *list, int objnum)
+{
+   SelPtr cur, prev;
+
+   if (objnum < 0) /* TEMPORARY */
+   {
+      Beep();
+      printf(" Error: UnSelectObject < 0\n");
+      sleep( 3);
+      Beep();
+   }
+   prev = NULL;
+   cur = *list;
+   while (cur)
+   {
+      if (cur->objnum == objnum)
+      {
+	 if (prev)
+	    prev->next = cur->next;
+	 else
+	    *list = cur->next;
+	 free( cur);
+	 if (prev)
+	    cur = prev->next;
+	 else
+	    cur = NULL;
+      }
+      else
+      {
+	 prev = cur;
+	 cur = cur->next;
+      }
+   }
+}
+
+
+
+/*
+   forget the selection list
+*/
+
+void ForgetSelection( SelPtr *list)
+{
+   SelPtr cur, prev;
+
+   cur = *list;
+   while (cur)
+   {
+      prev = cur;
+      cur = cur->next;
+      free( prev);
+   }
+   *list = NULL;
 }
 
 

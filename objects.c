@@ -13,27 +13,28 @@
 #include "things.h"
 
 /* the external variables from edit.c */
-extern int NumThings;                /* number of things */
-extern TPtr Things;                  /* things data */
-extern int NumLineDefs;              /* number of line defs */
-extern LDPtr LineDefs;               /* line defs data */
-extern int NumSideDefs;              /* number of side defs */
-extern SDPtr SideDefs;               /* side defs data */
-extern int NumVertexes;              /* number of vertexes */
-extern VPtr Vertexes;                /* vertex data */
-extern int NumSegs;		     /* number of segs */
-extern SEPtr Segs;                   /* segs data */
-extern int NumNodes;	     	     /* number of nodes */
-extern NPtr Nodes;		     /* nodes data */
-extern int NumSSectors;	     	     /* number of subsectors */
-extern SSPtr SSectors;               /* subsectors data */
-extern int NumSectors;		     /* number of sectors */
-extern SPtr Sectors;                 /* sectors data */
-extern int MaxX;		     /* maximum X value of map */
-extern int MaxY;		     /* maximum Y value of map */
-extern int MinX;		     /* minimum X value of map */
-extern int MinY;		     /* minimum Y value of map */
-extern int MadeChanges;		     /* made changes? */
+extern int NumThings;		/* number of things */
+extern TPtr Things;		/* things data */
+extern int NumLineDefs;		/* number of line defs */
+extern LDPtr LineDefs;		/* line defs data */
+extern int NumSideDefs;		/* number of side defs */
+extern SDPtr SideDefs;		/* side defs data */
+extern int NumVertexes;		/* number of vertexes */
+extern VPtr Vertexes;		/* vertex data */
+extern int NumSegs;		/* number of segs */
+extern SEPtr Segs;		/* segs data */
+extern int NumNodes;		/* number of nodes */
+extern NPtr Nodes;		/* nodes data */
+extern int NumSSectors;		/* number of subsectors */
+extern SSPtr SSectors;		/* subsectors data */
+extern int NumSectors;		/* number of sectors */
+extern SPtr Sectors;		/* sectors data */
+extern int MaxX;		/* maximum X value of map */
+extern int MaxY;		/* maximum Y value of map */
+extern int MinX;		/* minimum X value of map */
+extern int MinY;		/* minimum Y value of map */
+extern int MadeChanges;		/* made changes? */
+extern int MadeMapChanges;	/* made changes that need rebuilding? */
 
 
 
@@ -60,10 +61,6 @@ int GetMaxObjectNum( int objtype)
       return NumNodes - 1;
    case OBJ_SECTORS:
       return NumSectors - 1;
-   case OBJ_REJECT:
-      return - 1 /* NumReject? */;
-   case OBJ_BLOCKMAP:
-      return - 1 /* NumBlockmap? */;
    }
    return -1;
 }
@@ -75,12 +72,12 @@ int GetMaxObjectNum( int objtype)
 
 int GetCurObject( int objtype)
 {
-   int  x0 = MAPX(PointerX) - OBJSIZE;
-   int  x1 = MAPX(PointerX) + OBJSIZE;
-   int  y0 = MAPY(PointerY) - OBJSIZE;
-   int  y1 = MAPY(PointerY) + OBJSIZE;
-   int  n, m, cur, curx;
-
+   int x0 = MAPX(PointerX - 4);
+   int x1 = MAPX(PointerX + 4);
+   int y0 = MAPY(PointerY - 4);
+   int y1 = MAPY(PointerY + 4);
+   int n, m, cur, curx;
+   int lx0, ly0, lx1, ly1;
 
    cur = -1;
 
@@ -97,7 +94,7 @@ int GetCurObject( int objtype)
    case OBJ_LINEDEFS:
       for (n = 0; n < NumLineDefs; n++)
       {
-	 if (IsLineDefInside( n, (double) x0, (double) y0, (double) x1, (double) y1))
+	 if (IsLineDefInside( n, x0, y0, x1, y1))
 	 {
 	    cur = n;
 	    break;
@@ -132,23 +129,24 @@ int GetCurObject( int objtype)
 	 }
       break;
    case OBJ_SECTORS:
+      /* hack, hack...  I look for the first LineDef crossing an horizontal half-line drawn from the cursor */
       curx = MaxX + 1;
       cur = -1;
       for (n = 0; n < NumLineDefs; n++)
 	 if ((Vertexes[ LineDefs[ n].start].y > MAPY( PointerY)) != (Vertexes[ LineDefs[ n].end].y > MAPY( PointerY)))
 	 {
-	    double lx0 = (double) Vertexes[ LineDefs[ n].start].x;
-	    double ly0 = (double) Vertexes[ LineDefs[ n].start].y;
-	    double lx1 = (double) Vertexes[ LineDefs[ n].end].x;
-	    double ly1 = (double) Vertexes[ LineDefs[ n].end].y;
-
-	    m = (int) (lx0 + ((double) MAPY( PointerY) - ly0) * (lx1 - lx0) / (ly1 - ly0));
+	    lx0 = Vertexes[ LineDefs[ n].start].x;
+	    ly0 = Vertexes[ LineDefs[ n].start].y;
+	    lx1 = Vertexes[ LineDefs[ n].end].x;
+	    ly1 = Vertexes[ LineDefs[ n].end].y;
+	    m = lx0 + (int) ((long) (MAPY( PointerY) - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
 	    if (m >= MAPX( PointerX) && m < curx)
 	    {
 	       curx = m;
 	       cur = n;
 	    }
 	 }
+      /* now look if this LineDef has a SideDef bound to one sector */
       if (cur >= 0)
       {
 	 if (Vertexes[ LineDefs[ cur].start].y > Vertexes[ LineDefs[ cur].end].y)
@@ -197,15 +195,11 @@ void HighlightObject( int objtype, int objnum, int color)
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Vertexes[ LineDefs[ objnum].start].x, Vertexes[ LineDefs[ objnum].start].y,
 		     Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
-      if (LineDefs[ objnum].tag > 0)
+      if (color == YELLOW && LineDefs[ objnum].tag > 0)
       {
-	 setcolor( color - 1);
 	 for (m = 0; m < NumSectors; m++)
 	    if (Sectors[ m].tag == LineDefs[ objnum].tag)
-	       for (n = 0; n < NumLineDefs; n++)
-		  if (SideDefs[ LineDefs[ n].sidedef1].sector == m || SideDefs[ LineDefs[ n].sidedef2].sector == m)
-		     DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
-				  Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+	       HighlightObject( OBJ_SECTORS, m, LIGHTRED);
       }
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
@@ -215,38 +209,48 @@ void HighlightObject( int objtype, int objnum, int color)
       DrawMapLine( Vertexes[ objnum].x + OBJSIZE * 2, Vertexes[ objnum].y + OBJSIZE * 2, Vertexes[ objnum].x + OBJSIZE * 2, Vertexes[ objnum].y - OBJSIZE * 2);
       DrawMapLine( Vertexes[ objnum].x + OBJSIZE * 2, Vertexes[ objnum].y - OBJSIZE * 2, Vertexes[ objnum].x - OBJSIZE * 2, Vertexes[ objnum].y - OBJSIZE * 2);
       break;
-   case OBJ_SEGS:
+   case OBJ_SECTORS:
+      setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
+      for (n = 0; n < NumLineDefs; n++)
+	 if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum || SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
+	    DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+			 Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+      if (color == YELLOW && Sectors[ objnum].tag > 0)
+      {
+	 for (m = 0; m < NumLineDefs; m++)
+	    if (LineDefs[ m].tag == Sectors[ objnum].tag)
+	       HighlightObject( OBJ_LINEDEFS, m, LIGHTRED);
+      }
+      setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
+      break;
+   case OBJ_SEGS: /* DEBUG */
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Vertexes[ Segs[ objnum].start].x, Vertexes[ Segs[ objnum].start].y,
 		     Vertexes[ Segs[ objnum].end].x, Vertexes[ Segs[ objnum].end].y);
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
-   case OBJ_SSECTORS:
-      setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
+   case OBJ_SSECTORS: /* DEBUG */
       for (n = SSectors[ objnum].first; n < SSectors[ objnum].first + SSectors[ objnum].num; n++)
-	 DrawMapVector( Vertexes[ Segs[ n].start].x, Vertexes[ Segs[ n].start].y,
-			Vertexes[ Segs[ n].end].x, Vertexes[ Segs[ n].end].y);
-      setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
+	 HighlightObject( OBJ_SEGS, n, color);
       break;
-   case OBJ_NODES:
+   case OBJ_NODES: /* DEBUG */
       if (color == YELLOW)
       {
 	 if (Nodes[ objnum].tree1 & 0x8000)
-	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree1 & 0x7FFFF, CYAN);
+	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree1 & 0x7FFFF, LIGHTCYAN);
 	 else
 	    HighlightObject( OBJ_NODES, Nodes[ objnum].tree1, LIGHTCYAN);
-	 setwritemode( XOR_PUT);
 	 if (Nodes[ objnum].tree2 & 0x8000)
-	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree2 & 0x7FFFF, GREEN);
+	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree2 & 0x7FFFF, LIGHTGREEN);
 	 else
 	    HighlightObject( OBJ_NODES, Nodes[ objnum].tree2, LIGHTGREEN);
 	 setwritemode( XOR_PUT);
-	 setcolor( LIGHTCYAN);
+	 setcolor( CYAN);
 	 DrawMapLine( Nodes[ objnum].minx1, Nodes[ objnum].miny1, Nodes[ objnum].minx1, Nodes[ objnum].maxy1);
 	 DrawMapLine( Nodes[ objnum].minx1, Nodes[ objnum].maxy1, Nodes[ objnum].maxx1, Nodes[ objnum].maxy1);
 	 DrawMapLine( Nodes[ objnum].maxx1, Nodes[ objnum].maxy1, Nodes[ objnum].maxx1, Nodes[ objnum].miny1);
 	 DrawMapLine( Nodes[ objnum].maxx1, Nodes[ objnum].miny1, Nodes[ objnum].minx1, Nodes[ objnum].miny1);
-	 setcolor( LIGHTGREEN);
+	 setcolor( GREEN);
 	 DrawMapLine( Nodes[ objnum].minx2, Nodes[ objnum].miny2, Nodes[ objnum].minx2, Nodes[ objnum].maxy2);
 	 DrawMapLine( Nodes[ objnum].minx2, Nodes[ objnum].maxy2, Nodes[ objnum].maxx2, Nodes[ objnum].maxy2);
 	 DrawMapLine( Nodes[ objnum].maxx2, Nodes[ objnum].maxy2, Nodes[ objnum].maxx2, Nodes[ objnum].miny2);
@@ -255,22 +259,6 @@ void HighlightObject( int objtype, int objnum, int color)
       }
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Nodes[ objnum].x, Nodes[ objnum].y, Nodes[ objnum].x + Nodes[ objnum].dx, Nodes[ objnum].y + Nodes[ objnum].dy);
-      setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
-      break;
-   case OBJ_SECTORS:
-      setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
-      for (n = 0; n < NumLineDefs; n++)
-	 if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum || SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
-	    DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
-			 Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
-      if (Sectors[ objnum].tag > 0)
-      {
-	 setcolor( color - 1);
-	 for (m = 0; m < NumLineDefs; m++)
-	    if (LineDefs[ m].tag == Sectors[ objnum].tag)
-	       DrawMapVector( Vertexes[ LineDefs[ m].start].x, Vertexes[ LineDefs[ m].start].y,
-			      Vertexes[ LineDefs[ m].end].x, Vertexes[ LineDefs[ m].end].y);
-      }
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
    }
@@ -317,8 +305,8 @@ void DisplayObjectInfo( int objtype, int objnum)
 	 DrawScreenText( 5, 405, "Selected LineDef (#%d)", objnum);
 	 setcolor( BLACK);
 	 DrawScreenText( 5, 419, "Vertexes:    (#%d, #%d)", LineDefs[ objnum].start, LineDefs[ objnum].end);
-	 DrawScreenText( 5, 429, "Flags:       <%s>", GetLineDefFlagsName( LineDefs[ objnum].flags));
-	 DrawScreenText( 5, 439, "Type:        %s", GetLineDefTypeName( LineDefs[ objnum].type));
+	 DrawScreenText( 5, 429, "Flags:%3d    %s", LineDefs[ objnum].flags, GetLineDefFlagsName( LineDefs[ objnum].flags));
+	 DrawScreenText( 5, 439, "Type: %3d %s", LineDefs[ objnum].type, GetLineDefTypeName( LineDefs[ objnum].type));
 	 tag = LineDefs[ objnum].tag;
 	 if (tag > 0)
 	 {
@@ -349,9 +337,9 @@ void DisplayObjectInfo( int objtype, int objnum)
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex3, 8);
 	 DrawScreenText( 225, 419, "Normal texture: %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex1, 8);
-	 DrawScreenText( 225, 429, "Texture above:  %s", texname);
+	 DrawScreenText( 225, 429, "Upper texture:  %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex2, 8);
-	 DrawScreenText( 225, 439, "Texture below:  %s", texname);
+	 DrawScreenText( 225, 439, "Lower texture:  %s", texname);
 	 DrawScreenText( 225, 449, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].xoff);
 	 DrawScreenText( 225, 459, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].yoff);
 	 DrawScreenText( 225, 469, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef1].sector);
@@ -370,9 +358,9 @@ void DisplayObjectInfo( int objtype, int objnum)
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex3, 8);
 	 DrawScreenText( 445, 419, "Normal texture: %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex1, 8);
-	 DrawScreenText( 445, 429, "Texture above:  %s", texname);
+	 DrawScreenText( 445, 429, "Upper texture:  %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex2, 8);
-	 DrawScreenText( 445, 439, "Texture below:  %s", texname);
+	 DrawScreenText( 445, 439, "Lower texture:  %s", texname);
 	 DrawScreenText( 445, 449, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].xoff);
 	 DrawScreenText( 445, 459, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].yoff);
 	 DrawScreenText( 445, 469, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef2].sector);
@@ -386,7 +374,11 @@ void DisplayObjectInfo( int objtype, int objnum)
    case OBJ_VERTEXES:
       DrawScreenBox3D( 0, 450, 220, 479);
       if (objnum < 0)
+      {
+	 setcolor( DARKGRAY);
+	 DrawScreenText( 30, 462, "(No Vertex selected)");
 	 break;
+      }
       setcolor( YELLOW);
       DrawScreenText( 5, 455, "Selected Vertex (#%d)", objnum);
       setcolor( BLACK);
@@ -401,7 +393,6 @@ void DisplayObjectInfo( int objtype, int objnum)
       setcolor( BLACK);
       DrawScreenText( 5, 429, "Vertexes:    (#%d, #%d)", Segs[ objnum].start, Segs[ objnum].end);
       DrawScreenText( 5, 439, "Angle:       %d (%dø)", Segs[ objnum].angle, (int) (Segs[ objnum].angle * 0.0055));
-      /* (*"flags1" and "flags2" should be replaced by a descriptive text string*) */
       DrawScreenText( 5, 449, "Flip flag:   %d", Segs[ objnum].flip);
       DrawScreenText( 5, 459, "Distance:    %d", Segs[ objnum].dist);
       DrawScreenText( 5, 469, "LineDef:     #%d", Segs[ objnum].linedef);
@@ -417,18 +408,22 @@ void DisplayObjectInfo( int objtype, int objnum)
       DrawScreenText( 5, 439, "Rectangle 1: %d, %d, %d, %d", Nodes[ objnum].minx1, Nodes[ objnum].miny1, Nodes[ objnum].maxx1, Nodes[ objnum].maxy1);
       DrawScreenText( 5, 449, "Rectangle 2: %d, %d, %d, %d", Nodes[ objnum].minx2, Nodes[ objnum].miny2, Nodes[ objnum].maxx2, Nodes[ objnum].maxy2);
       if (Nodes[ objnum].tree1 & 0x8000)
-	 DrawScreenText( 5, 459, "Tree 1:      #%d (SSector)", Nodes[ objnum].tree1 & 0x7FFF);
+	 DrawScreenText( 5, 459, "Child 1:     #%d (SSector)", Nodes[ objnum].tree1 & 0x7FFF);
       else
-	 DrawScreenText( 5, 459, "Tree 1:      #%d (Node)", Nodes[ objnum].tree1);
+	 DrawScreenText( 5, 459, "Child 1:     #%d (Node)", Nodes[ objnum].tree1);
       if (Nodes[ objnum].tree2 & 0x8000)
-	 DrawScreenText( 5, 469, "Tree 2:      #%d (SSector)", Nodes[ objnum].tree2 & 0x7FFF);
+	 DrawScreenText( 5, 469, "Child 2:     #%d (SSector)", Nodes[ objnum].tree2 & 0x7FFF);
       else
-	 DrawScreenText( 5, 469, "Tree 2:      #%d (Node)", Nodes[ objnum].tree2);
+	 DrawScreenText( 5, 469, "Child 2:     #%d (Node)", Nodes[ objnum].tree2);
       break;
    case OBJ_SECTORS:
-      DrawScreenBox3D( 0, 390, 250, 479);
+      DrawScreenBox3D( 0, 390, 255, 479);
       if (objnum < 0)
+      {
+	setcolor( DARKGRAY);
+	DrawScreenText( 48, 425, "(No Sector selected)");
 	break;
+      }
       setcolor( YELLOW);
       DrawScreenText( 5, 395, "Selected Sector (#%d)", objnum);
       setcolor( BLACK);
@@ -440,18 +435,20 @@ void DisplayObjectInfo( int objtype, int objnum)
       strncpy( texname, Sectors[ objnum].ceilt, 8);
       DrawScreenText( 5, 439, "Ceiling texture: %s", texname);
       DrawScreenText( 5, 449, "Light level:     %d", Sectors[ objnum].light);
-      DrawScreenText( 5, 459, "Type:            %s", GetSectorTypeName( Sectors[ objnum].special));
+      DrawScreenText( 5, 459, "Type: %3d        %s", Sectors[ objnum].special, GetSectorTypeName( Sectors[ objnum].special));
       tag = Sectors[ objnum].tag;
-      if (tag > 0)
-      {
+      if (tag == 0)
+	 n = NumLineDefs;
+      else
 	 for (n = 0; n < NumLineDefs; n++)
 	    if (LineDefs[ n].tag == tag)
 	       break;
-      }
-      else
-	 n = NumLineDefs;
       if (n < NumLineDefs)
 	 DrawScreenText( 5, 469, "LineDef tag:     %d (#%d)", tag, n);
+      else if (tag == 99 || tag == 999)
+	 DrawScreenText( 5, 469, "LineDef tag:     %d (stairs?)", tag);
+      else if (tag == 666)
+	 DrawScreenText( 5, 469, "LineDef tag:     %d (lower@end)", tag);
       else
 	 DrawScreenText( 5, 469, "LineDef tag:     %d (none)", tag);
       break;
@@ -461,29 +458,94 @@ void DisplayObjectInfo( int objtype, int objnum)
 
 
 /*
-   delete an object (*should be recursive if a vertex is deleted*)
+   delete an object (*recursive*)
+   WARNING: Don't use the Segs or Nodes editor after having deleted one object!
 */
 void DeleteObject( int objtype, int objnum)
 {
    int n;
 
+   MadeChanges = TRUE;
    switch (objtype)
    {
    case OBJ_THINGS:
+      /* delete the Thing */
       NumThings--;
       for (n = objnum; n < NumThings; n++)
-	Things[ n] = Things[ n + 1];
-      Things = ResizeMemory( Things, NumThings * sizeof( struct Thing));
+	 Things[ n] = Things[ n + 1];
+      Things = ResizeFarMemory( Things, NumThings * sizeof( struct Thing));
       break;
-/*
+   case OBJ_LINEDEFS:
+      /* delete the two SideDefs bound to this LineDef */
+      if (LineDefs[ objnum].sidedef1 >= 0)
+	 DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef1);
+      if (LineDefs[ objnum].sidedef2 >= 0)
+	 DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef2);
+      /* delete the LineDef */
+      NumLineDefs--;
+      for (n = objnum; n < NumLineDefs; n++)
+	 LineDefs[ n] = LineDefs[ n + 1];
+      LineDefs = ResizeFarMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
+      MadeMapChanges = TRUE;
+      break;
+   case OBJ_SIDEDEFS:
+      /* change the LineDefs references */
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (LineDefs[ n].sidedef1 == objnum)
+	    LineDefs[ n].sidedef1 = -1;
+	 else if (LineDefs[ n].sidedef1 >= objnum)
+	    LineDefs[ n].sidedef1--;
+	 if (LineDefs[ n].sidedef2 == objnum)
+	    LineDefs[ n].sidedef2 = -1;
+	 else if (LineDefs[ n].sidedef2 >= objnum)
+	    LineDefs[ n].sidedef2--;
+      }
+      /* delete the SideDef */
+      NumSideDefs--;
+      for (n = objnum; n < NumSideDefs; n++)
+	 SideDefs[ n] = SideDefs[ n + 1];
+      SideDefs = ResizeFarMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
+      break;
    case OBJ_VERTEXES:
+      /* delete the LineDefs bound to this Vertex and change the references */
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (LineDefs[ n].start == objnum || LineDefs[ n].end == objnum)
+	    DeleteObject( OBJ_LINEDEFS, n--);
+	 else
+	 {
+	    if (LineDefs[ n].start >= objnum)
+	       LineDefs[ n].start--;
+	    if (LineDefs[ n].end >= objnum)
+	       LineDefs[ n].end--;
+	 }
+      }
+      /* delete the Vertex */
       NumVertexes--;
       for (n = objnum; n < NumVertexes; n++)
-	Vertexes[ n] = Vertexes[ n + 1];
-      Vertexes = ResizeMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
-      (* decrease linedefs & segs refs ! *)
+	 Vertexes[ n] = Vertexes[ n + 1];
+      Vertexes = ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
       break;
-*/
+   case OBJ_SECTORS:
+      /* delete the SideDefs bound to this Sector and change the references */
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum)
+	    DeleteObject( OBJ_SIDEDEFS, LineDefs[ n].sidedef1);
+	 else if (SideDefs[ LineDefs[ n].sidedef1].sector >= objnum)
+	    SideDefs[ LineDefs[ n].sidedef1].sector--;
+	 if (SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
+	    DeleteObject( OBJ_SIDEDEFS, LineDefs[ n].sidedef2);
+	 else if (SideDefs[ LineDefs[ n].sidedef2].sector >= objnum)
+	    SideDefs[ LineDefs[ n].sidedef2].sector--;
+      }
+      /* delete the Sector */
+      NumSectors--;
+      for (n = objnum; n < NumSectors; n++)
+	 Sectors[ n] = Sectors[ n + 1];
+      Sectors = ResizeFarMemory( Sectors, NumSectors * sizeof( struct Sector));
+      break;
    default:
       Beep();
    }
@@ -494,17 +556,26 @@ void DeleteObject( int objtype, int objnum)
 /*
    insert a new object
 */
-void InsertObject(int objtype, int copyfrom)
+void InsertObject(int objtype, int copyfrom, int grid)
 {
    int last;
 
+   MadeChanges = TRUE;
    switch (objtype)
    {
    case OBJ_THINGS:
       last = NumThings++;
-      Things = ResizeMemory( Things, NumThings * sizeof( struct Thing));
-      Things[ last].xpos  = MAPX(PointerX);
-      Things[ last].ypos  = MAPY(PointerY);
+      Things = ResizeFarMemory( Things, (unsigned long) NumThings * sizeof( struct Thing));
+      if (grid > 0)
+      {
+	 Things[ last].xpos  = (MAPX(PointerX) / grid) * grid;
+	 Things[ last].ypos  = (MAPY(PointerY) / grid) * grid;
+      }
+      else
+      {
+	 Things[ last].xpos  = MAPX(PointerX);
+	 Things[ last].ypos  = MAPY(PointerY);
+      }
       if (copyfrom >= 0)
       {
 	 Things[ last].type  = Things[ copyfrom].type;
@@ -520,7 +591,7 @@ void InsertObject(int objtype, int copyfrom)
       break;
    case OBJ_LINEDEFS:
       last = NumLineDefs++;
-      LineDefs = ResizeMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
+      LineDefs = ResizeFarMemory( LineDefs, (unsigned long) NumLineDefs * sizeof( struct LineDef));
       if (copyfrom >= 0)
       {
 	 LineDefs[ last].start = LineDefs[ copyfrom].start;
@@ -539,11 +610,12 @@ void InsertObject(int objtype, int copyfrom)
       }
       LineDefs[ last].sidedef1 = -1;
       LineDefs[ last].sidedef2 = -1;
+      MadeMapChanges = TRUE;
       break;
    case OBJ_SIDEDEFS:
       /* SideDefs are added from the LineDefs menu, so "copyfrom" should always be -1.  But I test it anyway. */
       last = NumSideDefs++;
-      SideDefs = ResizeMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
+      SideDefs = ResizeFarMemory( SideDefs, (unsigned long) NumSideDefs * sizeof( struct SideDef));
       if (copyfrom >= 0)
       {
 	 SideDefs[ last].xoff = SideDefs[ copyfrom].xoff;
@@ -565,13 +637,21 @@ void InsertObject(int objtype, int copyfrom)
       break;
    case OBJ_VERTEXES:
       last = NumVertexes++;
-      Vertexes = ResizeMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
-      Vertexes[ last].x  = MAPX(PointerX);
-      Vertexes[ last].y  = MAPY(PointerY);
+      Vertexes = ResizeFarMemory( Vertexes, (unsigned long) NumVertexes * sizeof( struct Vertex));
+      if (grid > 0)
+      {
+	 Vertexes[ last].x  = (MAPX(PointerX) / grid) * grid;
+	 Vertexes[ last].y  = (MAPY(PointerY) / grid) * grid;
+      }
+      else
+      {
+	 Vertexes[ last].x  = MAPX(PointerX);
+	 Vertexes[ last].y  = MAPY(PointerY);
+      }
       break;
    case OBJ_SEGS:
       last = NumSegs++;
-      Segs = ResizeMemory( Segs, NumSegs * sizeof( struct Seg));
+      Segs = ResizeFarMemory( Segs, (unsigned long) NumSegs * sizeof( struct Seg));
       if (copyfrom >= 0)
       {
 	 Segs[ last].start = Segs[ copyfrom].start;
@@ -595,13 +675,13 @@ void InsertObject(int objtype, int copyfrom)
       break;
    case OBJ_SSECTORS:
       last = NumSSectors++;
-      SSectors = ResizeMemory( SSectors, NumSSectors * sizeof( struct SSector));
+      SSectors = ResizeFarMemory( SSectors, (unsigned long) NumSSectors * sizeof( struct SSector));
       SSectors[ last].num = 1;
       SSectors[ last].first = NumSegs - 1;
       break;
    case OBJ_SECTORS:
       last = NumSectors++;
-      Sectors = ResizeMemory( Sectors, NumSectors * sizeof( struct Sector));
+      Sectors = ResizeFarMemory( Sectors, (unsigned long) NumSectors * sizeof( struct Sector));
       if (copyfrom >= 0)
       {
 	 Sectors[ last].floorh = Sectors[ copyfrom].floorh;
@@ -676,10 +756,7 @@ int DisplayLineDefTypeMenu( int x0, int y0, char *menutitle, ...)
    va_start( args, menutitle);
    while ((num < 30) && ((typeid[ num] = va_arg( args, int)) >= 0))
    {
-      if (typeid[ num] >= 9999)
-	 menustr[ num] = "Enter a decimal value";
-      else
-	 menustr[ num] = GetLineDefTypeName( typeid[ num]);
+      menustr[ num] = GetLineDefTypeLongName( typeid[ num]);
       num++;
    }
    va_end( args);
@@ -753,26 +830,101 @@ int InputObjectXRef( int x0, int y0, int objtype, int allownone, int curobj)
 
 
 /*
-   edit an object
+   ask for two vertex numbers and check for maximum valid number
+*/
+int Input2VertexNumbers( int x0, int y0, char *prompt1, int *v1, int *v2)
+{
+   int val, key;
+   int maxlen, first, ok;
+   char prompt2[ 80];
+
+   if (UseMouse)
+      HideMousePointer();
+   sprintf( prompt2, "Enter two numbers between 0 and %d:", NumVertexes - 1);
+   if (strlen( prompt1) > strlen( prompt2))
+      maxlen = strlen( prompt1);
+   else
+      maxlen = strlen( prompt2);
+   if (x0 < 0)
+      x0 = 307 - 4 * maxlen;
+   if (y0 < 0)
+      y0 = 202;
+   DrawScreenBox3D( x0, y0, x0 + 25 + 8 * maxlen, y0 + 75);
+   DrawScreenText( x0 + 10, y0 + 36, "From this Vertex");
+   DrawScreenText( x0 + 180, y0 + 36, "To this Vertex");
+   setcolor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt1);
+   DrawScreenText( x0 + 10, y0 + 18, prompt2);
+   first = TRUE;
+   key = 0;
+   for (;;)
+   {
+      ok = TRUE;
+      DrawScreenBox3D( x0 + 10, y0 + 48, x0 + 71, y0 + 61);
+      if (*v1 < 0 || *v1 >= NumVertexes)
+      {
+	 setcolor( DARKGRAY);
+	 ok = FALSE;
+      }
+      DrawScreenText( x0 + 14, y0 + 51, "%d", *v1);
+      DrawScreenBox3D( x0 + 180, y0 + 48, x0 + 241, y0 + 61);
+      if (*v2 < 0 || *v2 >= NumVertexes)
+      {
+	 setcolor( DARKGRAY);
+	 ok = FALSE;
+      }
+      DrawScreenText( x0 + 184, y0 + 51, "%d", *v2);
+      if (first)
+	 key = InputInteger( x0 + 10, y0 + 48, v1, 0, NumVertexes - 1);
+      else
+	 key = InputInteger( x0 + 180, y0 + 48, v2, 0, NumVertexes - 1);
+      if ((key & 0xFF00) == 0x4B00 || (key & 0xFF00) == 0x4D00 || (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
+	 first = !first;
+      else if ((key & 0x00FF) == 0x001B)
+	 break;
+      else if ((key & 0x00FF) == 0x000D)
+      {
+	 if (first)
+	    first = FALSE;
+	 else if (ok)
+	    break;
+	 else
+	    Beep();
+      }
+      else
+	 Beep();
+   }
+   if (UseMouse)
+      ShowMousePointer();
+   return ((key & 0x00FF) == 0x000D);
+}
+
+
+
+/*
+   edit an object or a group of objects
 */
 
-void EditObjectInfo( int objtype, int objnum)
+void EditObjectInfo( int objtype, SelPtr obj)
 {
-   char *menustr[ 30];
-   char  texname[ 9];
-   int   n, val;
+   char  *menustr[ 30];
+   char   texname[ 9];
+   int    n, val;
+   SelPtr cur, sdlist;
 
+   if (obj == NULL)
+      return;
    switch (objtype)
    {
    case OBJ_THINGS:
       for (n = 0; n < 6; n++)
 	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 5], "Edit Thing #%d", objnum);
-      sprintf( menustr[ 0], "Change Type          (Current: %s)", GetThingName( Things[ objnum].type));
-      sprintf( menustr[ 1], "Change Angle         (Current: %s)", GetAngleName( Things[ objnum].angle));
-      sprintf( menustr[ 2], "Change When Appears  (Current: %s)", GetWhenName( Things[ objnum].when));
-      sprintf( menustr[ 3], "Change X position    (Current: %d)", Things[ objnum].xpos);
-      sprintf( menustr[ 4], "Change Y position    (Current: %d)", Things[ objnum].ypos);
+      sprintf( menustr[ 5], "Edit Thing #%d", obj->objnum);
+      sprintf( menustr[ 0], "Change Type          (Current: %s)", GetThingName( Things[ obj->objnum].type));
+      sprintf( menustr[ 1], "Change Angle         (Current: %s)", GetAngleName( Things[ obj->objnum].angle));
+      sprintf( menustr[ 2], "Change When Appears  (Current: %s)", GetWhenName( Things[ obj->objnum].when));
+      sprintf( menustr[ 3], "Change X position    (Current: %d)", Things[ obj->objnum].xpos);
+      sprintf( menustr[ 4], "Change Y position    (Current: %d)", Things[ obj->objnum].ypos);
       val = DisplayMenuArray( 0, 30, menustr[ 5], 5, menustr);
       for (n = 0; n < 6; n++)
 	 free( menustr[ n]);
@@ -789,7 +941,7 @@ void EditObjectInfo( int objtype, int objnum)
 			      "Decoration (dead bodies)",
 			      "Decoration (hanging bodies)",
 			      "Teleport landing",
-			      "Enter a decimal value",
+			      "(Enter a decimal value)",
 			      NULL))
 	 {
 	 case 1:
@@ -869,7 +1021,7 @@ void EditObjectInfo( int objtype, int objnum)
 				     THING_TREDPILLAR,
 				     THING_SGREENPILLAR,
 				     THING_SREDPILLAR,
-				     THING_PILLARHEARTH,
+				     THING_PILLARHEART,
 				     THING_PILLARSKULL,
 				     THING_EYEINSYMBOL,
 				     THING_BROWNSTUB,
@@ -932,7 +1084,7 @@ void EditObjectInfo( int objtype, int objnum)
 	    break;
 
 	 case 10:
-	    val = InputIntegerValue( 84, 188, 0, 9999, Things[ objnum].type);
+	    val = InputIntegerValue( 84, 188, 0, 9999, Things[ obj->objnum].type);
 	    break;
 
 	 default:
@@ -941,7 +1093,8 @@ void EditObjectInfo( int objtype, int objnum)
 	 }
 	 if (val >= 0)
 	 {
-	    Things[ objnum].type = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].type = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
@@ -959,74 +1112,114 @@ void EditObjectInfo( int objtype, int objnum)
 			      NULL))
 	 {
 	 case 1:
-	    Things[ objnum].angle = 90;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 90;
 	    MadeChanges = TRUE;
 	    break;
 	 case 2:
-	    Things[ objnum].angle = 45;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 45;
 	    MadeChanges = TRUE;
 	    break;
 	 case 3:
-	    Things[ objnum].angle = 0;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 0;
 	    MadeChanges = TRUE;
 	    break;
 	 case 4:
-	    Things[ objnum].angle = 315;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 315;
 	    MadeChanges = TRUE;
 	    break;
 	 case 5:
-	    Things[ objnum].angle = 270;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 270;
 	    MadeChanges = TRUE;
 	    break;
 	 case 6:
-	    Things[ objnum].angle = 225;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 225;
 	    MadeChanges = TRUE;
 	    break;
 	 case 7:
-	    Things[ objnum].angle = 180;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 180;
 	    MadeChanges = TRUE;
 	    break;
 	 case 8:
-	    Things[ objnum].angle = 135;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].angle = 135;
 	    MadeChanges = TRUE;
 	    break;
 	 }
 	 break;
 
       case 3:
-	 val = DisplayMenu( 42, 84, "Choose the difficulty level(s)",
-			    "D12         (Easy only)",
-			    "D3          (Medium only)",
-			    "D12, D3     (Easy and Medium)",
-			    "D4          (Hard only)",
-			    "D12, D4     (Easy and Hard)",
-			    "D3, D4      (Medium and Hard)",
-			    "D12, D3, D4 (Easy, Medium, Hard)",
-			    "Enter a decimal value",
-			    NULL);
-	 if (val == 8)
-	    val = InputIntegerValue( 84,  188, 1, 31, Things[ objnum].when);
-	 if (val > 0)
+	 switch (DisplayMenu( 42, 84, "Choose the difficulty level(s)",
+			      "D12         (Easy only)",
+			      "D3          (Medium only)",
+			      "D12, D3     (Easy and Medium)",
+			      "D4          (Hard only)",
+			      "D12, D4     (Easy and Hard)",
+			      "D3, D4      (Medium and Hard)",
+			      "D12, D3, D4 (Easy, Medium, Hard)",
+			      "Toggle \"Deaf/Ambush\" bit",
+			      "Toggle \"Multi-player only\" bit",
+			      "(Enter a decimal value)",
+			      NULL))
 	 {
-	    Things[ objnum].when = val;
+	 case 1:
+	 case 2:
+	 case 3:
+	 case 4:
+	 case 5:
+	 case 6:
+	 case 7:
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].when = val;
 	    MadeChanges = TRUE;
+	    break;
+	 case 8:
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].when ^= 0x08;
+	    MadeChanges = TRUE;
+	    break;
+	 case 9:
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].when ^= 0x10;
+	    MadeChanges = TRUE;
+	    break;
+	 case 10:
+	    if (val == 10)
+	       val = InputIntegerValue( 84,  188, 1, 31, Things[ obj->objnum].when);
+	    if (val > 0)
+	    {
+	       for (cur = obj; cur; cur = cur->next)
+		  Things[ cur->objnum].when = val;
+	       MadeChanges = TRUE;
+	    }
+	    break;
 	 }
 	 break;
 
       case 4:
-	 val = InputIntegerValue( 42, 94, MinX, MaxX, Things[ objnum].xpos);
+	 val = InputIntegerValue( 42, 94, MinX, MaxX, Things[ obj->objnum].xpos);
 	 if (val >= MinX)
 	 {
-	    Things[ objnum].xpos = val;
+	    n = val - Things[ obj->objnum].xpos;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].xpos += n;
 	    MadeChanges = TRUE;
 	 }
 	 break;
 
       case 5:
-	 val = InputIntegerValue( 42, 104, MinY, MaxY, Things[ objnum].ypos);
+	 val = InputIntegerValue( 42, 104, MinY, MaxY, Things[ obj->objnum].ypos);
 	 if (val >= MinY)
 	 {
-	    Things[ objnum].ypos = val;
+	    n = val - Things[ obj->objnum].ypos;
+	    for (cur = obj; cur; cur = cur->next)
+	       Things[ cur->objnum].ypos += n;
 	    MadeChanges = TRUE;
 	 }
 	 break;
@@ -1036,185 +1229,331 @@ void EditObjectInfo( int objtype, int objnum)
    case OBJ_LINEDEFS:
       switch (DisplayMenu( 0, 30, "Choose the object to edit:",
 			   "Edit the LineDef",
-			   "Edit the 1st SideDef",
-			   "Edit the 2nd SideDef",
+			   (LineDefs[ obj->objnum].sidedef1 >= 0) ? "Edit the 1st SideDef" : "Add a 1st SideDef",
+			   (LineDefs[ obj->objnum].sidedef2 >= 0) ? "Edit the 2nd SideDef" : "Add a 2nd SideDef",
 			   NULL))
       {
       case 1:
 	 for (n = 0; n < 8; n++)
 	    menustr[ n] = GetMemory( 60);
-	 sprintf( menustr[ 7], "Edit LineDef #%d", objnum);
-	 sprintf( menustr[ 0], "Change Flags            (Current: %d)", LineDefs[ objnum].flags);
-	 sprintf( menustr[ 1], "Change Type             (Current: %d)", LineDefs[ objnum].type);
-	 sprintf( menustr[ 2], "Change Sector tag       (Current: %d)", LineDefs[ objnum].tag);
-	 sprintf( menustr[ 3], "Change Starting Vertex  (Current: #%d)", LineDefs[ objnum].start);
-	 sprintf( menustr[ 4], "Change Ending Vertex    (Current: #%d)", LineDefs[ objnum].end);
-	 sprintf( menustr[ 5], "Change 1st SideDef ref. (Current: #%d)", LineDefs[ objnum].sidedef1);
-	 sprintf( menustr[ 6], "Change 2nd SideDef ref. (Current: #%d)", LineDefs[ objnum].sidedef2);
+	 sprintf( menustr[ 7], "Edit LineDef #%d", obj->objnum);
+	 sprintf( menustr[ 0], "Change Flags            (Current: %d)", LineDefs[ obj->objnum].flags);
+	 sprintf( menustr[ 1], "Change Type             (Current: %d)", LineDefs[ obj->objnum].type);
+	 sprintf( menustr[ 2], "Change Sector tag       (Current: %d)", LineDefs[ obj->objnum].tag);
+	 sprintf( menustr[ 3], "Change Starting Vertex  (Current: #%d)", LineDefs[ obj->objnum].start);
+	 sprintf( menustr[ 4], "Change Ending Vertex    (Current: #%d)", LineDefs[ obj->objnum].end);
+	 sprintf( menustr[ 5], "Change 1st SideDef ref. (Current: #%d)", LineDefs[ obj->objnum].sidedef1);
+	 sprintf( menustr[ 6], "Change 2nd SideDef ref. (Current: #%d)", LineDefs[ obj->objnum].sidedef2);
 	 val = DisplayMenuArray( 42, 64, menustr[ 7], 7, menustr);
 	 for (n = 0; n < 8; n++)
 	    free( menustr[ n]);
 	 switch (val)
 	 {
 	 case 1:
-	    val = InputIntegerValue( 84, 98, 0, 255, LineDefs[ objnum].flags);
-	    if (val >= 0)
+	    val = DisplayMenu( 84, 98, "Toggle the flags:",
+			       GetLineDefFlagsLongName(0x01),
+			       GetLineDefFlagsLongName(0x02),
+			       GetLineDefFlagsLongName(0x04),
+			       GetLineDefFlagsLongName(0x08),
+			       GetLineDefFlagsLongName(0x10),
+			       GetLineDefFlagsLongName(0x20),
+			       GetLineDefFlagsLongName(0x40),
+			       GetLineDefFlagsLongName(0x80),
+			       GetLineDefFlagsLongName(0x100),
+			       "(Enter a decimal value)",
+			       NULL);
+	    if (val >= 1 && val <= 9)
 	    {
-	       LineDefs[ objnum].flags = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].flags ^= 0x01 << (val - 1);
 	       MadeChanges = TRUE;
+	    }
+	    else if (val == 10)
+	    {
+	       val = InputIntegerValue( 126, 212, 0, 511, LineDefs[ obj->objnum].flags);
+	       if (val >= 0)
+	       {
+		  for (cur = obj; cur; cur = cur->next)
+		     LineDefs[ cur->objnum].flags = val;
+		  MadeChanges = TRUE;
+	       }
 	    }
 	    break;
 	 case 2:
-	    val = DisplayLineDefTypeMenu( 84, 108, "Choose a LineDef type:",
-					  0, 1, 2, 7, 8, 11, 18, 20, 26, 27, 28, 32, 33, 34, 35, 36, 39, 46, 48, 51, 62, 70, 77, 88, 97,
-					  9999,
-					  -1);
-	    if (val == 9999)
-	       val = InputIntegerValue( 126, 392, 0, 255, LineDefs[ objnum].type);
+	    switch (DisplayMenu( 84, 108, "Choose a LineDef type:",
+				 "Normal",
+				 "Doors...",
+				 "Ceilings...",
+				 "Floors...",
+				 "Lifts & Moving things...",
+				 "Special...",
+				 "(Enter a decimal value)",
+				 NULL))
+	    {
+	    case 1:
+	       val = 0;
+	       break;
+	    case 2:
+	       val = DisplayLineDefTypeMenu( 126, 152, NULL, /* Doors */
+					     1, 26, 27, 28, 63, 29, 90, 31, 32, 34, 33, 103, 86, 2, 46, 42, 75, 3, 76, 16,
+					     -1);
+	       break;
+	    case 3:
+	       val = DisplayLineDefTypeMenu( 126, 162, NULL, /* Ceilings */
+					     41, 44, 40,
+					     -1);
+	       break;
+	    case 4:
+	       val = DisplayLineDefTypeMenu( 126, 172, NULL, /* Floors */
+					     102, 70, 23, 9, 21, 82, 19, 38, 37, 98, 36, 18, 20, 14, 5, 22, 59, 30, 58, 91, 56,
+					     -1);
+	       break;
+	    case 5:
+	       val = DisplayLineDefTypeMenu( 126, 182, NULL, /* Lifts & Moving things */
+					     62, 88, 10, 77, 73, 74, 87, 89, 7, 8,
+					     -1);
+	       break;
+	    case 6:
+	       val = DisplayLineDefTypeMenu( 126, 192, NULL, /* Special */
+					     48, 11, 52, 51, 97, 39, 13, 35, 80, 104,
+					     -1);
+	       break;
+	    case 7:
+	       val = InputIntegerValue( 126, 202, 0, 255, LineDefs[ obj->objnum].type);
+	       break;
+	    default:
+	       val = -1;
+	    }
 	    if (val >= 0)
 	    {
-	       LineDefs[ objnum].type = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].type = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 3:
-	    val = InputIntegerValue( 84, 118, 0, 255, LineDefs[ objnum].tag);
+	    val = InputIntegerValue( 84, 118, 0, 255, LineDefs[ obj->objnum].tag);
 	    if (val >= 0)
 	    {
-	       LineDefs[ objnum].tag = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].tag = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 4:
-	    val = InputObjectXRef( 84, 128, OBJ_VERTEXES, FALSE, LineDefs[ objnum].start);
+	    val = InputObjectXRef( 84, 128, OBJ_VERTEXES, FALSE, LineDefs[ obj->objnum].start);
 	    if (val >= 0)
 	    {
-	       LineDefs[ objnum].start = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].start = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 5:
-	    val = InputObjectXRef( 84, 138, OBJ_VERTEXES, FALSE, LineDefs[ objnum].end);
+	    val = InputObjectXRef( 84, 138, OBJ_VERTEXES, FALSE, LineDefs[ obj->objnum].end);
 	    if (val >= 0)
 	    {
-	       LineDefs[ objnum].end = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].end = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 6:
-	    val = InputObjectXRef( 84, 148, OBJ_SIDEDEFS, FALSE, LineDefs[ objnum].sidedef1);
+	    val = InputObjectXRef( 84, 148, OBJ_SIDEDEFS, FALSE, LineDefs[ obj->objnum].sidedef1);
 	    if (val >= 0)
 	    {
-	       LineDefs[ objnum].sidedef1 = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].sidedef1 = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 7:
-	    val = InputObjectXRef( 84, 158, OBJ_SIDEDEFS, TRUE, LineDefs[ objnum].sidedef2);
+	    val = InputObjectXRef( 84, 158, OBJ_SIDEDEFS, TRUE, LineDefs[ obj->objnum].sidedef2);
 	    if (val >= -1)
 	    {
-	       LineDefs[ objnum].sidedef2 = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  LineDefs[ cur->objnum].sidedef2 = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 }
 	 break;
 
+      /* edit or add the first SideDef */
       case 2:
-	 if (LineDefs[ objnum].sidedef1 >= 0)
+	 if (LineDefs[ obj->objnum].sidedef1 >= 0)
 	 {
+	    /* build a new selection list with the first SideDefs */
 	    objtype = OBJ_SIDEDEFS;
-	    objnum = LineDefs[ objnum].sidedef1;
+	    sdlist = NULL;
+	    for (cur = obj; cur; cur = cur->next)
+	       if (LineDefs[ cur->objnum].sidedef1 >= 0)
+		  SelectObject( &sdlist, LineDefs[ cur->objnum].sidedef1);
 	 }
 	 else
 	 {
-	    NotImplemented(); /* (*add a new sidedef*) */
+	    /* add a new first SideDef */
+	    for (cur = obj; cur; cur = cur->next)
+	       if (LineDefs[ cur->objnum].sidedef1 == -1)
+	       {
+		  InsertObject( OBJ_SIDEDEFS, -1, 0);
+		  LineDefs[ cur->objnum].sidedef1 = GetMaxObjectNum( OBJ_SIDEDEFS);
+	       }
 	    break;
 	 }
+	 /* no break here */
+
+      /* edit or add the second SideDef */
       case 3:
 	 if (objtype != OBJ_SIDEDEFS)
 	 {
-	    if (LineDefs[ objnum].sidedef2 >= 0)
+	    if (LineDefs[ obj->objnum].sidedef2 >= 0)
 	    {
+	       /* build a new selection list with the second (or first) SideDefs */
 	       objtype = OBJ_SIDEDEFS;
-	       objnum = LineDefs[ objnum].sidedef2;
+	       sdlist = NULL;
+	       for (cur = obj; cur; cur = cur->next)
+		  if (LineDefs[ cur->objnum].sidedef2 >= 0)
+		     SelectObject( &sdlist, LineDefs[ cur->objnum].sidedef2);
+		  else if (LineDefs[ cur->objnum].sidedef1 >= 0)
+		     SelectObject( &sdlist, LineDefs[ cur->objnum].sidedef1);
 	    }
 	    else
 	    {
-	       NotImplemented(); /* (*add a new sidedef*) */
+	       /* add a new second (or first) SideDef */
+	       for (cur = obj; cur; cur = cur->next)
+		  if (LineDefs[ cur->objnum].sidedef1 == -1)
+		  {
+		     InsertObject( OBJ_SIDEDEFS, -1, 0);
+		     LineDefs[ cur->objnum].sidedef1 = GetMaxObjectNum( OBJ_SIDEDEFS);
+		  }
+		  else if (LineDefs[ cur->objnum].sidedef2 == -1)
+		  {
+		     InsertObject( OBJ_SIDEDEFS, -1, 0);
+		     LineDefs[ cur->objnum].sidedef2 = GetMaxObjectNum( OBJ_SIDEDEFS);
+		  }
 	       break;
 	    }
 	 }
-	 for (n = 0; n < 7; n++)
+	 for (n = 0; n < 10; n++)
 	    menustr[ n] = GetMemory( 60);
-	 sprintf( menustr[ 6], "Edit SideDef #%d", objnum);
+	 sprintf( menustr[ 9], "Edit SideDef #%d", sdlist->objnum);
 	 texname[ 8] = '\0';
-	 strncpy( texname, SideDefs[ objnum].tex3, 8);
+	 strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
 	 sprintf( menustr[ 0], "Change Normal Texture   (Current: %s)", texname);
-	 strncpy( texname, SideDefs[ objnum].tex1, 8);
-	 sprintf( menustr[ 1], "Change Texture above    (Current: %s)", texname);
-	 strncpy( texname, SideDefs[ objnum].tex2, 8);
-	 sprintf( menustr[ 2], "Change Texture below    (Current: %s)", texname);
-	 sprintf( menustr[ 3], "Change Texture X offset (Current: %d)", SideDefs[ objnum].xoff);
-	 sprintf( menustr[ 4], "Change Texture Y offset (Current: %d)", SideDefs[ objnum].yoff);
-	 sprintf( menustr[ 5], "Change Sector ref.      (Current: #%d)", SideDefs[ objnum].sector);
-	 val = DisplayMenuArray( 42, 84, menustr[ 6], 6, menustr);
-	 for (n = 0; n < 7; n++)
+	 sprintf( menustr[ 1], "Display Normal Texture");
+	 strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
+	 sprintf( menustr[ 2], "Change Upper texture    (Current: %s)", texname);
+	 sprintf( menustr[ 3], "Display Upper texture");
+	 strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
+	 sprintf( menustr[ 4], "Change Lower texture    (Current: %s)", texname);
+	 sprintf( menustr[ 5], "Display Lower texture");
+	 sprintf( menustr[ 6], "Change Texture X offset (Current: %d)", SideDefs[ sdlist->objnum].xoff);
+	 sprintf( menustr[ 7], "Change Texture Y offset (Current: %d)", SideDefs[ sdlist->objnum].yoff);
+	 sprintf( menustr[ 8], "Change Sector ref.      (Current: #%d)", SideDefs[ sdlist->objnum].sector);
+	 val = DisplayMenuArray( 42, 84, menustr[ 9], 9, menustr);
+	 for (n = 0; n < 10; n++)
 	    free( menustr[ n]);
 	 switch (val)
 	 {
 	 case 1:
-	    strncpy( texname, SideDefs[ objnum].tex3, 8);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
 	    InputNameFromList( 84, 118, "Enter a wall texture name:", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
-	       strncpy( SideDefs[ objnum].tex3, texname, 8);
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex3, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 2:
-	    strncpy( texname, SideDefs[ objnum].tex1, 8);
-	    InputNameFromList( 84, 128, "Enter a wall texture name:", NumWTexture, WTexture, texname);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
+	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
-	       strncpy( SideDefs[ objnum].tex1, texname, 8);
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex3, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 3:
-	    strncpy( texname, SideDefs[ objnum].tex2, 8);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
 	    InputNameFromList( 84, 138, "Enter a wall texture name:", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
-	       strncpy( SideDefs[ objnum].tex2, texname, 8);
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex1, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 4:
-	    val = InputIntegerValue( 84, 148, -100, 100, SideDefs[ objnum].xoff);
-	    if (val >= -100)
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
+	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
+	    if (strlen(texname) > 0)
 	    {
-	       SideDefs[ objnum].xoff = val;
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex1, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 5:
-	    val = InputIntegerValue( 84, 158, -100, 100, SideDefs[ objnum].yoff);
-	    if (val >= -100)
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
+	    InputNameFromList( 84, 158, "Enter a wall texture name:", NumWTexture, WTexture, texname);
+	    if (strlen(texname) > 0)
 	    {
-	       SideDefs[ objnum].yoff = val;
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex2, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 6:
-	    val = InputObjectXRef( 84, 168, OBJ_SECTORS, FALSE, SideDefs[ objnum].sector);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
+	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
+	    if (strlen(texname) > 0)
+	    {
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     strncpy( SideDefs[ cur->objnum].tex2, texname, 8);
+	       MadeChanges = TRUE;
+	    }
+	    break;
+	 case 7:
+	    val = InputIntegerValue( 84, 178, -100, 100, SideDefs[ sdlist->objnum].xoff);
+	    if (val >= -100)
+	    {
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     SideDefs[ cur->objnum].xoff = val;
+	       MadeChanges = TRUE;
+	    }
+	    break;
+	 case 8:
+	    val = InputIntegerValue( 84, 188, -100, 100, SideDefs[ sdlist->objnum].yoff);
+	    if (val >= -100)
+	    {
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     SideDefs[ cur->objnum].yoff = val;
+	       MadeChanges = TRUE;
+	    }
+	    break;
+	 case 9:
+	    val = InputObjectXRef( 84, 198, OBJ_SECTORS, FALSE, SideDefs[ sdlist->objnum].sector);
 	    if (val >= 0)
 	    {
-	       SideDefs[ objnum].sector = val;
+	       for (cur = sdlist; cur; cur = cur->next)
+		  if (cur->objnum >= 0)
+		     SideDefs[ cur->objnum].sector = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 }
+	 ForgetSelection( &sdlist);
 	 break;
 
       }
@@ -1223,28 +1562,32 @@ void EditObjectInfo( int objtype, int objnum)
    case OBJ_VERTEXES:
       for (n = 0; n < 3; n++)
 	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 2], "Edit Vertex #%d", objnum);
-      sprintf( menustr[ 0], "Change X position (Current: %d)", Vertexes[ objnum].x);
-      sprintf( menustr[ 1], "Change Y position (Current: %d)", Vertexes[ objnum].y);
+      sprintf( menustr[ 2], "Edit Vertex #%d", obj->objnum);
+      sprintf( menustr[ 0], "Change X position (Current: %d)", Vertexes[ obj->objnum].x);
+      sprintf( menustr[ 1], "Change Y position (Current: %d)", Vertexes[ obj->objnum].y);
       val = DisplayMenuArray( 0, 30, menustr[ 2], 2, menustr);
       for (n = 0; n < 3; n++)
 	 free( menustr[ n]);
       switch (val)
       {
       case 1:
-	 val = InputIntegerValue( 42, 94, MinX, MaxX, Vertexes[ objnum].x);
+	 val = InputIntegerValue( 42, 94, MinX, MaxX, Vertexes[ obj->objnum].x);
 	 if (val >= MinX)
 	 {
-	    Vertexes[ objnum].x = val;
+	    n = val - Vertexes[ obj->objnum].x;
+	    for (cur = obj; cur; cur = cur->next)
+	       Vertexes[ cur->objnum].x += n;
 	    MadeChanges = TRUE;
 	 }
 	 break;
 
       case 2:
-	 val = InputIntegerValue( 42, 104, MinY, MaxY, Vertexes[ objnum].y);
+	 val = InputIntegerValue( 42, 104, MinY, MaxY, Vertexes[ obj->objnum].y);
 	 if (val >= MinY)
 	 {
-	    Vertexes[ objnum].y = val;
+	    n = val - Vertexes[ obj->objnum].y;
+	    for (cur = obj; cur; cur = cur->next)
+	       Vertexes[ cur->objnum].y += n;
 	    MadeChanges = TRUE;
 	 }
 	 break;
@@ -1255,61 +1598,81 @@ void EditObjectInfo( int objtype, int objnum)
    case OBJ_SEGS:
       for (n = 0; n < 7; n++)
 	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 6], "Edit Seg #%d", objnum);
-      sprintf( menustr[ 0], "Change Flip flag       (Current: %d)", Segs[ objnum].flip);
-      sprintf( menustr[ 1], "Change Distance        (Current: %d)", Segs[ objnum].dist);
-      sprintf( menustr[ 2], "Change Angle           (Current: %d)", Segs[ objnum].angle);
-      sprintf( menustr[ 3], "Change Starting Vertex (Current: #%d)", Segs[ objnum].start);
-      sprintf( menustr[ 4], "Change Ending Vertex   (Current: #%d)", Segs[ objnum].end);
-      sprintf( menustr[ 5], "Change LineDef ref.    (Current: #%d)", Segs[ objnum].linedef);
+      sprintf( menustr[ 6], "Edit Seg #%d", obj->objnum);
+      sprintf( menustr[ 0], "Change Flip flag       (Current: %d)", Segs[ obj->objnum].flip);
+      sprintf( menustr[ 1], "Change Distance        (Current: %d)", Segs[ obj->objnum].dist);
+      sprintf( menustr[ 2], "Change Angle           (Current: %d)", Segs[ obj->objnum].angle);
+      sprintf( menustr[ 3], "Change Starting Vertex (Current: #%d)", Segs[ obj->objnum].start);
+      sprintf( menustr[ 4], "Change Ending Vertex   (Current: #%d)", Segs[ obj->objnum].end);
+      sprintf( menustr[ 5], "Change LineDef ref.    (Current: #%d)", Segs[ obj->objnum].linedef);
       val = DisplayMenuArray( 0, 30, menustr[ 6], 6, menustr);
       for (n = 0; n < 7; n++)
 	 free( menustr[ n]);
       switch (val)
       {
       case 1:
-	 val = InputIntegerValue( 42, 64, 0, 255, Segs[ objnum].flip);
+	 val = InputIntegerValue( 42, 64, 0, 255, Segs[ obj->objnum].flip);
 	 if (val >= 0)
 	 {
-	    Segs[ objnum].flip = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Segs[ cur->objnum].flip = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 2:
-	 val = InputIntegerValue( 42, 64, 0, 255, Segs[ objnum].dist);
+	 val = InputIntegerValue( 42, 74, 0, 255, Segs[ obj->objnum].dist);
 	 if (val >= 0)
 	 {
-	    Segs[ objnum].dist = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Segs[ cur->objnum].dist = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 3:
-	 NotImplemented(); /* (*ask for confirmation*) */
+	 if (Confirm( 42, 74, "The angle is automatically updated by this program.", "Do you really want to change this value?"))
+	 {
+	    val = InputIntegerValue( 42, 84, -32767, 32767, Segs[ obj->objnum].angle);
+	    if (val >= -32767)
+	    {
+	       for (cur = obj; cur; cur = cur->next)
+		  Segs[ cur->objnum].angle = val;
+	       MadeChanges = TRUE;
+	    }
+
+	 }
+	 break;
       case 4:
-	 val = InputObjectXRef( 42, 74, OBJ_VERTEXES, FALSE, Segs[ objnum].start);
+	 val = InputObjectXRef( 42, 94, OBJ_VERTEXES, FALSE, Segs[ obj->objnum].start);
 	 if (val >= 0)
 	 {
-	    Segs[ objnum].start = val;
-	    Segs[ objnum].angle = ComputeAngle(Vertexes[ Segs[ objnum].end].x - Vertexes[ Segs[ objnum].start].x,
-					       Vertexes[ Segs[ objnum].end].y - Vertexes[ Segs[ objnum].start].y);
+	    for (cur = obj; cur; cur = cur->next)
+	    {
+	       Segs[ cur->objnum].start = val;
+	       Segs[ cur->objnum].angle = ComputeAngle(Vertexes[ Segs[ cur->objnum].end].x - Vertexes[ Segs[ cur->objnum].start].x,
+						       Vertexes[ Segs[ cur->objnum].end].y - Vertexes[ Segs[ cur->objnum].start].y);
+	    }
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 5:
-	 val = InputObjectXRef( 42, 84, OBJ_VERTEXES, FALSE, Segs[ objnum].end);
+	 val = InputObjectXRef( 42, 104, OBJ_VERTEXES, FALSE, Segs[ obj->objnum].end);
 	 if (val >= 0)
 	 {
-	    Segs[ objnum].end = val;
-	    Segs[ objnum].angle = ComputeAngle(Vertexes[ Segs[ objnum].end].x - Vertexes[ Segs[ objnum].start].x,
-					       Vertexes[ Segs[ objnum].end].y - Vertexes[ Segs[ objnum].start].y);
+	    for (cur = obj; cur; cur = cur->next)
+	    {
+	       Segs[ cur->objnum].end = val;
+	       Segs[ cur->objnum].angle = ComputeAngle(Vertexes[ Segs[ cur->objnum].end].x - Vertexes[ Segs[ cur->objnum].start].x,
+						       Vertexes[ Segs[ cur->objnum].end].y - Vertexes[ Segs[ cur->objnum].start].y);
+	    }
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 6:
-	 val = InputObjectXRef( 42, 94, OBJ_LINEDEFS, FALSE, Segs[ objnum].linedef);
+	 val = InputObjectXRef( 42, 114, OBJ_LINEDEFS, FALSE, Segs[ obj->objnum].linedef);
 	 if (val >= 0)
 	 {
-	    Segs[ objnum].linedef = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Segs[ cur->objnum].linedef = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
@@ -1317,131 +1680,158 @@ void EditObjectInfo( int objtype, int objnum)
       break;
 
    case OBJ_SECTORS:
-      for (n = 0; n < 8; n++)
+      for (n = 0; n < 10; n++)
 	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 7], "Edit Sector #%d", objnum);
-      sprintf( menustr[ 0], "Change Floor height    (Current: %d)", Sectors[ objnum].floorh);
-      sprintf( menustr[ 1], "Change Ceiling height  (Current: %d)", Sectors[ objnum].ceilh);
+      sprintf( menustr[ 9], "Edit Sector #%d", obj->objnum);
+      sprintf( menustr[ 0], "Change Floor height     (Current: %d)", Sectors[ obj->objnum].floorh);
+      sprintf( menustr[ 1], "Change Ceiling height   (Current: %d)", Sectors[ obj->objnum].ceilh);
       texname[ 8] = '\0';
-      strncpy( texname, Sectors[ objnum].floort, 8);
-      sprintf( menustr[ 2], "Change Floor texture   (Current: %s)", texname);
-      strncpy( texname, Sectors[ objnum].ceilt, 8);
-      sprintf( menustr[ 3], "Change Ceiling texture (Current: %s)", texname);
-      sprintf( menustr[ 4], "Change Light level     (Current: %d)", Sectors[ objnum].light);
-      sprintf( menustr[ 5], "Change Type            (Current: %d)", Sectors[ objnum].special);
-      sprintf( menustr[ 6], "Change LineDef tag     (Current: %d)", Sectors[ objnum].tag);
-      val = DisplayMenuArray( 0, 30, menustr[ 7], 7, menustr);
-      for (n = 0; n < 8; n++)
+      strncpy( texname, Sectors[ obj->objnum].floort, 8);
+      sprintf( menustr[ 2], "Change Floor texture    (Current: %s)", texname);
+      sprintf( menustr[ 3], "Display Floor texture");
+      strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
+      sprintf( menustr[ 4], "Change Ceiling texture  (Current: %s)", texname);
+      sprintf( menustr[ 5], "Display Ceiling texture");
+      sprintf( menustr[ 6], "Change Light level      (Current: %d)", Sectors[ obj->objnum].light);
+      sprintf( menustr[ 7], "Change Type             (Current: %d)", Sectors[ obj->objnum].special);
+      sprintf( menustr[ 8], "Change LineDef tag      (Current: %d)", Sectors[ obj->objnum].tag);
+      val = DisplayMenuArray( 0, 30, menustr[ 9], 9, menustr);
+      for (n = 0; n < 10; n++)
 	 free( menustr[ n]);
       switch (val)
       {
       case 1:
-	 val = InputIntegerValue( 42, 64, -512, 512, Sectors[ objnum].floorh);
+	 val = InputIntegerValue( 42, 64, -512, 512, Sectors[ obj->objnum].floorh);
 	 if (val >= -264)
 	 {
-	    Sectors[ objnum].floorh = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].floorh = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 2:
-	 val = InputIntegerValue( 42, 74, -512, 512, Sectors[ objnum].ceilh);
+	 val = InputIntegerValue( 42, 74, -512, 512, Sectors[ obj->objnum].ceilh);
 	 if (val >= -264)
 	 {
-	    Sectors[ objnum].ceilh = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].ceilh = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 3:
-	 strncpy( texname, Sectors[ objnum].floort, 8);
+	 strncpy( texname, Sectors[ obj->objnum].floort, 8);
 	 InputNameFromList( 42, 84, "Enter a floor texture name:", NumFTexture, FTexture, texname);
 	 if (strlen(texname) > 0)
 	 {
-	    strncpy( Sectors[ objnum].floort, texname, 8);
+	    for (cur = obj; cur; cur = cur->next)
+	       strncpy( Sectors[ cur->objnum].floort, texname, 8);
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 4:
-	 strncpy( texname, Sectors[ objnum].ceilt, 8);
-	 InputNameFromList( 42, 94, "Enter a ceiling texture name:", NumFTexture, FTexture, texname);
+	 strncpy( texname, Sectors[ obj->objnum].floort, 8);
+	 ChooseFloorTexture( "Choose a floor texture", NumFTexture, FTexture, texname);
 	 if (strlen(texname) > 0)
 	 {
-	    strncpy( Sectors[ objnum].ceilt, texname, 8);
+	    for (cur = obj; cur; cur = cur->next)
+	       strncpy( Sectors[ cur->objnum].floort, texname, 8);
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 5:
-	 val = InputIntegerValue( 42, 104, 0, 255, Sectors[ objnum].light);
-	 if (val >= 0)
+	 strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
+	 InputNameFromList( 42, 104, "Enter a ceiling texture name:", NumFTexture, FTexture, texname);
+	 if (strlen(texname) > 0)
 	 {
-	    Sectors[ objnum].light = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       strncpy( Sectors[ cur->objnum].ceilt, texname, 8);
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 6:
-	 switch (DisplayMenu( 42, 114, "Choose a special behaviour",
-			      "Normal",
-			      "Light blinks randomly",
-			      "Light quickly pulsates",
-			      "Light blinks",
-			      "Light pulsates and -20% health",
-			      "-10% health",
-			      "-5% health",
-			      "Light pulsates",
-			      "Secret (credit if discovered)",
-			      "Enter a decimal value",
-			      NULL))
+	 strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
+	 ChooseFloorTexture( "Choose a ceiling texture", NumFTexture, FTexture, texname);
+	 if (strlen(texname) > 0)
+	 {
+	    for (cur = obj; cur; cur = cur->next)
+	       strncpy( Sectors[ cur->objnum].ceilt, texname, 8);
+	    MadeChanges = TRUE;
+	 }
+	 break;
+      case 7:
+	 val = InputIntegerValue( 42, 124, 0, 255, Sectors[ obj->objnum].light);
+	 if (val >= 0)
+	 {
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].light = val;
+	    MadeChanges = TRUE;
+	 }
+	 break;
+      case 8:
+	 val = DisplayMenu( 42, 134, "Choose a special behaviour",
+			    GetSectorTypeLongName(0),
+			    GetSectorTypeLongName(1),
+			    GetSectorTypeLongName(2),
+			    GetSectorTypeLongName(3),
+			    GetSectorTypeLongName(4),
+			    GetSectorTypeLongName(5),
+			    GetSectorTypeLongName(7),
+			    GetSectorTypeLongName(8),
+			    GetSectorTypeLongName(9),
+			    GetSectorTypeLongName(10),
+			    GetSectorTypeLongName(11),
+			    GetSectorTypeLongName(12),
+			    GetSectorTypeLongName(13),
+			    GetSectorTypeLongName(14),
+			    GetSectorTypeLongName(16),
+			    "(Enter a decimal value)",
+			    NULL);
+	 switch (val)
 	 {
 	 case 1:
-	    Sectors[ objnum].special = 0;
-	    MadeChanges = TRUE;
-	    break;
 	 case 2:
-	    Sectors[ objnum].special = 1;
-	    MadeChanges = TRUE;
-	    break;
 	 case 3:
-	    Sectors[ objnum].special = 2;
-	    MadeChanges = TRUE;
-	    break;
 	 case 4:
-	    Sectors[ objnum].special = 3;
-	    MadeChanges = TRUE;
-	    break;
 	 case 5:
-	    Sectors[ objnum].special = 4;
-	    MadeChanges = TRUE;
-	    break;
 	 case 6:
-	    Sectors[ objnum].special = 5;
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].special = val - 1;
 	    MadeChanges = TRUE;
 	    break;
 	 case 7:
-	    Sectors[ objnum].special = 7;
-	    MadeChanges = TRUE;
-	    break;
 	 case 8:
-	    Sectors[ objnum].special = 8;
-	    MadeChanges = TRUE;
-	    break;
 	 case 9:
-	    Sectors[ objnum].special = 9;
+	 case 10:
+	 case 11:
+	 case 12:
+	 case 13:
+	 case 14:
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].special = val;
 	    MadeChanges = TRUE;
 	    break;
-	 case 10:
-	    val = InputIntegerValue( 84, 238, 0, 255, Sectors[ objnum].special);
+	 case 15:
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].special = 16;
+	    MadeChanges = TRUE;
+	    break;
+	 case 16:
+	    val = InputIntegerValue( 84, 258, 0, 255, Sectors[ obj->objnum].special);
 	    if (val >= 0)
 	    {
-	       Sectors[ objnum].special = val;
+	       for (cur = obj; cur; cur = cur->next)
+		  Sectors[ cur->objnum].special = val;
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 }
 	 break;
-      case 7:
-	 val = InputIntegerValue( 42, 124, 0, 255, Sectors[ objnum].tag);
+      case 9:
+	 val = InputIntegerValue( 42, 144, 0, 999, Sectors[ obj->objnum].tag);
 	 if (val >= 0)
 	 {
-	    Sectors[ objnum].tag = val;
+	    for (cur = obj; cur; cur = cur->next)
+	       Sectors[ cur->objnum].tag = val;
 	    MadeChanges = TRUE;
 	 }
 	 break;
@@ -1453,42 +1843,81 @@ void EditObjectInfo( int objtype, int objnum)
 
 
 /*
+   move an object or a group of objects to a new position
+*/
+
+void MoveObjectToCoords( int objtype, SelPtr obj, int x, int y)
+{
+   int    d;
+   SelPtr cur;
+
+   switch (objtype)
+   {
+      case OBJ_THINGS:
+	 d = x - Things[ obj->objnum].xpos;
+	 for (cur = obj; cur; cur = cur ->next)
+	    Things[ cur->objnum].xpos += d;
+	 d = y - Things[ obj->objnum].ypos;
+	 for (cur = obj; cur; cur = cur ->next)
+	    Things[ cur->objnum].ypos += d;
+	 MadeChanges = TRUE;
+	 break;
+      case OBJ_VERTEXES:
+	 d = x - Vertexes[ obj->objnum].x;
+	 for (cur = obj; cur; cur = cur ->next)
+	    Vertexes[ cur->objnum].x += d;
+	 d = y - Vertexes[ obj->objnum].y;
+	 for (cur = obj; cur; cur = cur ->next)
+	    Vertexes[ cur->objnum].y += d;
+	 MadeChanges = TRUE;
+	 MadeMapChanges = TRUE;
+	 break;
+   }
+}
+
+
+
+/*
    check if a (part of a) LineDef is inside a given block
 */
 
-int IsLineDefInside( int ldnum, double x0, double y0, double x1, double y1)
+int IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1)
 {
-   double lx0 = (double) Vertexes[ LineDefs[ ldnum].start].x;
-   double ly0 = (double) Vertexes[ LineDefs[ ldnum].start].y;
-   double lx1 = (double) Vertexes[ LineDefs[ ldnum].end].x;
-   double ly1 = (double) Vertexes[ LineDefs[ ldnum].end].y;
-   double i;
+   int lx0 = Vertexes[ LineDefs[ ldnum].start].x;
+   int ly0 = Vertexes[ LineDefs[ ldnum].start].y;
+   int lx1 = Vertexes[ LineDefs[ ldnum].end].x;
+   int ly1 = Vertexes[ LineDefs[ ldnum].end].y;
+   int i;
 
    /* do you like mathematics? */
    if ((ly0 > y0) != (ly1 > y0))
    {
-      i = lx0 + (y0 - ly0) * (lx1 - lx0) / (ly1 - ly0);
+      i = lx0 + (int) ( (long) (y0 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
       if (i >= x0 && i <= x1)
-	 return TRUE;
+	 return TRUE; /* the LineDef crosses the y0 side (left) */
    }
    if ((ly0 > y1) != (ly1 > y1))
    {
-      i = lx0 + (y1 - ly0) * (lx1 - lx0) / (ly1 - ly0);
+      i = lx0 + (int) ( (long) (y1 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
       if (i >= x0 && i <= x1)
-	 return TRUE;
+	 return TRUE; /* the LineDef crosses the y1 side (right) */
    }
    if ((lx0 > x0) != (lx1 > x0))
    {
-      i = ly0 + (x0 - lx0) * (ly1 - ly0) / (lx1 - lx0);
+      i = ly0 + (int) ( (long) (x0 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
       if (i >= y0 && i <= y1)
-	 return TRUE;
+	 return TRUE; /* the LineDef crosses the x0 side (down) */
    }
    if ((lx0 > x1) != (lx1 > x1))
    {
-      i = ly0 + (x1 - lx0) * (ly1 - ly0) / (lx1 - lx0);
+      i = ly0 + (int) ( (long) (x1 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
       if (i >= y0 && i <= y1)
-	 return TRUE;
+	 return TRUE; /* the LineDef crosses the x1 side (up) */
    }
+   if (lx0 >= x0 && lx0 <= x1 && ly0 >= y0 && ly0 <= y1)
+      return TRUE; /* the LineDef is entirely inside the square */
+   if (lx1 >= x0 && lx1 <= x1 && ly1 >= y0 && ly1 <= y1)
+      return TRUE; /* paranoia */
    return FALSE;
 }
 

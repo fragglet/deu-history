@@ -71,7 +71,7 @@
 #define THING_TREDPILLAR      32
 #define THING_SGREENPILLAR    31
 #define THING_SREDPILLAR      33
-#define THING_PILLARHEARTH    36
+#define THING_PILLARHEART     36
 #define THING_PILLARSKULL     37
 #define THING_EYEINSYMBOL     41
 #define THING_GREYTREE        43
@@ -96,6 +96,7 @@
 #define THING_DEADIMP         20
 #define THING_DEADDEMON       21
 #define THING_DEADCACODEMON   22
+#define THING_DEADLOSTSOUL    23
 #define THING_BONES           10
 #define THING_BONES2          12
 #define THING_POOLOFBLOOD     24

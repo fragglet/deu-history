@@ -1,42 +1,41 @@
 			 *-----------------------*
 			 |   INSTRUCTIONS FOR    |
-			 |     NEW DEU 4.2       |
+			 |     NEW DEU 4.31      |
 			 |  DOOM EDITOR UTILITY  |
 			 *-----------------------*
 
 IMPORTANT NOTICE:
 =================
 
- This program is called "NEWDEU" because Brendon Wyber (the author of DEU)
- has requested that anyone who alters his DEU program calls it something
- else.  This program is based on DEU-3.01, but I originally didn't plan on
- releasing it by myself.  In fact, I sent a first version of this program
- to Brendon, hoping that he will release it soon and add new features of
- his own.
+ THE NEXT VERSION OF THIS PROGRAM WILL BE CALLED "DEU 5.0", NOT "NEWDEU"!
 
- Well, he didn't have the time to work on it, because he had to go on
- holidays.  So I eventually decided to make this program public and I choose
- the temporary name "NEWDEU".  Now that Brendon has returned, we will see if
- the next release is going to be called "DEU" or anything else...
+ The EXE file is already called "DEU.EXE".  In the next release, the ZIP
+ file will also loose its "NEW" prefix.  Take note!
 
- In short, you will probably never see any program called "NEWDEU" again.
- If Brendon starts working on my program, it will be called "DEU" from
- then on.  If he doesn't like it, I will call it something else.  Got that?
+ I used the name "NEWDEU" because Brendon Wyber (the author of the original
+ DEU editor) had requested that anyone who alters his DEU program calls it
+ something else.  But I will give the program back to Brendon after the next
+ major revision.  From then on, you will only see "DEU", not "NEWDEU".
 
-						   Rapha‰l Quinet,
-						   15 Feb. 1994
+ This file will be removed in the next version.  All documentation will be
+ in DEU.TXT and MANUAL.DOC.
+
 
 COPYRIGHT
 =========
 
-* DOOM is owned by ID software.
+* DOOM is owned by ID software.  Thanks to ID for making such great games!
 
 * The original DEU was released into Public Domain by Brendon Wyber.
 
 * I (Rapha‰l Quinet) wrote the new user interface (mouse, menus, and so on)
   and added the different editing modes (LineDefs, SideDefs, Sectors...).
+  Even if I rewrote nearly 80% of the code, this editor still has its strong
+  DEU roots... :-)
 
-Please read the original copyright notice in "DEU.TXT".
+Please read the original copyright notice in "DEU.TXT".  This is the text
+file that came with DEU 3.01 (the lastest DEU release before I started working
+on my version).
 
 
 WHAT'S NEW (4.0)?
@@ -53,7 +52,7 @@ Here are a few things that are new to this version:
 
 * Better menus, 3D boxes, etc.  I changed the whole user interface.
 
-* You can now use the first mouse button to drag an object.  If you are
+X You can now use the first mouse button to drag an object.  If you are
   using the keyboard, press 'Ins' once when the pointer is on the object,
   move it around, then press 'Ins' once again to release it.
 
@@ -95,9 +94,10 @@ WHAT'S NEW IN 4.1?
 * The 'N' and 'P' keys may be used to jump to the Next or Previous object
   in the editor.  (You may also use '>' and '<'.)
 
-* You still cannot create a whole new level (because you can't add new
+X You still cannot create a whole new level (because you can't add new
   LineDefs, SideDefs,... - you may only change their attributes).  But you
   can do almost anything else.
+
 
 WHAT'S NEW IN 4.2?
 ==================
@@ -121,47 +121,107 @@ WHAT'S NEW IN 4.2?
   errrr... large.
 
 
+WHAT'S NEW IN 4.31?
+===================
+
+* New mouse interface: the left button is used to mark/unmark objects, the
+  right button is used to drag an object or a group of objects, and the middle
+  button is used to edit an object or a group of objects.  The object detection
+  algorithm has been slightly improved.
+
+* You may mark on unmark any object and edit or move all marked objects in
+  only one operation.
+
+* Command line parameters: "-sb" or "-swapbuttons" swaps the left and middle
+  buttons of the mouse.  "-d" or "-debug" lets you see the Segs and Nodes in
+  the editor.  "-q" or "-quiet" makes less noise.  "-e" or "-expert" doesn't
+  ask for confirmation when you delete one object.
+
+* You may now add or delete ANY object (Things, Vertices, LineDefs, SideDefs
+  or Sectors).  One more step towards the Holy Grail (the absolute editor)!
+
+* Most LineDefs types are now recognized.  You can easily create a lift, a
+  moving floor, a teleporter, a crushing ceiling, etc.  Different colors are
+  used for the special LineDefs or Sectors.  They will be easily distinguished
+  from the normal ones.
+
+* New "snap to grid" option.  New "zoom on pointer" feature.
+
+* New keyboard shortcuts: use "T", "V", "L", "S" to switch to the Things,
+  Vertexes (vertices, I know!), LineDefs or Sectors editor.
+
+* Many bug fixes.  The bug in the BlockMap builder has been fixed.  The bug in
+  the "-debug" (!) option has been fixed.
+
+* A manual file, "MANUAL.DOC".  Read this if you want to know how to use DEU.
+
+
 FUTURE PLANS
 ============
 
-* Understand the Nodes structure.  Thanks to chrisp@halcyon.com for the
-  hints about these things.  I NEED MORE HELP!  PLEASE...
+* Create an automatic Nodes builder.  Thanks to chrisp@halcyon.com for the
+  hints about these obscure things.  I will hopefully soon be able to create
+  a full-featured editor (the first one?).
 
-* Build a correct WAD file when a Vertex has been moved.  I hopefully only
-  need to rebuild the Nodes list.  But how do you do that?
+* Display the walls/floors/ceilings textures in 256 colors.
 
-* Be able to delete Vertexes (this will also delete the related objects).
+* Display the Things in 256 colors, when you select them.  Use the extended
+  VGA modes for all editors, instead of the standard 16 color mode.
 
-* Be able to add, delete or edit LineDefs, SideDefs, Sectors, etc.
-  In other words, create a true editor
+* Add scrollbars to some dialog boxes.
+
+* Add XMS support.
 
 
-WARNING
-=======
+A WORD OF WARNING...
+====================
 
-The Things, LineDefs/SideDefs and Sectors editors works quite well.  You may
-move Things around, insert or delete some of them, change the wall textures,
-create new lifts or secret sectors, etc.  The WAD file created by NEWDEU will
-always give the expected results when you play DOOM.
-
-But the Vertex editor is far from complete: there are lots of cross-references
-in the WAD files and some of them are not updated by NEWDEU.  Expect strange
-results if you play with a modified WAD file: you will be able to go through
-some of the walls, your screen will display strange patterns from time to
-time, and so on...  The Segs and Nodes editors are under development.
-Hopefully, DEU will be able to create these objects automatically, one day
-or another...
-
-If you find how to build a fully working WAD file, please tell me.
-I'm still having lots of problems with the Nodes objects.  Have you got
-any clues?  BTW, do you know how the Reject and Blockmap entries work?
+If you move any Vertex or add new LineDefs, SideDefs or Sectors, you will
+certainly get the "hall of mirrors syndrome" at some place in the game, just
+like when you use the "no clipping" cheat mode and go through a wall.  This
+is because the editor doesn't update the Nodes objects that are needed for
+rendering.  The next version of this program will be called "DEU" and will
+include a Nodes builder.
 
 
 CREDITS
 =======
 
-The credits will be in the next version of DEU.  Apologies to those who
-helped me and whose names are not here...  :-)
+* Guess what?  Thanks to ID for making such great games!
+
+* Thanks to Matt Fell (matt.burnett@acebbs.com) for his great Unofficial Doom
+  Specs.  I found lots of useful informations in this file.  As I'm not very
+  good at writing docs, you should take this file as a technical reference and
+  companion manual for DEU.  Get the file "dmspec12.txt" by anonymous FTP on
+  "wuarchive.wustl.edu" (/incoming/msdos_uploads/games/doomstuff).
+
+* Thanks to Chris Phillips (chrisp@halcyon.com) for his help about the NODES
+  object.  If DEU is sooner or later able to create a new level from scratch,
+  I will owe him a lot.
+
+* Thanks to Trevor Phillips (rphillip@cc.curtin.edu.au) and Brian Downing
+  (bdowning@ncsa.uiuc.edu) for their numerous suggestions and bug reports.
+
+* Thanks to Will Ellett (wellet@cs.uah.edu), Barry Bloom (barry@noc.unt.edu),
+  E. Boling (edb9140@tamsun.tamu.edu), X? (stu_gwgrimsb@vax1.acs.jmu.edu) and
+  many others for their suggestions, bug reports and comments about NewDEU.
+
+
+FREE ADVERTISEMENT
+==================
+
+If you are using UNIX (Linux is a good example), you should have the two
+following programs.  They were not written by me, but I really like them:
+
+* Rplay is used to play sounds on a local or remote host.  It is available
+  on "sounds.sdsu.edu" (/pub/rplay/...) and "bear.montefiore.ulg.ac.be".
+  Rplay3.2 will hopefully be available within a few weeks and include support
+  for various sound formats (.au, .wav, .aiff, 8/16 bits, mono/stereo).
+
+* CrossFire is a multi-player graphical adventure game for X Window.  It takes
+  its inspiration from other games like nethack, moria, gauntlet, etc.  The
+  graphics are not as pretty as Doom, but this is not the point.  You can get
+  it from "ftp.ifi.uio.no" (/pub/crossfire/...) and "ftp.world.net".
 
 
 CONTACTING THE AUTHORS
@@ -173,7 +233,7 @@ CONTACTING THE AUTHORS
 
 I would greatly appreciate any comments and suggestions about this program.
 I'll keep on watching my mailbox...  If you are working on an UNIX box, you
-may use the following command to see if I have received your message :
+may use the following command to see if I have received your message:
 	finger quinet@verif1.montefiore.ulg.ac.be
 This will give lots of useless information to you, but you may consider it
 funny.  If you have a Sun workstation with the RPlay library installed, you

@@ -208,8 +208,8 @@ char *GetThingName( int type)
       return "Short Green Pillar";
    case THING_SREDPILLAR:
       return "Short Red Pillar";
-   case THING_PILLARHEARTH:
-      return "Pillar w/Hearth";
+   case THING_PILLARHEART:
+      return "Pillar w/Heart";
    case THING_PILLARSKULL:
       return "Red Pillar w/Skull";
    case THING_EYEINSYMBOL:
@@ -252,6 +252,8 @@ char *GetThingName( int type)
       return "Dead Demon";
    case THING_DEADCACODEMON:
       return "Dead CacoDemon";
+   case THING_DEADLOSTSOUL:
+      return "Dead Lost Soul";
    case THING_BONES:
       return "Guts and Bones";
    case THING_BONES2:
@@ -298,7 +300,7 @@ char *GetThingName( int type)
    }
 
    /* unknown */
-   sprintf( temp, "Unknown <%04d>", type);
+   sprintf( temp, "<UNKNOWN %04d>", type);
    return temp;
 }
 
@@ -341,6 +343,7 @@ char *GetAngleName( int angle)
 char *GetWhenName( int when)
 {
    static char temp[ 40];
+
    temp[ 0] = '\0';
    if (when & 0x01)
       strcat( temp, "D12 ");
@@ -349,7 +352,7 @@ char *GetWhenName( int when)
    if (when & 0x04)
       strcat( temp, "D4 ");
    if (when & 0x08)
-      strcat( temp, "Deaf? ");
+      strcat( temp, "Deaf ");
    if (when & 0x10)
       strcat( temp, "Multi ");
    return temp;

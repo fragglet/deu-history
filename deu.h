@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <graphics.h>
+#include <alloc.h>
 
 
 
@@ -21,7 +22,7 @@
    the version information
 */
 
-#define DEU_VERSION    "4.20"       /* the version number */
+#define DEU_VERSION	"4.31"	/* the version number */
 
 
 
@@ -30,12 +31,12 @@
    data in it's WAD files
 */
 
-typedef struct Directory *DirPtr;
+typedef struct Directory far *DirPtr;
 struct Directory
 {
-   long start;          /* offset to start of data */
-   long size;           /* byte size of data */
-   char name[ 8];       /* name of data block */
+   long start;			/* offset to start of data */
+   long size;			/* byte size of data */
+   char name[ 8];		/* name of data block */
 };
 
 
@@ -47,16 +48,16 @@ struct Directory
    The first wad file in the main wad file. The rest a patches.
 */
 
-typedef struct WadFileInfo *WadPtr;
+typedef struct WadFileInfo far *WadPtr;
 struct WadFileInfo
 {
-   WadPtr next;               /* next file in linked list */
-   char *filename;            /* name of the wad file */
-   FILE *fileinfo;            /* c file stream information */
-   char type[ 4];             /* type of wad file (IWAD or PWAD) */
-   long dirsize;              /* directory size of WAD */
-   long dirstart;             /* offset to start of directory */
-   DirPtr directory;          /* array of directory information */
+   WadPtr next;			/* next file in linked list */
+   char *filename;		/* name of the wad file */
+   FILE *fileinfo;		/* C file stream information */
+   char type[ 4];		/* type of wad file (IWAD or PWAD) */
+   long dirsize;		/* directory size of WAD */
+   long dirstart;		/* offset to start of directory */
+   DirPtr directory;		/* array of directory information */
 };
 
 
@@ -66,12 +67,25 @@ struct WadFileInfo
    of all the data blocks from all the various wad files
 */
 
-typedef struct MasterDirectory *MDirPtr;
+typedef struct MasterDirectory far *MDirPtr;
 struct MasterDirectory
 {
-   MDirPtr next;              /* next in list */
-   WadPtr wadfile;            /* file of origin */
-   struct Directory dir;      /* directory data */
+   MDirPtr next;		/* next in list */
+   WadPtr wadfile;		/* file of origin */
+   struct Directory dir;	/* directory data */
+};
+
+
+
+/*
+   the selection list is used when more than one object is selected
+*/
+
+typedef struct SelectionList *SelPtr;
+struct SelectionList
+{
+   SelPtr next;			/* next in list */
+   int objnum;			/* object number */
 };
 
 
@@ -81,54 +95,58 @@ struct MasterDirectory
 */
 
 /* convert pointer coordinates to map coordinates */
-#define MAPX(x)               (OrigX + (x - 319) * Scale)
-#define MAPY(y)               (OrigY + (239 - y) * Scale)
+#define MAPX(x)			(OrigX + (x - 319) * Scale)
+#define MAPY(y)			(OrigY + (239 - y) * Scale)
 
 /* object types */
-#define OBJ_THINGS           1
-#define OBJ_LINEDEFS         2
-#define OBJ_SIDEDEFS         3
-#define OBJ_VERTEXES         4
-#define OBJ_SEGS             5
-#define OBJ_SSECTORS         -1 /* Not implemented */
-#define OBJ_NODES            -2 /* Not implemented */
-#define OBJ_SECTORS          6
-#define OBJ_REJECT           -3 /* Not implemented */
-#define OBJ_BLOCKMAP         -4 /* Not implemented */
+#define OBJ_THINGS		1
+#define OBJ_LINEDEFS		2
+#define OBJ_SIDEDEFS		3
+#define OBJ_VERTEXES		4
+#define OBJ_SEGS		5
+#define OBJ_SSECTORS		6
+#define OBJ_NODES		7
+#define OBJ_SECTORS		8
+#define OBJ_REJECT		9
+#define OBJ_BLOCKMAP		10
 
 /* boolean constants */
-#define TRUE                  1
-#define FALSE                 0
+#define TRUE			1
+#define FALSE			0
 
 /* half the size of an object (Thing or Vertex) in map coords */
-#define OBJSIZE   10
+#define OBJSIZE			10
 
 /*
    the interfile global variables
 */
 
 /* from deu.c */
-extern int Registered;        /* registered or shareware WAD file? */
+extern int Registered;		/* registered or shareware WAD file? */
+extern int Debug;		/* are we debugging? */
+extern int SwapButtons;         /* swap right and middle mouse buttons */
+extern int Quiet;		/* don't play a sound when an object is selected */
+extern int Expert;		/* don't ask for confirmation for some operations */
 
 /* from wads.c */
-extern WadPtr  WadFileList;   /* list of wad files */
-extern MDirPtr MasterDir;     /* the master directory */
+extern WadPtr  WadFileList;	/* list of wad files */
+extern MDirPtr MasterDir;	/* the master directory */
 
 /* from edit.c */
-extern int NumWTexture;       /* number of wall textures */
-extern char **WTexture;       /* wall texture names */
-extern int NumFTexture;       /* number of floor/ceiling textures */
-extern char **FTexture;       /* floor/ceiling texture names */
+extern int NumWTexture;		/* number of wall textures */
+extern char **WTexture;		/* wall texture names */
+extern int NumFTexture;		/* number of floor/ceiling textures */
+extern char **FTexture;		/* floor/ceiling texture names */
 
 /* from gfx.c */
-extern int Scale;             /* scale to draw map 20 to 1 */
-extern int OrigX;             /* the X origin */
-extern int OrigY;             /* the Y origin */
-extern int PointerX;          /* X position of pointer */
-extern int PointerY;          /* Y position of pointer */
+extern int Scale;		/* scale to draw map 20 to 1 */
+extern int OrigX;		/* the X origin */
+extern int OrigY;		/* the Y origin */
+extern int PointerX;		/* X position of pointer */
+extern int PointerY;		/* Y position of pointer */
 
 /* from mouse.c */
-extern int UseMouse;          /* is there a mouse driver? */
+extern int UseMouse;		/* is there a mouse driver? */
 
 
 
@@ -143,22 +161,25 @@ void Beep( void);
 void ProgError( char *, ...);
 void *GetMemory( size_t);
 void *ResizeMemory( void *, size_t);
+void far *GetFarMemory( unsigned long size);
+void far *ResizeFarMemory( void far *old, unsigned long size);
 void MainLoop( void);
 
 /* from wads.c */
-void OpenWadFiles( int, char *[]);
-void CloseWadFiles( void);
-void CloseUnusedWadFiles( void);
 void OpenMainWad( char *);
 void OpenPatchWad( char *);
+void CloseWadFiles( void);
+void CloseUnusedWadFiles( void);
 WadPtr BasicWadOpen( char *);
-void BasicWadRead( WadPtr, void *, long);
+void BasicWadRead( WadPtr, void far *, long);
 void BasicWadSeek( WadPtr, long);
 MDirPtr FindMasterDir( MDirPtr, char *);
 void ListMasterDirectory( FILE *);
 void ListFileDirectory( FILE *, WadPtr);
 void BuildNewMainWad( char *);
-void WriteBytes( FILE *, void *, long);
+void WriteBytes( FILE *, void far *, long);
+int Exists( char *);
+void DumpDirectoryEntry( FILE *, char *);
 
 /* from edit.c */
 void EditLevel( int, int);
@@ -171,7 +192,12 @@ void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
 void ForgetWTextureNames( void);
 void EditorLoop( void);
-void DrawMap( int);
+void DrawMap( int, int);
+void HighlightSelection( int, SelPtr);
+int IsSelected( SelPtr, int);
+void SelectObject( SelPtr *, int);
+void UnSelectObject( SelPtr *, int);
+void ForgetSelection( SelPtr *);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -214,22 +240,32 @@ void DisplayMessage( int, int, char *, ...);
 void NotImplemented( void);
 
 /* from objects.c */
-char *GetObjectTypeName( int);
-char *GetEditModeName( int);
 int GetCurObject( int);
 void HighlightObject( int, int, int);
 void DisplayObjectInfo( int, int);
 void DeleteObject( int, int);
-void InsertObject( int, int);
+void InsertObject( int, int, int);
 int DisplayThingsMenu( int, int, char *, ...);
+int DisplayLineDefTypeMenu( int, int, char *, ...);
 int InputObjectNumber( int, int, int, int);
 int InputObjectXRef( int, int, int, int, int);
-void EditObjectInfo( int, int);
-int IsLineDefInside( int, double, double, double, double);
+int Input2VertexNumber( int, int, char *, int *, int *);
+void EditObjectInfo( int, SelPtr);
+void MoveObjectToCoords( int, SelPtr, int, int);
+int IsLineDefInside( int, int, int, int, int);
 
 /* from names.c */
+char *GetObjectTypeName( int);
+char *GetEditModeName( int);
 char *GetLineDefTypeName( int);
+char *GetLineDefTypeLongName( int);
 char *GetLineDefFlagsName( int);
+char *GetLineDefFlagsLongName( int);
 char *GetSectorTypeName( int);
+char *GetSectorTypeLongName( int);
+
+/* from textures.c */
+void ChooseFloorTexture( char *, int, char **, char *);
+void ChooseWallTexture( char *, int, char **, char *);
 
 /* end of file */

@@ -189,12 +189,21 @@ void DrawScreenBox3D( int Xstart, int Ystart, int Xend, int Yend)
 
 void DrawScreenText( int Xstart, int Ystart, char *msg, ...)
 {
+   static int lastX;
+   static int lastY;
    char temp[ 120];
    va_list args;
+
    va_start( args, msg);
    vsprintf( temp, msg, args);
    va_end( args);
+   if (Xstart < 0)
+      Xstart = lastX;
+   if (Ystart < 0)
+      Ystart = lastY;
    outtextxy( Xstart, Ystart, temp);
+   lastX = Xstart;
+   lastY = Ystart + 10;  /* or textheight("W") ? */
 }
 
 

@@ -20,7 +20,7 @@ struct Thing
    int type;      /* thing type */
    int when;      /* appears when? */
 };
-typedef struct Thing *TPtr;
+typedef struct Thing far *TPtr;
 
 
 
@@ -31,13 +31,13 @@ struct LineDef
 {
    int start;     /* from this vertex ... */
    int end;       /* ... to this vertex */
-   int flags;     /* ? 1 = solid */
-   int type;      /* ? 1 = door, 11 = switch */
+   int flags;     /* see NAMES.C for more info */
+   int type;      /* see NAMES.C for more info */
    int tag;       /* crossing this linedef activates the sector with the same tag */
    int sidedef1;  /* sidedef */
    int sidedef2;  /* only if this line adjoins 2 sectors */
 };
-typedef struct LineDef *LDPtr;
+typedef struct LineDef far *LDPtr;
 
 
 
@@ -48,12 +48,12 @@ struct SideDef
 {
    int xoff;      /* X offset for texture */
    int yoff;      /* Y offset for texture */
-   char tex1[8];  /* "texture1" name for the part above */
-   char tex2[8];  /* "texture1" name for the part below */
-   char tex3[8];  /* "texture1" name for the regular part */
+   char tex1[8];  /* texture name for the part above */
+   char tex2[8];  /* texture name for the part below */
+   char tex3[8];  /* texture name for the regular part */
    int sector;    /* adjacent sector */
 };
-typedef struct SideDef *SDPtr;
+typedef struct SideDef far *SDPtr;
 
 
 
@@ -65,7 +65,7 @@ struct Vertex
    int x;         /* X coordinate */
    int y;         /* Y coordinate */
 };
-typedef struct Vertex *VPtr;
+typedef struct Vertex far *VPtr;
 
 
 
@@ -81,7 +81,7 @@ struct Seg
    int flip;      /* true if not the same direction as linedef */
    int dist;      /* distance from starting point */
 };
-typedef struct Seg *SEPtr;
+typedef struct Seg far *SEPtr;
 
 
 
@@ -93,7 +93,7 @@ struct SSector
    int num;       /* number of Segs in this SSector */
    int first;     /* first Seg */
 };
-typedef struct SSector *SSPtr;
+typedef struct SSector far *SSPtr;
 
 
 
@@ -107,10 +107,8 @@ struct Node
    int miny1, maxy1, minx1, maxx1;   /* bounding rectangle 1 */
    int miny2, maxy2, minx2, maxx2;   /* bounding rectangle 2 */
    int tree1, tree2;                 /* node or ssector (if high bit is set) */
-   /* the following fields are not in the WAD file: */
-   int vertex1, vertex2;
 };
-typedef struct Node *NPtr;
+typedef struct Node far *NPtr;
 
 
 
@@ -127,13 +125,8 @@ struct Sector
    int special;   /* special behaviour (0 = normal, 9 = secret, ...) */
    int tag;       /* sector activated by a linedef with the same tag */
 };
-typedef struct Sector *SPtr;
+typedef struct Sector far *SPtr;
 
-
-
-/*
-   REJECT and BLOCKMAP are still a mystery for me...
-*/
 
 
 /* end of file */

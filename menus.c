@@ -20,9 +20,9 @@ void DisplayMenuText( int x0, int y0, int line, char *text)
    if (UseMouse)
       HideMousePointer();
    if (line < 9)
-     DrawScreenText( x0 + 10, y0 + 24 + line * 10, "%d - %s", line + 1, text);
+     DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
    else
-     DrawScreenText( x0 + 10, y0 + 24 + line * 10, "%c - %s", line + 56, text);
+     DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
    if (UseMouse)
       ShowMousePointer();
 }
@@ -39,7 +39,10 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
    int key, buttons, oldbuttons;
 
    /* compute maxlen */
-   maxlen = strlen( menutitle) - 4;
+   if (menutitle)
+      maxlen = strlen( menutitle) - 4;
+   else
+      maxlen = 1;
    for (line = 0; line < numitems; line++)
       if (strlen( menustr[ line]) > maxlen)
 	 maxlen = strlen( menustr[ line]);
@@ -47,14 +50,15 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
    /* display the menu */
    if (UseMouse)
       HideMousePointer();
-   DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + 53, y0 + numitems * 10 + 28);
-   setcolor( WHITE);
-   DrawScreenText( x0 + 10, y0 + 8, menutitle);
+   DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + 53, y0 + numitems * 10 + (menutitle ? 28 : 12));
+   setcolor( YELLOW);
+   if (menutitle)
+      DrawScreenText( x0 + 10, y0 + 8, menutitle);
    if (UseMouse)
       ShowMousePointer();
    setcolor( BLACK);
    for (line = 0; line < numitems; line++)
-      DisplayMenuText( x0, y0, line, menustr[ line]);
+      DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line]);
 
    oldline = -1;
    line = 0;
@@ -113,7 +117,7 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	 else if ((key & 0xFF00) == 0x4800 && (line > 0))
 	    line--;
 	 /* up arrow = select previous line */
-	 else if ((key & 0xFF00) == 0x5000 && (line < numitems))
+	 else if ((key & 0xFF00) == 0x5000 && (line < numitems - 1))
 	    line++;
 	 /* other key */
 	 else
@@ -124,12 +128,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	 if (oldline >= 0 && oldline < numitems)
 	 {
 	    setcolor( BLACK);
-	    DisplayMenuText( x0, y0, oldline, menustr[oldline]);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[oldline]);
 	 }
 	 if (line >= 0 && line < numitems)
 	 {
-	    setcolor( YELLOW);
-	    DisplayMenuText( x0, y0, line, menustr[line]);
+	    setcolor( WHITE);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[line]);
 	 }
 	 oldline = line;
       }
@@ -189,9 +193,9 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
       else
 	 setcolor( LIGHTGRAY);
       if (neg)
-	 DrawScreenText( x0 + 2, y0 + 2, "-%d", val);
+	 DrawScreenText( x0 + 3, y0 + 3, "-%d", val);
       else
-	 DrawScreenText( x0 + 2, y0 + 2, "%d", val);
+	 DrawScreenText( x0 + 3, y0 + 3, "%d", val);
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {
@@ -209,7 +213,9 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
 	 neg = !neg;
       else if (ok && (key & 0x00FF) == 0x000D)
 	 break; /* return "val" */
-      else if ((key & 0xFF00) == 0x4800 || (key & 0xFF00) == 0x5000 || (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
+      else if ((key & 0xFF00) == 0x4800 || (key & 0xFF00) == 0x5000 ||
+	       (key & 0xFF00) == 0x4B00 || (key & 0xFF00) == 0x4D00 ||
+	       (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
 	 break; /* return "val", even if not valid */
       else if ((key & 0x00FF) == 0x001B)
       {

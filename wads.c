@@ -13,29 +13,120 @@
 /* global variables */
 WadPtr WadFileList = NULL;       /* linked list of wad files */
 MDirPtr MasterDir = NULL;        /* the master directory */
-int Registered = FALSE;          /* registered or shareware game? */
 
 
 /*
-   open the wad files
-
-   the first file in the list is the main wad file, the rest will be
-   patch wad files.
+   open the main wad file, read in its directory and create the
+   master directory
 */
 
-void OpenWadFiles( int number, char *list[])
+void OpenMainWad( char *filename)
 {
-   int n;
+   MDirPtr last, new;
+   long n;
+   WadPtr wad;
 
-   if (number < 1)
-      OpenMainWad( "DOOM.WAD");
-   else
+   /* open the wad file */
+   printf( "Loading main WAD file: %s...\n", filename);
+   wad = BasicWadOpen( filename);
+   if (strncmp( wad->type, "IWAD", 4))
+      ProgError( "\"%s\" is not the main WAD file", filename);
+
+   /* create the master directory */
+   last = NULL;
+   for (n = 0; n < wad->dirsize; n++)
    {
-      for (n = 0; n < number; n++)
-	 strupr( list[ n]);
-      OpenMainWad( list[ 0]);
-      for (n = 1; n < number; n++)
-	 OpenPatchWad( list[ n]);
+      new = GetMemory( sizeof( struct MasterDirectory));
+      new->next = NULL;
+      new->wadfile = wad;
+      memcpy( &(new->dir), &(wad->directory[ n]), sizeof( struct Directory));
+      if (MasterDir)
+	 last->next = new;
+      else
+	 MasterDir = new;
+      last = new;
+   }
+
+   /* check if registered version */
+   if (FindMasterDir( MasterDir, "E2M1") == NULL)
+   {
+      printf( "   *-------------------------------------------------*\n");
+      printf( "   | Warning: this is the shareware version of DOOM. |\n");
+      printf( "   |   You won't be allowed to save your changes.    |\n");
+      printf( "   |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
+      printf( "   *-------------------------------------------------*\n");
+      Registered = FALSE; /* If you remove this, bad things will happen to you... */
+   }
+   else
+      Registered = TRUE;
+}
+
+
+
+/*
+   open a patch wad file, read in its directory and alter the master
+   directory
+*/
+
+void OpenPatchWad( char *filename)
+{
+   WadPtr wad;
+   MDirPtr mdir;
+   int n, l;
+   char entryname[9];
+
+   /* ignore the file if it doesn't exist */
+   if (! Exists( filename))
+   {
+      printf( "Warning: patch WAD file \"%s\" doesn't exist.  Ignored.\n", filename);
+      return;
+   }
+
+   /* open the wad file */
+   printf( "Loading patch WAD file: %s...\n", filename);
+   wad = BasicWadOpen( filename);
+   if (strncmp( wad->type, "PWAD", 4))
+      ProgError( "\"%s\" is not a patch WAD file", filename);
+
+   /* alter the master directory */
+   l = 0;
+   for (n = 0; n < wad->dirsize; n++)
+   {
+      strncpy( entryname, wad->directory[ n].name, 8);
+      entryname[8] = '\0';
+      if (l > 0)
+      {
+	 mdir = mdir->next;
+	 /* the level data should replace an existing level */
+	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
+	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
+	 l--;
+      }
+      else
+      {
+	 mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
+	 /* if this entry is not in the master directory, then add it */
+	 if (mdir == NULL)
+	 {
+	    printf( "   [Adding new entry %s]\n", entryname);
+	    mdir = MasterDir;
+	    while (mdir->next)
+	       mdir = mdir->next;
+	    mdir->next = GetMemory( sizeof( struct MasterDirectory));
+	    mdir = mdir->next;
+	    mdir->next = NULL;
+	 }
+	 /* if this is a level, then copy this entry and the next 10 */
+	 else if (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0')
+	 {
+	    printf( "   [Updating level %s]\n", entryname);
+	    l = 10;
+	 }
+	 else
+	    printf( "   [Updating entry %s]\n", entryname);
+      }
+      mdir->wadfile = wad;
+      memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
    }
 }
 
@@ -112,116 +203,6 @@ void CloseUnusedWadFiles()
 
 
 /*
-   open the main wad file, read in its directory and create the
-   master directory
-*/
-
-void OpenMainWad( char *filename)
-{
-   MDirPtr last, new;
-   long n;
-   WadPtr wad;
-
-   /* open the wad file */
-   printf( "Loading main WAD file: %s...\n", filename);
-   wad = BasicWadOpen( filename);
-   if (strncmp( wad->type, "IWAD", 4))
-      ProgError( "\"%s\" is not the main WAD file", filename);
-
-   /* create the master directory */
-   last = NULL;
-   for (n = 0; n < wad->dirsize; n++)
-   {
-      new = GetMemory( sizeof( struct MasterDirectory));
-      new->next = NULL;
-      new->wadfile = wad;
-      memcpy( &(new->dir), &(wad->directory[ n]), sizeof( struct Directory));
-      if (MasterDir)
-	 last->next = new;
-      else
-	 MasterDir = new;
-      last = new;
-   }
-
-   /* check if registered version */
-   if (FindMasterDir( MasterDir, "E2M1") == NULL)
-   {
-      printf( "   *-------------------------------------------------*\n");
-      printf( "   | Warning: this is the shareware version of DOOM. |\n");
-      printf( "   |   You won't be allowed to save your changes.    |\n");
-      printf( "   |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
-      printf( "   *-------------------------------------------------*\n");
-      Registered = FALSE; /* If you change this, bad things will happen to you... */
-   }
-   else
-      Registered = TRUE;
-}
-
-
-
-/*
-   open a patch wad file, read in its directory and alter the master
-   directory
-*/
-
-void OpenPatchWad( char *filename)
-{
-   WadPtr wad;
-   MDirPtr mdir;
-   int n, l;
-   char entryname[9];
-
-   /* open the wad file */
-   printf( "Loading patch WAD file: %s...\n", filename);
-   wad = BasicWadOpen( filename);
-   if (strncmp( wad->type, "PWAD", 4))
-      ProgError( "\"%s\" is not a patch WAD file", filename);
-
-   /* alter the master directory */
-   l = 0;
-   for (n = 0; n < wad->dirsize; n++)
-   {
-      strncpy( entryname, wad->directory[ n].name, 8);
-      entryname[8] = '\0';
-      if (l > 0)
-      {
-	 mdir = mdir->next;
-	 /* the level data should replace an existing level */
-	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
-	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
-	 l--;
-      }
-      else
-      {
-	 mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
-	 /* if this entry is not in the master directory, then add it */
-	 if (mdir == NULL)
-	 {
-	    printf( "   [Adding new entry %s]\n", entryname);
-	    mdir = MasterDir;
-	    while (mdir->next)
-	       mdir = mdir->next;
-	    mdir->next = GetMemory( sizeof( struct MasterDirectory));
-	    mdir = mdir->next;
-	    mdir->next = NULL;
-	 }
-	 /* if this is a level, then copy this entry and the next 10 */
-	 else if (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0')
-	 {
-	    printf( "   [Updating level %s]\n", entryname);
-	    l = 10;
-	 }
-	 else
-	    printf( "   [Updating entry %s]\n", entryname);
-      }
-      mdir->wadfile = wad;
-      memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
-   }
-}
-
-
-
-/*
    basic opening of WAD file and creation of node in Wad linked list
 */
 
@@ -281,7 +262,7 @@ WadPtr BasicWadOpen( char *filename)
    read bytes from a file and store it into an address with error checking
 */
 
-void BasicWadRead( WadPtr wadfile, void *addr, long size)
+void BasicWadRead( WadPtr wadfile, void far *addr, long size)
 {
    if (fread( addr, 1, size, wadfile->fileinfo) != size)
       ProgError( "error reading from \"%s\"", wadfile->filename);
@@ -394,7 +375,7 @@ void BuildNewMainWad( char *filename)
    FILE *file;
    long counter = 12;
    MDirPtr cur;
-   void *data;
+   void far *data;
    long size;
    long dirstart;
    long dirnum;
@@ -410,7 +391,7 @@ void BuildNewMainWad( char *filename)
    WriteBytes( file, &counter, 4L);      /* put true value in later */
 
    /* output the directory data chuncks */
-   data = GetMemory( 0x8000 + 2);
+   data = GetFarMemory( 0x8000 + 2);
    for (cur = MasterDir; cur; cur = cur->next)
    {
       size = cur->dir.size;
@@ -429,6 +410,7 @@ void BuildNewMainWad( char *filename)
       }
       printf( "Size: %dK\r", counter / 1024);
    }
+   farfree( data);
 
    /* output the directory */
    dirstart = counter;
@@ -440,7 +422,7 @@ void BuildNewMainWad( char *filename)
       if (cur->dir.start)
 	 WriteBytes( file, &counter, 4L);
       else
-         WriteBytes( file, &(cur->dir.start), 4L);
+	 WriteBytes( file, &(cur->dir.start), 4L);
       WriteBytes( file, &(cur->dir.size), 4L);
       WriteBytes( file, &(cur->dir.name), 8L);
       counter += cur->dir.size;
@@ -462,7 +444,7 @@ void BuildNewMainWad( char *filename)
    output bytes to a binary file with error checking
 */
 
-void WriteBytes( FILE *file, void *addr, long size)
+void WriteBytes( FILE *file, void far *addr, long size)
 {
    if (! Registered)
       return;
@@ -473,7 +455,23 @@ void WriteBytes( FILE *file, void *addr, long size)
 
 
 /*
-   dump a directory entry (* debug *)
+   check if a file exists and is readable
+*/
+
+int Exists( char *filename)
+{
+   FILE *test;
+
+   if ((test = fopen( filename, "rb")) == NULL)
+      return FALSE;
+   fclose( test);
+   return TRUE;
+}
+
+
+
+/*
+   dump a directory entry in hex
 */
 
 void DumpDirectoryEntry( FILE *file, char *entryname)
