@@ -1,0 +1,181 @@
+                           =====================
+                                 MANUAL FOR
+                            DOOM EDITOR UTILITY
+                                Version 3.00
+                           =====================
+
+
+
+CREDITS
+========
+
+This program was written by Brendon Wyber (b.wyber@csc.canterbury.ac.nz).
+It was based on findings published by someone else (roggerfff@aol.com).
+            
+            Three cheers for roggerffff!!!
+                    Hip Hip Horray!
+                    Hip Hip Horray!
+                    Hip Hip Horray!
+
+
+
+COPYRIGHT
+==========
+
+DOOM is owned by ID software.
+
+The DEU is released into Public Domain by myself, the author, Brendon Wyber.
+This means you can do anything you want with it. However it would be 
+considered polite if you did the following things:
+
+    *  If you alter this executable, call it something else. I would like
+       to be the only person to release DEU named programs.
+
+    *  ... and... Give me credit. E.g.
+             Bob's Amazing Doom Editor, Version 1.00.
+             Copyright 1994 Bob Bobbingbob. All rights reserved.
+             [Derived from DEU v3.00 by Brendon Wyber.]
+
+    *  Refrain from using the source to make an editor for the ShareWare
+       version. id doesn't want shareware editors around. PLEASE ADHERE TO
+       THIS REQUEST, OTHERWISE id MAY TAKE TERRIBLE VENGENCE UPON US.
+
+
+
+VERSION HISTORY
+================
+
+Version__  Released___  Notes______________________________________________
+
+1.00       Never        Really sucked!
+
+2.00       26 Jan 93    First release. Had two programs DDIR and DEDT and
+                        used text THING DATA files.
+
+3.00       29 Jan 93    Second Release. Merged DDIR and DEDT into one 
+                        program. Replaced THING DATA files with PWAD files.
+                        Released with source code.
+
+
+
+WAD Files
+==========
+
+The DEU works by editing the database that DOOM uses to store its information
+about each of the levels. These database files are called WAD file. There are
+two types of WAD files.
+
+IWAD File:  This is the main data base file. It contains all the information
+            about the graphics, sound, level maps, etc of the game. There is
+            only one IWAD file. That is called DOOM.WAD and it must be in the
+            current directory when DOOM is run.
+
+PWAD File:  This is a specail patch of the IWAD file. It contains updates
+            about the IWAD file. PWAD files created by DEU will contain an
+            updated map of a game level. PWAD files can be called anything.
+            When running DOOM, DOOM must be told to load a PWAD file. This
+            us done with the -FILE parameter. E.g.:
+                 
+                 DOOM -FILE E1M1.WAD
+            
+            will load the normal doom game and the use the E1M1.WAD file to
+            patch the data base. Note: More than one PWAD file can be 
+            loaded. E.g.:
+                
+                DOOM -FILE E1M1.WAD BOB.WAD TOM.DM
+            
+            PWAD files are small so they can be easily shared.
+
+
+
+RUNNING DEU
+============
+
+To run DEU just type in 
+
+   DEU <Doom's Main Wad File>   [<patchwad file list>]
+
+Where the first arguement is the name of the main DOOM wad file. Following
+that is a list (seperated by spaces) of any PWAD files created before.
+
+You should then be presented with the prompt. The following commands are
+available. Note the first word of each command can be appreviated to
+its first letter.
+
+?
+   This command displays a list of the available command with their
+   valid command syntax.
+
+BUILD <OutIWadFileName>
+   This will make a completely new IWAD main file (all 10Megs of it) with
+   the given file name. Not really neccesary now. Note this includes all
+   the differences from the PWAD files. In order for DOOM to run using this
+   file it must be called DOOM.WAD and be in the DOOM directory.
+
+EDIT <game> <level> <OutPWadFileName>
+   This command will call up the Thing editor for the given map, allowing 
+   the user to edit it. There resulting level will then be saved into
+   a PWAD file of the given name. The created PWAD file will then be added 
+   to the list of PWAD files already opened. (See below).
+
+LIST <OpenedWadFileName> [OptionalOutputFile]
+   This command will list the structure of the directory of a opened file.
+   More for interests (and debugging) sake. If an output file is given it
+   will then write the list to that file instead.
+
+MASTER [OptionalOutputFile]
+   This will list the Master directory of the IWAD and any PWAD files, all
+   mixed together. More for interests (and debugging) sake. If an output file 
+   is given it will then write the list to that file instead.
+
+QUIT
+   This quits the program.
+
+WADS
+   This will list all the opened wad files at the moment. They are ordered
+   in order of old to newest, where the newer patch WAD files may overwrite
+   the previous ones.
+
+
+
+RUNNING THE THING EDITOR
+=========================
+
+The Editor will only edit the objects in the Map NOT the actual Map itself.
+The editor will let you insert, delete and edit things in there. 
+
+When the editor starts up it should display the Map. In the centre of the
+map is a cross hair with marks your current position. Little x's represent
+the things. Red one are enemies, green ones are player start poistions, and
+the rest are white. There are also three onther areas.
+
+Title Bar: If this changes colour you are being prompted for a question.
+
+LowerLeft: This displayed the available options.
+
+Lower Right: This displays data on the slecting thing if the cross hairs
+             is on one. Otherwise it displays the default object.
+
+The following keys are available:
+
+Cursor keys:    To move around the map.
+
+Space Bar:      To toggle the movement between three speeds: slow, med, fast.
+
+MINUS and PLUS: To zoom in and out of the Map.
+
+E:              To exit the editor.
+
+Q:              To quit the editor, forgetting any changes.
+                Will prompt you for a Y.
+
+T:              Edits either the current object or the default object.
+                Will lead you through a large menu system.
+
+Delete:         Deletes the current object if there is one.
+
+Insert:         Inserts an object the same as the default object.
+
+==============
+End of DEU.TXT
+==============

@@ -1,0 +1,27 @@
+Welcome the the DOOM EDITOR UTILITY (version 3.00)
+By Brendon Wyber (b.wyber@csc.canterbury.ac.nz)
+==================================================
+For a quick start...
+Put editor files into the Doom Directory...
+At the Dos Prompt> DEU DOOM.WAD
+At the DEU Prompt> EDIT 1 1 E1M1.WAD
+<edit the level pressing E when done>
+At the DEU Prompt> QUIT
+At the Dos Prompt> DOOM -FILE E1M1.WAD
+==================================================
+In this archive are the following files...
+   README.1ST      This file
+   DEU.EXE         The executable
+   EGAVGA.BGI      Graphics device driver
+   DET.TXT         The Instruction Manual
+   SOURCE.ZIP      The Source Code
+==================================================
+The Source Code contains...
+   DEU.C           The program execution routines
+   EDIT.C          The Editor Bit
+   GFX.C           Graphics Stuff
+   THINGS.C        Thing Information
+   WADS.C          Wad File Processor Bit
+   DEU.H           All Other Defines
+   THING.H         Thing Type Defines
+==================================================
