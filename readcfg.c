@@ -1,8 +1,15 @@
-/* readcfg.c, by Simon Oke.
-   This file is part of DETH.
-   Purpose: read one of the supplied configuration files,
-   containing information on things, linedefs, textures, sectors,
-   levels, colours to use, and where to find the IWAD. */
+/*
+   DETH - Doom Editor for Total Headcases, by Simon Oke and Antony Burden.
+   HETH - Hexen Editor for Total Headcases, by Antony Burden.
+   
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+   
+   This program comes with absolutely no warranty.
+
+   READCFG.C, by Simon Oke.
+   */
 
 #include "deu.h"
 
@@ -19,6 +26,12 @@ BCINT getcol(char *str);
 void readcfg(char *file);
 void add_thing(char *line);
 void add_thing_class(char *line);
+#ifdef GAME_HEXEN
+void add_spawn(char *line);
+void add_spawn_class(char *line);
+#endif
+void add_scheme(char *line);
+void add_scheme_class(char *line);
 void add_linedef(char *line);
 void add_linedef_class(char *line);
 void add_sector_type(char *line);
@@ -40,13 +53,17 @@ typedef enum {
 	NONE = 0,	/* haven't got a section header yet */
 	WAD,
 	THINGS,
-	LINEDEFS,
+#ifdef GAME_HEXEN
+	SPAWNABLE,
+#endif
+	SPECIALS,
 	LEVELS,
 	TEXTURES,
 	FTEXTURES,
 	REGTEST,
 	SECTORS,
 	COLORS,
+	SCHEMES,
 	NUM_SECTIONS
 } cfg_section;
 
@@ -55,13 +72,17 @@ char *header[NUM_SECTIONS] = {
 	"",
 	"[wad]",
 	"[things]",
-	"[linedefs]",
+#ifdef GAME_HEXEN
+	"[spawnable]",
+#endif
+	"[specials]",
 	"[levels]",
 	"[textures]",
 	"[ftextures]",
 	"[regtest]",
 	"[sectors]",
-	"[colors]"
+	"[colors]",
+	"[schemes]"
 };
 
 char *colours[32] = {
@@ -79,8 +100,17 @@ ld_class *linedef_class = (ld_class *)NULL;
 thing_class *current_thing_class = (thing_class *)NULL;
 /* ditto for thing class */
 
+#ifdef GAME_HEXEN
+spawn_class *current_spawn_class = (spawn_class *)NULL;
+/* ditto for spawn class */
+#endif
+
 sector_class *current_sector_class = (sector_class *)NULL;
 /* ditto for sectors */
+
+scheme_class *current_scheme_class = (scheme_class *)NULL;
+/* ditto for texture schemes */
+
 
 BCINT getcol(char *str)
 {
@@ -147,7 +177,23 @@ void readcfg(char *file)
 				add_thing(buf);
 			break;
 			
-		case LINEDEFS:
+		case SCHEMES:
+			if(buf[0] == '"' && buf[strlen(buf) - 1] ==  '"')
+				add_scheme_class(buf);
+			else
+				add_scheme(buf);
+			break;
+
+#ifdef GAME_HEXEN
+		case SPAWNABLE:
+			if(buf[0] == '"' && buf[strlen(buf) - 1] ==  '"')
+				add_spawn_class(buf);
+			else
+				add_spawn(buf);
+			break;
+#endif
+
+		case SPECIALS:
 			if(buf[0] == '"' && buf[strlen(buf) - 1] == '"')
 				add_linedef_class(buf);
 			else	
@@ -156,9 +202,13 @@ void readcfg(char *file)
 			
 		case SECTORS:
 			if(buf[0] == '"' && buf[strlen(buf) - 1] == '"')
+			{
 				add_sector_class(buf);
-			else
+			}
+			else if (strlen(buf) && buf[0]!='\n' && buf[0]!='\r')
+			{
 				add_sector_type(buf);
+			}
 			break;
 			
 		case REGTEST:
@@ -170,6 +220,7 @@ void readcfg(char *file)
 			break;
 			
 		case TEXTURES:
+			printf("Textures\n");
 			add_texture_sections(buf);
 			break;
 			
@@ -188,12 +239,12 @@ void readcfg(char *file)
 	
 	fclose(thefile);
 }
-
+			
 
 void add_thing(char *line)
 {
-	BCINT c1, c2, radius, type;
-	char *tok;
+	BCINT col, radius, type;
+	char *tok, *sprite, *name;
 	thing_type *p, *new = (thing_type *)NULL;
 	
 	if(!current_thing_class)
@@ -202,16 +253,21 @@ void add_thing(char *line)
 	tok = strtok(line, "\t ,");
 	if(tok && (type = atoi(tok))) {
 		tok = strtok(NULL, "\t ,");
-		if(tok && (c1 = getcol(tok)) != -1) {
+		if(tok && (col = getcol(tok)) != -1) {
 			tok = strtok(NULL, "\t ,");
-			if(tok && (c2 = getcol(tok)) != -1) {
-				tok = strtok(NULL, "\t ,");
-				if(tok && (radius = atoi(tok))) {
-					tok = strtok(NULL, "\t\",");
-					/* bodging so that we can get a string delimited
-					   by quotes which may contain spaces */
-					while(tok && (tok[0] == ' '))
-						tok = strtok(NULL, "\t\",");
+			if(tok && (radius = atoi(tok))) {
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		name = strdup(tok);
+		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		sprite = strdup(tok);
+		
+
 					/* do the add here */
 					for(p = current_thing_class->types;
 						(p && p->next); p = p->next);
@@ -220,10 +276,10 @@ void add_thing(char *line)
 					assert(new);
 					
 					new->type = type;
-					new->col1 = c1;
-					new->col2 = c2;
+					new->colour = col;
 					new->radius = radius;
-					new->name = strdup(tok);
+					new->name = name;
+					new->sprite = sprite;
 					new->next = (thing_type *)NULL;
 					
 					if(p)
@@ -233,7 +289,6 @@ void add_thing(char *line)
 				}
 			}
 		}
-	}
 }
 
 void add_thing_class(char *line)
@@ -255,6 +310,7 @@ void add_thing_class(char *line)
 	
 	new->name = strdup(line);
 	new->next = (thing_class *)NULL;
+	new->types = (thing_type *)NULL;	/*JFF initialize this pointer*/
 	
 	if(p)
 		p->next = new;
@@ -264,9 +320,87 @@ void add_thing_class(char *line)
 	current_thing_class = new; 
 }
 
+
+
+
+#ifdef GAME_HEXEN
+void add_spawn(char *line)
+{
+	BCINT type;
+	char *tok, *sprite, *name;
+	spawn_type *p, *new = (spawn_type *)NULL;
+	
+	if(!current_spawn_class)
+		return;
+
+	tok = strtok(line, "\t ,");
+	if(tok && (type = atoi(tok)) != -1) {
+	
+/*	if(tok && (type = atoi(tok))) { */
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		name = strdup(tok);
+		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		sprite = strdup(tok);
+		
+
+					/* do the add here */
+					for(p = current_spawn_class->types;
+						(p && p->next); p = p->next);
+					
+					new = (spawn_type *)malloc(sizeof(spawn_type));
+					assert(new);
+					
+					new->type = type;
+					new->name = name;
+					new->sprite = sprite;
+					new->next = (spawn_type *)NULL;
+					
+					if(p)
+						p->next = new;
+					else
+						current_spawn_class->types = new;
+	}
+}
+
+void add_spawn_class(char *line)
+{
+	spawn_class *p, *new = (spawn_class *)NULL;
+	
+	line[strlen(line) - 1] = '\0';
+	line++;
+	/* add it here */
+	
+	for(p = Spawn_classes; (p && p->next); p = p->next)
+		if(!strcmp(line, p->name)) {
+			current_spawn_class = p;
+			return;
+		}
+	
+	new = (spawn_class *)malloc(sizeof(spawn_class));
+	assert(new);
+	
+	new->name = strdup(line);
+	new->next = (spawn_class *)NULL;
+	new->types = (spawn_type *)NULL;    /*JFF initialize this pointer*/	
+	if(p)
+		p->next = new;
+	else
+		Spawn_classes = new;
+	
+	current_spawn_class = new; 
+}
+
+
+
 void add_linedef(char *line)
 {
-	char *short_desc, *long_desc, *tok;
+	char *short_desc, *long_desc, *args, *tok, *arg1text, *arg2text, *arg3text, *arg4text, *arg5text;
 	BCINT type = -1;
 	ld_type *p, *new = (ld_type *)NULL;
 	
@@ -289,6 +423,94 @@ void add_linedef(char *line)
 		/* should by now have the long description */
 		long_desc = strdup(tok);
 		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		args = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		arg1text = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		arg2text = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		arg3text = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		arg4text = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the argument types */
+		arg5text = strdup(tok);
+
+		/* now add it */
+		for(p = linedef_class->types; (p && p->next); p = p->next);
+		/* make p point to the last item in the list, or be NULL */
+		
+		new = (ld_type *)malloc(sizeof(ld_type));
+		assert(new);
+		
+		new->longname = long_desc;
+		new->shortname = short_desc;
+		new->args = args;
+		new->arg1text = arg1text;
+		new->arg2text = arg2text;
+		new->arg3text = arg3text;
+		new->arg4text = arg4text;
+		new->arg5text = arg5text;
+		new->type = type;
+		new->next = (ld_type *)NULL;
+
+		if(p)
+			p->next = new;
+		else
+			linedef_class->types = new;
+	}
+}
+#else
+void add_linedef(char *line)
+{
+	char *short_desc, *long_desc, *tok ;
+	BCINT type = -1;
+	ld_type *p, *new = (ld_type *)NULL;
+	
+	if(!linedef_class)
+		return;
+	/* can't add a linedef if we don't know what class
+	   to put it in */
+	
+	tok = strtok(line, "\t ,");
+	if(tok && (type = atoi(tok)) != -1) {
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the short description */
+		short_desc = strdup(tok);
+		if (!BOOMEnable && islower(short_desc[0]))
+			return;
+		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		/* should by now have the long description */
+		long_desc = strdup(tok);
+		
 		/* now add it */
 		for(p = linedef_class->types; (p && p->next); p = p->next);
 		/* make p point to the last item in the list, or be NULL */
@@ -300,13 +522,18 @@ void add_linedef(char *line)
 		new->shortname = short_desc;
 		new->type = type;
 		new->next = (ld_type *)NULL;
-		
+
+		if (type>MaxExtendedType)
+			MaxExtendedType = type;
+
 		if(p)
 			p->next = new;
 		else
 			linedef_class->types = new;
 	}
 }
+
+#endif
 
 void add_linedef_class(char *line)
 {
@@ -343,6 +570,107 @@ void add_linedef_class(char *line)
 	linedef_class = new;
 }
 
+void add_scheme(char *line)
+{
+	BCINT type;
+	char *tok, *name, *normal, *upper, *lower, *floor, *ceiling;
+	scheme_type *p, *new = (scheme_type *)NULL;
+	
+	if(!current_scheme_class)
+		return;
+
+	tok = strtok(line, "\t ,");
+	if(tok && (type = atoi(tok)) != -1) {
+	
+/*	if(tok && (type = atoi(tok))) { */
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		name = strdup(tok);
+		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		normal = strdup(tok);
+		
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		upper = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		lower = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		floor = strdup(tok);
+
+		tok = strtok(NULL, "\t,\"");
+		while(tok && ((tok[0] == ' ') || (tok[0] == ',')))
+			tok = strtok(NULL, "\t\"");
+		ceiling = strdup(tok);
+
+					/* do the add here */
+					for(p = current_scheme_class->types;
+						(p && p->next); p = p->next);
+					
+					new = (scheme_type *)malloc(sizeof(scheme_type));
+					assert(new);
+					
+					new->type = type;
+					new->name = name;
+					new->normal = normal;
+					new->upper = upper;
+					new->lower = lower;
+					new->floor = floor;
+					new->ceiling = ceiling;
+
+					new->next = (scheme_type *)NULL;
+					
+					if(p)
+						p->next = new;
+					else
+						current_scheme_class->types = new;
+	}
+}
+
+void add_scheme_class(char *line)
+{
+	scheme_class *p, *new = (scheme_class *)NULL;
+	
+	line[strlen(line) - 1] = '\0';
+	line++;
+	/* add it here */
+	
+	for(p = Scheme_classes; (p && p->next); p = p->next)
+		if(!strcmp(line, p->name)) {
+			current_scheme_class = p;
+			return;
+		}
+	
+	new = (scheme_class *)malloc(sizeof(scheme_class));
+	assert(new);
+	
+	new->name = strdup(line);
+	new->next = (scheme_class *)NULL;
+	new->types = (scheme_type *)NULL;	/*JFF initialize this pointer*/
+	
+	if(p)
+		p->next = new;
+	else
+		Scheme_classes = new;
+	
+	current_scheme_class = new; 
+}
+
+
+
+
+
 void add_sector_class(char *line)
 {
 	sector_class *p, *new = (sector_class *)NULL;
@@ -361,6 +689,7 @@ void add_sector_class(char *line)
 	
 	new->name = strdup(line);
 	new->next = (sector_class *)NULL;
+	new->types = (sector_type *)NULL;	/*JFF initialize this pointer*/
 	
 	if(p)
 		p->next = new;
@@ -516,19 +845,20 @@ int read_line(FILE *f, char *buf, int buflen)
 
 SList SList_append(SList l, char *str)
 {
-	SList new, head = l;
+	SList nw, head = l;
+
 	
-	while(l->next)
+	while(l && l->next)	/*JFF prevent dereference of NULL pointer*/
 		l = l->next;
 	
-	new = (SList)malloc(sizeof(struct _SList));
+	nw = (SList)malloc(sizeof(struct _SList));
 	if(head)
-		l->next = new;
+		l->next = nw;
 	else
-		head = new;
+		head = nw;
 	
-	new->string = strdup(str);
-	new->next = (SList)NULL;
+	nw->string = strdup(str);
+	nw->next = (SList)NULL;
 	
 	return head;
 }
@@ -544,3 +874,4 @@ SList SList_find(SList l, char *str)
 	return (SList)NULL;
 }
 
+

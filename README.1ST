@@ -1,102 +1,101 @@
-files included in deth.zip:
+*****************************************************************
+**															   **
+** DETH 4.12 is an experimental revision of code (beta test)   **
+**															   **
+**      Bugs still exist and exceptions are possible		   **
+**			BACKUP your wad, save often!					   **
+**															   **
+*****************************************************************
 
-.\
-bsp.exe         - node builder for those large wads you're going to make!
-deth.exe        - the main executable
-deth.ini        - initialization file, contains options for using DETH
-go32.exe        - dos extender for 32 bit processing
+IMPORTANT NOTE:
+
+DETH v4.01 and later runs in a Win'95 FULL-SCREEN Dos Window. Start a
+DOS Window and press Alt-Enter to switch it to full screen if it
+isn't already, then run DETH. Win'95 does not support SVGA
+resolutions in DOS Windows with many Win'95 video drivers, and may
+TERMINATE such a task if you attempt to run it in a window on the
+desktop, which can lose your edits! For the same reason, do not run
+background processes like the Internet that can post notification
+messages like Disconnect to the desktop - as this can switch you to
+desktop mode and lose your edits! It is no longer necessary to run
+from MS-DOS mode and reboot to Win'95 afterwards, but it is safer.
+
+---------------------------------------------------------------------------
+
+DETH v4.12 supports the extensions of the TNT BOOM engine fully. These
+include:
+
+1) All new linedefs types are available from the menus
+2) The new linedef flag PassThru for multiple switch activation is supported
+3) The new things, MT_PUSH (4001) and MT_PULL (4002) are supported
+4) The new thing flags "Not DM" and "Not Coop" are supported
+5) The generalized sector types for combined lighting, damage, secret,
+   ice/mud, and wind are supported.
+6) Flats added from the PWAD are supported.
+
+You need Boom set to True in DETH.INI to enable these extensions.
+
+---------------------------------------------------------------------------
+
+Files included in DETH412.ZIP (beta version):
+
 readme.1st      - this file
-runme1st.bat    - batch file to setup go32 environment
-edit.bat        - batch file to launch DETH and edit a pwad
-test.bat        - a batch file to automate node building & testing of your pwad
-ed.bat          - enhanced batch file for people with NDOS or 4DOS shells
-
-.\readme\
-bsp12x.txt      - stuff about Colin Reed's node builder
+install.txt		- basic instructions for installing and starting DETH
 changes.txt     - history of versions complete with bugs removed and additions
-dethgo32.txt    - info on getting DETH started, written by Dr Sleep
+deth.exe        - the main executable for DOOM II
+deth.ini        - initialization file, contains options for using DETH
+go32-v2.exe     - new v2 dos extender / memory info tool
+csdpmi3b.zip	- DJGPP DPMI platform for DOS users without one
+
 texture.txt     - information on how our Intelligent Texture Aligning works
 copying         - Copyright stuff for GNU GCC
-copying.dj      - go32.exe Copyright information
-keys.txt	- guide to all keys, inc new hotkeys
-keys.doc	- as above but in Word 6 format (for printing)
+copying.dj      - go32-v2.exe Copyright information
+keys.txt	    - guide to all keys, inc new hotkeys
 
-.\config\
-doom.cfg        - configuration file for Doom, includes path to main IWAD
 doom2.cfg       - configuration file for Doom 2 includes path to main IWAD
-heretic.cfg     - configuration file for Heretic, includes path to main IWAD
-ldtypes.dm      - LineDefs in Doom - must be included in doom.cfg and doom2.cfg
-ldtypes.her     - LineDefs in Heretic - must be included in heretic.cfg
-things.dm1      - Things in Doom - must be included in doom.cfg and doom2.cfg
-things.dm2      - Things in Doom 2 - must be included in doom2.cfg
-things.her      - Things in Heretic - must be included in heretic.cfg
-
-.\palette\
-showpal.exe     - program to display palette for selecting colors in cfg files
-showpal.txt     - info on how to use showpal
-playpal.d       - Doom color palette
-playpal.h       - Heretic color palette
-
-.\drivers\      - video drivers, see dethgo32.txt for more information
-.\source\       - source files for people that want to hack, written for GCC
-
-
-
-The things.??? and ldtypes.??? files can be changed to reflect the users
-preference, new sub menus may be created in the same fashion as the
-existing ones. Likewise, one can define the colours for special sector and 
-LineDef in doom.cfg, doom2.cfg, and heretic.cfg.
-
-If two files are used in one game (i.e things.dm1 and things.dm2 are both used
-in Doom2), ensure that the menu titles are identical.
+doom.cfg        - configuration file for Doom includes path to main IWAD
+common.cfg	    - configuration file for all, containing Things, and Specials
 
 --------------------------------------------------------------------------------
 
 From the authors:
 
-DETH is a version of GCC DEU 5.2.
+DETH 4.12 is a port of DETH 3.92 from DJGPP v1 to v2 with several bug
+fixes thrown in (see changes.txt). The work is being done by Jim
+Flynn. 
+
+We also thank Antony for his support for our work on these sources.
+
+-----------------------------------------------------------------------------
+
+DETH is a version of GCC DEU 5.21 with a few features borrowed from 5.3.
 It has been written by wad editors, so the features we've added and changed
 should reflect what a wad creator both needs and requires.
 
-It now edits Doom2 and Heretic as well as Doom and Ultimate Doom.
+It now edits HEXEN, as well as DOOM II, DOOM, Ultimate DOOM, and HERETIC.
 
-A lot of the Texture and Sprite handling routines have been re-written for
-extra stability and lightning speed.
-
-The main display has also been greatly improved both cosmetically and in speed.
-
-Lots of bugs that were present in DEU have also been removed.
-
-Both the X and Y alignment routines have been completely changed, they now
-include intelligent routines to align either SideDef, regardless of what is
-or isn't present. You will not get any messages returned to you just because
-a texture is missing.
-
-With the addition of config, things and linedef files we can almost guarantee
-that DETH is future proof - meaning that, if Heretic 2 is released (or any
-other Doom clone), just by adding/changing the files, DETH should quite happily
-edit them. Obviously this depends upon how far from the track the game creators
-have wandered! - WARNING - unless you are absolutely sure in what you are doing
-do not change any part of the config files except the [wad] entry.
-
+WARNING - unless you are absolutely sure what you are doing, do not change any
+part of the config files except the [wad] entry, except where otherwise 
+instructed.
 
 
 Thanks to:
 
 id and Raven soft for 3 excellent games.
 Brendon J Wyber and Raphael Quinet for the original, first, and best DEU.
-Colin Reed for his Binary Space Partition builder (BSP).
+Marc Rousseau for permission to include his excellent ZenNode nodes builder,
+and BSPInfo v1.0 (for determining the efficiency of different nodes builders).
 John W. Anderson (aka Dr Sleep) and Jim F. Flynn for all of their suggestions,
- patience and bug hunting.
+  patience, and bug hunting.
 Everyone currently using and supporting DETH.
 
 
-
-
 If you have any suggestion for future releases or have any bugs to report then
-you can reach us at either antony@seetru.demon.co.uk or
-E-Mail Antony Burden at 100141.277@compuserve.com or just leave a message in
-the Action forum of compuserve.
+you can reach me at 100765,3240@compuserve.com or just leave a message in
+the ACTION forum of CompuServe.
 
 
-Antony Burden & Simon Oke.
+Antony Burden.
+
+-----------------------------------------------------------------------------
+

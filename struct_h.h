@@ -1,13 +1,14 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   DETH - Doom Editor for Total Headcases, by Simon Oke and Antony Burden.
+   HETH - Hexen Editor for Total Headcases, by Antony Burden.
    
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
    the program itself.  Read the file README.1ST for more information.
    
    This program comes with absolutely no warranty.
-   
-   WSTRUCTS.H - WAD files data structures.
+
+   STRUCT_H.H - HEXEN WAD files data structures.
    */
 
 
@@ -21,11 +22,19 @@
 
 struct Thing
 {
-    BCINT xpos;      /* x position */
-    BCINT ypos;      /* y position */
-    BCINT angle;     /* facing angle */
-    BCINT type;      /* thing type */
-    BCINT when;      /* appears when? */
+    BCINT tid;
+    BCINT xpos;     /* x position */
+    BCINT ypos;     /* y position */
+    BCINT zpos;	    /* z position (height) */
+    BCINT angle;    /* facing angle */
+    BCINT type;     /* thing type */
+    BCINT flags;    /* appears when? */
+    BYTE special; 	/* special command to perform */
+    BYTE arg1;		/* special argument 1 */
+    BYTE arg2; 		/* special argument 2 */
+    BYTE arg3;		/* special argument 3 */
+    BYTE arg4;		/* special argument 4 */
+    BYTE arg5;		/* special argument 5 */
 };
 typedef struct Thing huge *TPtr;
 
@@ -39,8 +48,12 @@ struct LineDef
     BCINT start;     /* from this vertex ... */
     BCINT end;       /* ... to this vertex */
     BCINT flags;     /* see NAMES.C for more info */
-    BCINT type;      /* see NAMES.C for more info */
-    BCINT tag;       /* crossing this linedef activates the sector with the same tag */
+    BYTE special;      /* see NAMES.C for more info */
+    BYTE arg1;
+    BYTE arg2;     
+    BYTE arg3;     
+    BYTE arg4;     
+    BYTE arg5;     
     BCINT sidedef1;  /* sidedef */
     BCINT sidedef2;  /* only if this line adjoins 2 sectors */
 };
@@ -137,6 +150,15 @@ struct Sector
     BCINT tag;       /* sector activated by a linedef with the same tag */
 };
 typedef struct Sector huge *SPtr;
+
+
+struct Behavior
+{
+    BCINT unknown1;   
+    BCINT unknown2;   
+};
+typedef struct Behavior huge *BPtr;
+
 
 
 /* SO: added these 2 25/02/95 to speed up displaying wall textures */

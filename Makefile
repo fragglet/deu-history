@@ -1,19 +1,20 @@
 # gnuish Makefile
  
-OPTIONS = -O2 -g -pedantic -Wall
+OPTIONS = -O3 -m486 -Wall -fomit-frame-pointer -ffast-math -Wno-parentheses
+#OPTIONS = -g -Wall
+
 CC = gcc $(OPTIONS)
 
-SRCS =  deu.c gfx.c menus.c nodes.c textures.c edit.c levels.c mouse.c \
-	objects.c things2.c editobj.c names.c wads.c readcfg.c
+SRCS =  deu.c gfx.c draw.c help.c menus.c textures.c levels.c mouse.c \
+        objects.c things.c info.c checks.c prefab.c editobj.c names.c \
+		wads.c readcfg.c edit.c mainloop.c onscreen.c function.c dialog.c
 	
 OBJS = $(SRCS:.c=.o)
 
-deth.exe: deth
-	strip deth
-	coff2exe deth
-        	
-deth: $(OBJS)
-	gcc $(OPTIONS) -o deth $(OBJS) -lm -lpc -lbcc -lgrx
+deth.exe: $(OBJS)
+#	gcc $(OPTIONS) -o deth.exe $(OBJS) -lm -lpc -lgrx20 -lemu
+	gcc $(OPTIONS) -o deth.exe $(OBJS) -lm -lpc -lbcc2 -lgrx20 -lemu
+#	strip deth.exe
 
 debug: deth
 
@@ -23,26 +24,10 @@ clean:
 	del deth.exe
 
 zip:
-	zip -r -u source.zip *.c *.h makefile *.cfg *.dm? *.her *.dm
+	pkzip source.zip *.c *.h makefile.*
 
 tags: dummy
 	ctags -r -v *.c *.h
 
 dummy:
-
-# dependencies produced by 'gcc -MM' 
-
-deu.o : deu.c deu.h deu-go32.h 
-edit.o : edit.c deu.h deu-go32.h levels.h wstructs.h
-editobj.o : editobj.c deu.h deu-go32.h levels.h wstructs.h
-gfx.o : gfx.c deu.h deu-go32.h 
-levels.o : levels.c deu.h deu-go32.h wstructs.h
-menus.o : menus.c deu.h deu-go32.h 
-mouse.o : mouse.c deu.h deu-go32.h 
-names.o : names.c deu.h deu-go32.h 
-nodes.o : nodes.c deu.h deu-go32.h levels.h wstructs.h
-objects.o : objects.c deu.h deu-go32.h levels.h wstructs.h
-textures.o : textures.c deu.h deu-go32.h 
-things2.o : things2.c deu.h deu-go32.h 
-wads.o : wads.c deu.h deu-go32.h 
-readcfg.o: readcfg.c deu.h deu-go32.h wstructs.h
+

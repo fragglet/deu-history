@@ -1,10 +1,11 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
-
+   DETH - Doom Editor for Total Headcases, by Simon Oke and Antony Burden.
+   HETH - Hexen Editor for Total Headcases, by Antony Burden.
+   
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
    the program itself.  Read the file README.1ST for more information.
-
+   
    This program comes with absolutely no warranty.
 
    LEVELS.C - Level loading and saving routines.
@@ -12,23 +13,26 @@
 
 /* the includes */
 #include "deu.h"
-#include "wstructs.h"
-
-/* external function from objects.c */
-extern Bool CreateNodes( NPtr*, BCINT *, SEPtr); /* SWAP - needs Vertexes */
+#ifdef GAME_HEXEN
+#include "struct_h.h"
+#else
+#include "struct_d.h"
+#endif
 
 /* the global data */
 MDirPtr Level = NULL;                /* master dictionary entry for the level */
 BCINT NumThings = 0;                /* number of things */
-TPtr Things;                        /* things data */
+TPtr Things = NULL;                   /* things data */
+BCINT NumBehavior = 0;                /* number of things */
+BPtr Behavior = NULL;                        /* things data */
 BCINT NumLineDefs = 0;                /* number of line defs */
-LDPtr LineDefs;                        /* line defs data */
+LDPtr LineDefs=NULL;                  /* line defs data */
 BCINT NumSideDefs = 0;                /* number of side defs */
-SDPtr SideDefs;                        /* side defs data */
+SDPtr SideDefs=NULL;                   /* side defs data */
 BCINT NumVertexes = 0;                /* number of vertexes */
-VPtr Vertexes;                        /* vertex data */
+VPtr Vertexes=NULL;                    /* vertex data */
 BCINT NumSectors = 0;                /* number of sectors */
-SPtr Sectors;                        /* sectors data */
+SPtr Sectors=NULL;                   /* sectors data */
 BCINT NumSegs = 0;                /* number of segments */
 SEPtr Segs = NULL;                /* list of segments */
 SEPtr LastSeg = NULL;                /* last segment in the list */
@@ -38,10 +42,12 @@ SSPtr LastSSector = NULL;        /* last subsector in the list */
 BCINT NumNodes = 0;                /* number of Nodes */
 NPtr Nodes = NULL;                /* nodes tree */
 BCINT NumWTexture = 0;                /* number of wall textures */
-char **WTexture;                /* array of wall texture names */
+char **WTexture;	                /* array of wall texture names */
 char *_WTexture;
 BCINT NumFTexture = 0;                /* number of floor/ceiling textures */
-char **FTexture;                /* array of texture names */
+char *FTexture[2048];                /* array of texture names */
+BCINT NumCMaps = 0;										/* number of colormaps */
+char *CMaps[2048];									  /* array of colormap names */
 BCINT MapMaxX = -32767;                /* maximum X value of map */
 BCINT MapMaxY = -32767;                /* maximum Y value of map */
 BCINT MapMinX = 32767;                /* minimum X value of map */
@@ -52,6 +58,7 @@ SelPtr errld = NULL;                /* LineDefs in error (Nodes builder) */
 
 SList Texture_sections = NULL;
 SList Ftexture_sections = NULL;
+SList CMap_sections = NULL;
 
 /*
    read in the level data
@@ -66,12 +73,17 @@ void ReadLevelData()
     BCINT *VertexUsed = (BCINT *)NULL;
 
     /* No objects are needed: they may be swapped after they have been read */
-    ObjectsNeeded( 0);
 
-    DisplayMessage( -1, -1, "Reading data for level %s...", LevelName);
-    Level = FindMasterDir( MasterDir, LevelName);
+/*
+    DisplayMessage( -1, -1, "Reading Data For Level %s...", LevelName);
+*/
+    Level = FindMasterDir( MasterDir, LevelName);		//jff try the name
     if (!Level)
-        ProgError( "level data not found");
+			Level = FindMasterDir( MasterDir, "MAP01");		//jff try DOOM2 default
+    if (!Level)                                     
+			Level = FindMasterDir( MasterDir, "E1M1");		//jff try DOOM default
+    if (!Level)
+			ProgError( "level data not found");           //jff if no level, error
 
     /* get the number of Vertices */
     dir = FindMasterDir( Level, "VERTEXES");
@@ -88,26 +100,45 @@ void ReadLevelData()
     /* read in the Things data */
     dir = FindMasterDir( Level, "THINGS");
     if (dir != 0)
+#ifdef GAME_HEXEN
+        NumThings = (BCINT) (dir->dir.size / 20L);
+#else
         NumThings = (BCINT) (dir->dir.size / 10L);
+#endif
     else
         NumThings = 0;
     if (NumThings > 0) {
         Things = (TPtr)GetFarMemory( (unsigned long) NumThings * sizeof( struct Thing));
         BasicWadSeek( dir->wadfile, dir->dir.start);
-        /*	for (n = 0; n < NumThings; n++) {
+#ifdef GAME_HEXEN
+        	for (n = 0; n < NumThings; n++) {
+			BasicWadRead( dir->wadfile, &(Things[ n].tid), 2);
 			BasicWadRead( dir->wadfile, &(Things[ n].xpos), 2);
 			BasicWadRead( dir->wadfile, &(Things[ n].ypos), 2);
+			BasicWadRead( dir->wadfile, &(Things[ n].zpos), 2);
 			BasicWadRead( dir->wadfile, &(Things[ n].angle), 2);
 			BasicWadRead( dir->wadfile, &(Things[ n].type), 2);
-			BasicWadRead( dir->wadfile, &(Things[ n].when), 2);
-			} */
+			BasicWadRead( dir->wadfile, &(Things[ n].flags), 2);
+			BasicWadRead( dir->wadfile, &(Things[ n].special), 1);
+			BasicWadRead( dir->wadfile, &(Things[ n].arg1), 1);
+			BasicWadRead( dir->wadfile, &(Things[ n].arg2), 1);
+			BasicWadRead( dir->wadfile, &(Things[ n].arg3), 1);
+			BasicWadRead( dir->wadfile, &(Things[ n].arg4), 1);
+			BasicWadRead( dir->wadfile, &(Things[ n].arg5), 1);
+			} 
+#else
         BasicWadRead(dir->wadfile, Things, 10 * NumThings);
+#endif
     }
 
     /* read in the LineDef information */
     dir = FindMasterDir( Level, "LINEDEFS");
     if (dir != NULL)
+#ifdef GAME_HEXEN
+        NumLineDefs = (BCINT) (dir->dir.size / 16L);
+#else
         NumLineDefs = (BCINT) (dir->dir.size / 14L);
+#endif
     else
         NumLineDefs = 0;
     if (NumLineDefs > 0) {
@@ -119,8 +150,17 @@ void ReadLevelData()
             BasicWadRead( dir->wadfile, &(LineDefs[ n].end), 2);
             VertexUsed[ LineDefs[ n].end] = TRUE;
             BasicWadRead( dir->wadfile, &(LineDefs[ n].flags), 2);
-            BasicWadRead( dir->wadfile, &(LineDefs[ n].type), 2);
+#ifdef GAME_HEXEN
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].special), 1);
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].arg1), 1);
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].arg2), 1);
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].arg3), 1);
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].arg4), 1);
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].arg5), 1);
+#else
+            BasicWadRead( dir->wadfile, &(LineDefs[ n].special), 2);
             BasicWadRead( dir->wadfile, &(LineDefs[ n].tag), 2);
+#endif
             BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef1), 2);
             BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef2), 2);
         }
@@ -189,12 +229,10 @@ void ReadLevelData()
         for (n = 0; n < OldNumVertexes; n++)
             if (VertexUsed[ n])
                 VertexUsed[ n] = m++;
-        ObjectsNeeded( OBJ_LINEDEFS, 0);
         for (n = 0; n < NumLineDefs; n++) {
             LineDefs[ n].start = VertexUsed[ LineDefs[ n].start];
             LineDefs[ n].end = VertexUsed[ LineDefs[ n].end];
         }
-        ObjectsNeeded( 0);
         FreeMemory( VertexUsed);
     }
 
@@ -220,7 +258,19 @@ void ReadLevelData()
         }
     }
 
-    /* ignore the last entries (Reject & BlockMap) */
+#ifdef GAME_HEXEN
+    /* read in the Behavior data */
+    dir = FindMasterDir( Level, "BEHAVIOR");
+    if (dir != 0)
+        NumBehavior = (BCINT) (dir->dir.size / 4L);
+    else
+        NumBehavior = 0;
+    if (NumBehavior > 0) {
+        Behavior = (BPtr)GetFarMemory( (unsigned long) NumBehavior * sizeof( struct Behavior));
+        BasicWadSeek( dir->wadfile, dir->dir.start);
+        BasicWadRead(dir->wadfile, Behavior, 4 * NumBehavior);
+    }
+#endif
 }
 
 
@@ -232,91 +282,35 @@ void ReadLevelData()
 void ForgetLevelData() /* SWAP! */
 {
     /* forget the Things */
-    ObjectsNeeded( OBJ_THINGS, 0);
     NumThings = 0;
     if (Things)
         FreeFarMemory( Things);
     Things = NULL;
 
     /* forget the Vertices */
-    ObjectsNeeded( OBJ_VERTEXES, 0);
     NumVertexes = 0;
     if (Vertexes)
         FreeFarMemory( Vertexes);
     Vertexes = NULL;
 
     /* forget the LineDefs */
-    ObjectsNeeded( OBJ_LINEDEFS, 0);
     NumLineDefs = 0;
     if (LineDefs)
         FreeFarMemory( LineDefs);
     LineDefs = NULL;
 
     /* forget the SideDefs */
-    ObjectsNeeded( OBJ_SIDEDEFS, 0);
     NumSideDefs = 0;
     if (SideDefs)
         FreeFarMemory( SideDefs);
     SideDefs = NULL;
 
     /* forget the Sectors */
-    ObjectsNeeded( OBJ_SECTORS, 0);
     NumSectors = 0;
     if (Sectors)
         FreeFarMemory( Sectors);
     Sectors = NULL;
-    ObjectsNeeded( 0);
 }
-
-
-
-/*
-   recursively save the Nodes data to a PWAD file
-   */
-
-void SaveNodes( FILE *file, NPtr node)
-{
-    /* Nodes tree walk: save child1, save child2, save parent */
-    if ((node->child1 & 0x8000) == 0) {
-        SaveNodes( file, node->node1);
-        node->child1 = node->node1->num;
-    }
-    if ((node->child2 & 0x8000) == 0) {
-        SaveNodes( file, node->node2);
-        node->child2 = node->node2->num;
-    }
-    WriteBytes( file, &(node->x), 2L);
-    WriteBytes( file, &(node->y), 2L);
-    WriteBytes( file, &(node->dx), 2L);
-    WriteBytes( file, &(node->dy), 2L);
-    WriteBytes( file, &(node->maxy1), 2L);
-    WriteBytes( file, &(node->miny1), 2L);
-    WriteBytes( file, &(node->minx1), 2L);
-    WriteBytes( file, &(node->maxx1), 2L);
-    WriteBytes( file, &(node->maxy2), 2L);
-    WriteBytes( file, &(node->miny2), 2L);
-    WriteBytes( file, &(node->minx2), 2L);
-    WriteBytes( file, &(node->maxx2), 2L);
-    WriteBytes( file, &(node->child1), 2L);
-    WriteBytes( file, &(node->child2), 2L);
-    node->num = NumNodes++;
-}
-
-
-
-/*
-   forget the Nodes
-   */
-
-void ForgetNodes( NPtr node)
-{
-    if ((node->child1 & 0x8000) == 0)
-        ForgetNodes( node->node1);
-    if ((node->child2 & 0x8000) == 0)
-        ForgetNodes( node->node2);
-    FreeFarMemory( node);
-}
-
 
 
 /*
@@ -327,23 +321,31 @@ void SaveLevelData( char *outfile)
 {
     FILE   *file;
     MDirPtr dir;
-    long    counter = 11;
-    BCINT   n, i, j;
-    void   *data;
+    long    counter = 11;  
+    BCINT   n; 
     long    size;
     long    dirstart;
-    BCINT   *blockptr;
     long    blocksize;
-    BCINT   blockcount;
-    long    oldpos;
-    Bool    newnodes;
     long    rejectsize;
     BCINT   oldNumVertexes;
     Bool usem = UseMouse;
+#ifdef GAME_HEXEN
+    long    behaviorsize;
+    long    mapinfosize;
+    long    sndinfosize;
+
+	if (KeepInfo == TRUE)
+		counter = 14;
+	else
+		counter = 12;
+#endif
 
     UseMouse = FALSE;
     if (usem)
         HideMousePointer();
+
+
+
 
     DisplayMessage( -1, -1, "Saving data to \"%s\"...", outfile);
     LogMessage( ": Saving data to \"%s\"...\n", outfile);
@@ -354,23 +356,38 @@ void SaveLevelData( char *outfile)
     WriteBytes( file, "PWAD", 4L);     /* PWAD file */
     WriteBytes( file, &counter, 4L);   /* 11 entries */
     WriteBytes( file, &counter, 4L);   /* fix this up later */
-    counter = 12L;
+    counter = 12L; 
     dir = Level->next;
 
     /* output the things data */
-    ObjectsNeeded( OBJ_THINGS, 0);
     for (n = 0; n < NumThings; n++) {
+#ifdef GAME_HEXEN
+        WriteBytes( file, &(Things[ n].tid), 2L);
+        WriteBytes( file, &(Things[ n].xpos), 2L);
+        WriteBytes( file, &(Things[ n].ypos), 2L);
+        WriteBytes( file, &(Things[ n].zpos), 2L);
+        WriteBytes( file, &(Things[ n].angle), 2L);
+        WriteBytes( file, &(Things[ n].type), 2L);
+        WriteBytes( file, &(Things[ n].flags), 2L);
+        WriteBytes( file, &(Things[ n].special), 1L);
+        WriteBytes( file, &(Things[ n].arg1), 1L);
+        WriteBytes( file, &(Things[ n].arg2), 1L);
+        WriteBytes( file, &(Things[ n].arg3), 1L);
+        WriteBytes( file, &(Things[ n].arg4), 1L);
+        WriteBytes( file, &(Things[ n].arg5), 1L);
+        counter += 20L;
+#else
         WriteBytes( file, &(Things[ n].xpos), 2L);
         WriteBytes( file, &(Things[ n].ypos), 2L);
         WriteBytes( file, &(Things[ n].angle), 2L);
         WriteBytes( file, &(Things[ n].type), 2L);
-        WriteBytes( file, &(Things[ n].when), 2L);
+        WriteBytes( file, &(Things[ n].flags), 2L);
         counter += 10L;
+#endif
     }
     dir = dir->next;
 
     /* update MapMinX, MapMinY, MapMaxX, MapMaxY */
-    ObjectsNeeded( OBJ_VERTEXES, 0);
     MapMaxX = -32767;
     MapMaxY = -32767;
     MapMinX = 32767;
@@ -386,108 +403,35 @@ void SaveLevelData( char *outfile)
             MapMaxY = Vertexes[ n].y;
     }
 
-    /* do we need to rebuild the Nodes, Segs and SSectors? */
-    if (MadeMapChanges && UseOwnBSP &&
-		(Expert || Confirm( -1, 270, "Do you want to rebuild the NODES, SEGS, SSECTORS, REJECT and BLOCKMAP?",
-						   "WARNING: You won't be able to use your level if you don't do this..."))) {
-        SEPtr seglist;
-
-        if (UseMouse)
-            HideMousePointer();
-        ClearScreen();
-        DrawScreenBox3D( 218, 0, ScrMaxX, 55);
-        SetColor( WHITE);
-        DrawScreenText( 225, 10, "Rebuilding the NODES...");
-        DrawScreenBoxHollow( 225, 28, ScrMaxX - 10, 48);
-        DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, 0.0);
-        if (UseMouse)
-            ShowMousePointer();
-        seglist = NULL;
-        ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
-        for (n = 0; n < NumLineDefs; n++) {
-            if (LineDefs[ n].sidedef1 >= 0) {
-                if (seglist) {
-                    LastSeg->next = (SEPtr) GetMemory( sizeof( struct Seg));
-                    LastSeg = LastSeg->next;
-                }
-                else {
-                    seglist = (SEPtr) GetMemory( sizeof( struct Seg));
-                    LastSeg = seglist;
-                }
-                LastSeg->next = NULL;
-                LastSeg->start = LineDefs[ n].start;
-                LastSeg->end = LineDefs[ n].end;
-                LastSeg->angle = ComputeAngle(Vertexes[ LineDefs[ n].end].x - Vertexes[ LineDefs[ n].start].x,
-                                              Vertexes[ LineDefs[ n].end].y - Vertexes[ LineDefs[ n].start].y);
-                LastSeg->linedef = n;
-                LastSeg->flip = 0;
-                LastSeg->dist = 0;
-            }
-            if (LineDefs[ n].sidedef2 >= 0) {
-                if (seglist) {
-                    LastSeg->next = (SEPtr) GetMemory( sizeof( struct Seg));
-                    LastSeg = LastSeg->next;
-                }
-                else {
-                    seglist = (SEPtr) GetMemory( sizeof( struct Seg));
-                    LastSeg = seglist;
-                }
-                LastSeg->next = NULL;
-                LastSeg->start = LineDefs[ n].end;
-                LastSeg->end = LineDefs[ n].start;
-                LastSeg->angle = ComputeAngle(Vertexes[ LineDefs[ n].start].x - Vertexes[ LineDefs[ n].end].x,
-                                              Vertexes[ LineDefs[ n].start].y - Vertexes[ LineDefs[ n].end].y);
-                LastSeg->linedef = n;
-                LastSeg->flip = 1;
-                LastSeg->dist = 0;
-            }
-        }
-        ShowProgress( OBJ_VERTEXES);
-        ShowProgress( OBJ_SIDEDEFS);
-        LogMessage( ": Starting Nodes builder...\n");
-        LogMessage( "\tNumber of Vertices: %d\n", NumVertexes);
-        LogMessage( "\tNumber of Segs:     %d\n", NumSegs);
-        ObjectsNeeded( OBJ_VERTEXES, 0);
-        if (CreateNodes( &Nodes, &n, seglist) == FALSE) {
-            Beep();
-            Beep();
-            Beep();
-            LogMessage( "\nError: CreateNodes failed!\n\n");
-            Beep();
-            Beep();
-            Beep();
-        }
-        LogMessage( ": Nodes created OK.\n");
-        LogMessage( "\tNumber of Vertices: %d\n", NumVertexes);
-        LogMessage( "\tNumber of SideDefs: %d\n", NumSideDefs);
-        LogMessage( "\tNumber of Segs:     %d\n", NumSegs);
-        LogMessage( "\tNumber of SSectors: %d\n", NumSSectors);
-        if (UseMouse)
-            HideMousePointer();
-        DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, 1.0);
-        if (UseMouse)
-            ShowMousePointer();
-        newnodes = TRUE;
-    }
-    else
-        newnodes = FALSE;
-
     /* output the LineDefs */
-    ObjectsNeeded( OBJ_LINEDEFS, 0);
     for (n = 0; n < NumLineDefs; n++) {
+#ifdef GAME_HEXEN
         WriteBytes( file, &(LineDefs[ n].start), 2L);
         WriteBytes( file, &(LineDefs[ n].end), 2L);
         WriteBytes( file, &(LineDefs[ n].flags), 2L);
-        WriteBytes( file, &(LineDefs[ n].type), 2L);
+        WriteBytes( file, &(LineDefs[ n].special), 1L);
+        WriteBytes( file, &(LineDefs[ n].arg1), 1L);
+        WriteBytes( file, &(LineDefs[ n].arg2), 1L);
+        WriteBytes( file, &(LineDefs[ n].arg3), 1L);
+        WriteBytes( file, &(LineDefs[ n].arg4), 1L);
+        WriteBytes( file, &(LineDefs[ n].arg5), 1L);
+        WriteBytes( file, &(LineDefs[ n].sidedef1), 2L);
+        WriteBytes( file, &(LineDefs[ n].sidedef2), 2L);
+        counter += 16L;
+#else
+        WriteBytes( file, &(LineDefs[ n].start), 2L);
+        WriteBytes( file, &(LineDefs[ n].end), 2L);
+        WriteBytes( file, &(LineDefs[ n].flags), 2L);
+        WriteBytes( file, &(LineDefs[ n].special), 2L);
         WriteBytes( file, &(LineDefs[ n].tag), 2L);
         WriteBytes( file, &(LineDefs[ n].sidedef1), 2L);
         WriteBytes( file, &(LineDefs[ n].sidedef2), 2L);
         counter += 14L;
+#endif
     }
     dir = dir->next;
 
     /* output the SideDefs */
-    ObjectsNeeded( OBJ_SIDEDEFS, 0);
     for (n = 0; n < NumSideDefs; n++) {
         WriteBytes( file, &(SideDefs[ n].xoff), 2L);
         WriteBytes( file, &(SideDefs[ n].yoff), 2L);
@@ -501,7 +445,6 @@ void SaveLevelData( char *outfile)
 
     if (MadeMapChanges) {
         /* output the Vertices */
-        ObjectsNeeded( OBJ_VERTEXES, 0);
         for (n = 0; n < NumVertexes; n++) {
             WriteBytes( file, &(Vertexes[ n].x), 2L);
             WriteBytes( file, &(Vertexes[ n].y), 2L);
@@ -510,7 +453,6 @@ void SaveLevelData( char *outfile)
     }
     else {
         /* copy the Vertices */
-        ObjectsNeeded( 0);
         size = dir->dir.size;
         counter += size;
         BasicWadSeek( dir->wadfile, dir->dir.start);
@@ -518,64 +460,16 @@ void SaveLevelData( char *outfile)
     }
     dir = dir->next;
 
-    if (newnodes) {
-        SEPtr curse, oldse;
-        SSPtr curss, oldss;
-
-        ObjectsNeeded( 0);
-        /* output and forget the Segments */
-        curse = Segs;
-        while (curse) {
-            WriteBytes( file, &(curse->start), 2L);
-            WriteBytes( file, &(curse->end), 2L);
-            WriteBytes( file, &(curse->angle), 2L);
-            WriteBytes( file, &(curse->linedef), 2L);
-            WriteBytes( file, &(curse->flip), 2L);
-            WriteBytes( file, &(curse->dist), 2L);
-            oldse = curse;
-            curse = curse->next;
-            FreeFarMemory( oldse);
-            counter += 12L;
-        }
-        Segs = NULL;
-        dir = dir->next;
-
-        /* output and forget the SSectors */
-        curss = SSectors;
-        while (curss) {
-            WriteBytes( file, &(curss->num), 2L);
-            WriteBytes( file, &(curss->first), 2L);
-            oldss = curss;
-            curss = curss->next;
-            FreeFarMemory( oldss);
-            counter += 4L;
-        }
-        SSectors = NULL;
-        dir = dir->next;
-
-        /* output the Nodes */
-        NumNodes = 0;
-        SaveNodes( file, Nodes);
-        counter += (long) NumNodes * 28L;
-        dir = dir->next;
-
-        /* forget the Nodes */
-        ForgetNodes( Nodes);
-        Nodes = NULL;
-    }
-    else {
-        /* copy the Segs, SSectors and Nodes */
-        for (n = 0; n < 3; n++) {
-            size = dir->dir.size;
-            counter += size;
-            BasicWadSeek( dir->wadfile, dir->dir.start);
-            CopyBytes( file, dir->wadfile->fileinfo, size);
-            dir = dir->next;
-        }
-    }
+	/* copy the Segs, SSectors and Nodes */
+	for (n = 0; n < 3; n++) {
+		size = dir->dir.size;
+		counter += size;
+		BasicWadSeek( dir->wadfile, dir->dir.start);
+		CopyBytes( file, dir->wadfile->fileinfo, size);
+		dir = dir->next;
+	}
 
     /* output the Sectors */
-    ObjectsNeeded( OBJ_SECTORS, 0);
     for (n = 0; n < NumSectors; n++) {
         WriteBytes( file, &(Sectors[ n].floorh), 2L);
         WriteBytes( file, &(Sectors[ n].ceilh), 2L);
@@ -588,159 +482,80 @@ void SaveLevelData( char *outfile)
     }
     dir = dir->next;
 
-    if (newnodes) {
-        /* create and output the reject data */
-        ObjectsNeeded( OBJ_SECTORS, 0); /* !!! */
-        if (UseMouse)
-            HideMousePointer();
-        DrawScreenBox3D( 218, 80, ScrMaxX, 135);
-        SetColor( WHITE);
-        DrawScreenText( 225, 90, "Rebuilding the REJECT data...");
-        DrawScreenBoxHollow( 225, 108, ScrMaxX - 10, 128);
-        DrawScreenMeter( 225, 108, ScrMaxX - 10, 128, 0.0);
-        if (UseMouse)
-            ShowMousePointer();
-        rejectsize = ((long) NumSectors * (long) NumSectors + 7L) / 8L;
-        data = GetMemory( (size_t) rejectsize);
-        for (i = 0; i < rejectsize; i++)
-            ((char *) data)[ i] = 0;
-        for (i = 0; i < NumSectors; i++) {
-            if (UseMouse)
-                HideMousePointer();
-            DrawScreenMeter( 225, 108, ScrMaxX - 10, 128, (float) i / (float) NumSectors);
-            if (UseMouse)
-                ShowMousePointer();
-            for (j = 0; j < NumSectors; j++) {
-                /*
-                   if (Reject( i, j))
-                   data[ (i * NumSectors + j) / 8] |= 1 <<
-                   */
-            }
-        }
-        if (UseMouse)
-            HideMousePointer();
-        DrawScreenMeter( 225, 108, ScrMaxX - 10, 128, 1.0);
-        if (UseMouse)
-            ShowMousePointer();
-        WriteBytes( file, data, rejectsize);
-        counter += rejectsize;
-        dir = dir->next;
-        FreeMemory( data);
-    }
-    else {
-        /* copy the Reject data */
-        ObjectsNeeded( 0);
-        rejectsize = dir->dir.size;
-        size = rejectsize;
-        counter += size;
-        BasicWadSeek( dir->wadfile, dir->dir.start);
-        CopyBytes( file, dir->wadfile->fileinfo, size);
-        dir = dir->next;
-    }
+	/* copy the Reject data */
+	rejectsize = dir->dir.size;
+	size = rejectsize;
+	counter += size;
+	BasicWadSeek( dir->wadfile, dir->dir.start);
+	CopyBytes( file, dir->wadfile->fileinfo, size);
+	dir = dir->next;
 
-    if (newnodes) {
-        /* create and output the blockmap */
+	/* copy the blockmap data */
+	blocksize = dir->dir.size;
+	size = blocksize;
+	counter += size;
+	BasicWadSeek( dir->wadfile, dir->dir.start);
+	CopyBytes( file, dir->wadfile->fileinfo, size);
+	dir = dir->next;
 
-        BCINT mminx, mminy, mnumx, mnumy;
+#ifdef GAME_HEXEN
+	/* copy the behavior data */
+	behaviorsize = dir->dir.size;
+	size = behaviorsize;
+	counter += size;
+	BasicWadSeek( dir->wadfile, dir->dir.start);
+	CopyBytes( file, dir->wadfile->fileinfo, size);
+	dir = dir->next;
 
-        ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
-        if (UseMouse)
-            HideMousePointer();
-        DrawScreenBox3D( 218, 160, ScrMaxX, 215);
-        SetColor( WHITE);
-        DrawScreenText( 225, 170, "Rebuilding the BLOCKMAP...");
-        DrawScreenBoxHollow( 225, 188, ScrMaxX - 10, 208);
-        DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, 0.0);
-        if (UseMouse)
-            ShowMousePointer();
-        mminx = (BCINT) (MapMinX / 8 - 8) * 8;
-        WriteBytes( file, &mminx, 2L);
-        mminy = (BCINT) (MapMinY / 8 - 8) * 8;
-        WriteBytes( file, &mminy, 2L);
-        mnumx = MapMaxX / 128 - MapMinX / 128 + 2;
-        WriteBytes( file, &mnumx, 2L);
-        mnumy = MapMaxY / 128 - MapMinY / 128 + 2;
-        WriteBytes( file, &mnumy, 2L);
-        counter += 8L;
-        oldpos = ftell( file);
-        blocksize = (long) (mnumx * mnumy * sizeof( BCINT));
-        blockptr = (BCINT*) GetMemory( blocksize);
-        WriteBytes( file, blockptr, blocksize);
-        blocksize += 8L;
-        counter += blocksize - 7L;
-        blockcount = mnumx * mnumy + 4;
-        for (i = 0; i < mnumy; i++) {
-            if (UseMouse)
-                HideMousePointer();
-            DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, (float) i / (float) mnumy);
-            if (UseMouse)
-                ShowMousePointer();
-            for (j = 0; j < mnumx; j++) {
-                blockptr[ mnumx * i + j] = blockcount;
-                n = 0;
-                WriteBytes( file, &n, 2L);
-                counter += 2L;
-                blocksize += 2L;
-                blockcount++;
-                for (n = 0; n < NumLineDefs; n++)
-                    if (IsLineDefInside( n, mminx + j * 128, mminy + i * 128, mminx + 127 + j * 128, mminy + 127 + i * 128)) {
-                        WriteBytes( file, &n, 2L);
-                        counter += 2L;
-                        blocksize += 2L;
-                        blockcount++;
-                    }
-                n = -1;
-                WriteBytes( file, &n, 2L);
-                counter += 2L;
-                blocksize += 2L;
-                blockcount++;
-            }
-        }
-        if (UseMouse)
-            HideMousePointer();
-        DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, 1.0);
-        if (UseMouse)
-            ShowMousePointer();
-        size = ftell( file);
-        fseek( file, oldpos, SEEK_SET);
-        WriteBytes( file, blockptr, (long) (mnumx * mnumy * sizeof( BCINT)));
-        fseek( file, size, SEEK_SET);
-        /* SO 9/4/95: This looks like YET ANOTHER
-           "break level if not registered" check!
-        if (FindMasterDir( dir, "P2_END"))
-            counter--;   */
-        FreeMemory( blockptr);
-    }
-    else {
-        /* copy the blockmap data */
-        ObjectsNeeded( 0);
-        blocksize = dir->dir.size;
-        size = blocksize;
-        counter += size;
-        BasicWadSeek( dir->wadfile, dir->dir.start);
-        CopyBytes( file, dir->wadfile->fileinfo, size);
-        dir = dir->next;
-    }
 
+	if (KeepInfo == TRUE) {
+	/* copy the mapinfo data */
+    	dir = FindMasterDir( Level, "MAPINFO");
+	mapinfosize = dir->dir.size;
+	size = mapinfosize;
+	counter += size;
+	BasicWadSeek( dir->wadfile, dir->dir.start);
+	CopyBytes( file, dir->wadfile->fileinfo, size);
+	dir = dir->next;
+
+	/* copy the sndinfo data */
+    	dir = FindMasterDir( Level, "SNDINFO");
+	sndinfosize = dir->dir.size;
+	size = sndinfosize;
+	counter += size;
+	BasicWadSeek( dir->wadfile, dir->dir.start);
+	CopyBytes( file, dir->wadfile->fileinfo, size);
+	dir = dir->next;
+	}
+#endif
 
     /* output the actual directory */
     dirstart = counter;
     counter = 12L;
-    size = 0L;
+    size = 0L; /*12L*/
     dir = Level;
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, &(dir->dir.name), 8L);
+    /*counter += 12;*/
     dir = dir->next;
 
+#ifdef GAME_HEXEN
+    size = (long) NumThings * 20L;
+#else
     size = (long) NumThings * 10L;
+#endif
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, "THINGS\0\0", 8L);
     counter += size;
     dir = dir->next;
 
+#ifdef GAME_HEXEN
+    size = (long) NumLineDefs * 16L;
+#else
     size = (long) NumLineDefs * 14L;
+#endif
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, "LINEDEFS", 8L);
@@ -764,30 +579,21 @@ void SaveLevelData( char *outfile)
     counter += size;
     dir = dir->next;
 
-    if (newnodes)
-        size = (long) NumSegs * 12L;
-    else
-        size = dir->dir.size;
+	size = dir->dir.size;
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, "SEGS\0\0\0\0", 8L);
     counter += size;
     dir = dir->next;
 
-    if (newnodes)
-        size = (long) NumSSectors * 4L;
-    else
-        size = dir->dir.size;
+	size = dir->dir.size;
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, "SSECTORS", 8L);
     counter += size;
     dir = dir->next;
 
-    if (newnodes)
-        size = (long) NumNodes * 28L;
-    else
-        size = dir->dir.size;
+	size = dir->dir.size;
     WriteBytes( file, &counter, 4L);
     WriteBytes( file, &size, 4L);
     WriteBytes( file, "NODES\0\0\0", 8L);
@@ -815,6 +621,32 @@ void SaveLevelData( char *outfile)
     counter += size;
     dir = dir->next;
 
+#ifdef GAME_HEXEN
+    size = (long) NumBehavior * 4L;
+    WriteBytes( file, &counter, 4L);
+    WriteBytes( file, &size, 4L);
+    WriteBytes( file, "BEHAVIOR", 8L);
+    counter += size;
+    dir = dir->next;
+
+
+    if (KeepInfo == TRUE) {
+    size = mapinfosize;
+    WriteBytes( file, &counter, 4L);
+    WriteBytes( file, &size, 4L);
+    WriteBytes( file, "MAPINFO", 8L);
+    counter += size;
+    dir = dir->next;
+	
+    size = sndinfosize;
+    WriteBytes( file, &counter, 4L);
+    WriteBytes( file, &size, 4L);
+    WriteBytes( file, "SNDINFO", 8L);
+    counter += size;
+    dir = dir->next;
+    }
+#endif
+
     /* fix up the directory start information */
     if (fseek( file, 8L, SEEK_SET))
         ProgError( "error writing to file");
@@ -829,16 +661,12 @@ void SaveLevelData( char *outfile)
 
     /* delete the vertices added by the Nodes builder */
     if (NumVertexes != oldNumVertexes) {
-        ObjectsNeeded( OBJ_VERTEXES, 0);
         NumVertexes = oldNumVertexes;
         ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
     }
 
     /* the file is now up to date */
     MadeChanges = FALSE;
-    if (newnodes)
-        MadeMapChanges = FALSE;
-    ObjectsNeeded( 0);
 
     /* update pointers in Master Directory */
     OpenPatchWad( outfile);
@@ -864,8 +692,8 @@ Bool dupname;
 int SortTextures( const void *a, const void *b)
 {
     int i = strcmp( *((char **)a), *((char **)b));
-    if(i == 0)
-    	dupname = TRUE;
+    if (i == 0)
+			dupname = TRUE;
     return i;
 }
 
@@ -877,18 +705,18 @@ int SortTextures( const void *a, const void *b)
 
 void ReadWTextureNames()
 {
-    BCINT i, j;
-    void *resource;
-    long nTexture = 0, n;
-    Texture *p;
-    SList l;
-	
-    printf("Reading wall texture names\n");
-	
-    for(l = Texture_sections; l; l = l->next) {
-    	resource = GetResource(l->string);
-	    n = *((long *)resource);
-	    nTexture += n;
+  BCINT i, j;
+  void *resource;
+  long nTexture = 0, n;
+  Texture *p;
+  SList l;
+
+
+  for (l = Texture_sections; l; l = l->next)
+	{
+    resource = GetResource(l->string);
+	  n = *((long *)resource);
+	  nTexture += n;
 	}
 	
 	NumWTexture = nTexture + 1;
@@ -901,35 +729,48 @@ void ReadWTextureNames()
 	strcpy(WTexture[0], "-");
 	
 	j = 1;
-	for(l = Texture_sections; l; l = l->next) {
-	    resource = GetResource(l->string);
-	    n = *((long *)resource);
-		for(i = 1; i <= n; i++, j++) {
+	for (l = Texture_sections; l; l = l->next)
+	{
+	  resource = GetResource(l->string);
+	  n = *((long *)resource);
+		for (i = 1; i <= n; i++, j++)
+		{
 			WTexture[j] = _WTexture + 9 * j;
 			p = (Texture *)(((long *)resource)[i]);
-			p = (Texture *)((long)p + (long)resource);
+			p = (Texture *)((long)p + (long)resource); 
 			strncpy(WTexture[j], p->name, 8);
 			WTexture[j][8] = '\0';
 		}
 	}
 	
-    /* sort the names */
-    /* SO 14/4/95 */
-    dupname = FALSE;
-    qsort( WTexture, NumWTexture, sizeof( char *), SortTextures);
+  /* sort the names */
+  /* SO 14/4/95 */
+  dupname = FALSE;
+  qsort(WTexture, NumWTexture, sizeof( char *), SortTextures);
 
-    if(dupname) {
-    	/* Grrr. We now have to fool about with the array. */
-    	i = 0; j = 1;
+  if (dupname)
+	{
+    /* Grrr. We now have to fool about with the array. */
+    i = 0; j = 1;
 
-    	while(j < nTexture) {
-    		if(!strcmp(WTexture[j++], WTexture[i++])) {
-    			NumWTexture--;
-    			j++;
-    		}
-    		WTexture[i] = WTexture[j];
-    	}
-    }
+		while (j<nTexture)		// jff fix logic for eliminating duplicates
+		{
+			int j0=j;
+			while (j<nTexture && !strcmp(WTexture[i],WTexture[j++]));
+			nTexture -= j-j0;
+		  if (j<nTexture)
+				WTexture[++i] = WTexture[j++];
+		}
+//    while (j < nTexture)
+//		{
+//    	if (!strcmp(WTexture[j++], WTexture[i++]))
+//			{
+//    		NumWTexture--;
+//    		j++;
+//    	}
+//    	WTexture[i] = WTexture[j];
+//    }
+  }
 }
 
 
@@ -940,9 +781,9 @@ void ReadWTextureNames()
 
 void ForgetWTextureNames()
 {
-    FreeMemory( _WTexture);
-    NumWTexture = 0;
-    FreeMemory( WTexture);
+	FreeMemory( _WTexture);
+  NumWTexture = 0;
+  FreeMemory( WTexture);
 }
 
 /*
@@ -951,43 +792,81 @@ void ForgetWTextureNames()
 
 void ReadFTextureNames()
 {
+  BCINT i, j;
 	SList p;
 	
-    printf("Reading floor/ceiling texture names\n");
-    FTexture = (char **)GetMemory(1);
+  for(p = Ftexture_sections; p; p = p->next)
+    ReadFTextureNamesIn(p->string);
 
-    for(p = Ftexture_sections; p; p = p->next)
-    	ReadFTextureNamesIn(p->string);
+	dupname = FALSE;
+  qsort( FTexture, NumFTexture, sizeof( char *), SortTextures);
 
-    qsort( FTexture, NumFTexture, sizeof( char *), SortTextures);
+  if (dupname)
+	{
+    /* Grrr. We now have to fool about with the array. */
+    i = 0; j = 1;
+
+		while (j<NumFTexture)		// jff fix logic for eliminating duplicates
+		{
+			int j0=j;
+			while (j<NumFTexture && !strcmp(FTexture[i],FTexture[j++]));
+			NumFTexture -= j-j0;
+		  if (j<NumFTexture)
+				FTexture[++i] = FTexture[j++];
+		}
+//    while(j < NumFTexture)
+//		{
+//    	if(!strcmp(FTexture[j++], FTexture[i++]))
+//			{
+//    		NumFTexture--;
+//    		j++;
+//    	}
+//    	FTexture[i] = FTexture[j];
+//    }
+  }
 }
+
 
 void ReadFTextureNamesIn(char *section)
 {
-    MDirPtr dir;
-    BCINT n, m;
-    char start[16];
-    char end[16];
+  MDirPtr dir,cdir;/*jff*/
+  BCINT n, m;
+  char start[16];
+  char end[16];
 	
 	strcpy(start, section); strcat(start, "_START");
 	strcpy(end, section); strcat(end, "_END");
 	
-    /* count the names */
-    dir = FindMasterDir( MasterDir, start);
-    dir = dir->next;
-    for (n = 0; dir && strcmp(dir->dir.name, end); n++)
-        dir = dir->next;
-    /* get the actual names from master dir. */
-    dir = FindMasterDir( MasterDir, start);
-    dir = dir->next;
-    FTexture = (char**)ResizeMemory( FTexture, (NumFTexture + n) * sizeof( char *));
-    for (m = 0; m < n; m++) {
-        FTexture[ NumFTexture + m] = (char*)GetMemory( 9 * sizeof( char));
-        strncpy( FTexture[ NumFTexture + m], dir->dir.name, 8);
-        FTexture[ NumFTexture + m][ 8] = '\0';
-        dir = dir->next;
-    }
-    NumFTexture += n;
+    /* while blocks delimited by start and end exist */
+
+	cdir = MasterDir; 	/*JFF use a variable start pointer to support loop */
+  while (cdir && (dir = FindMasterDir( cdir, start)))
+	{ 												/*JFF keep looking for more */
+		cdir = dir = dir->next;
+		/*	count the names */
+
+		if (dir && !isamark(dir->dir.name))
+		{
+    	for (n = 0; dir && !isamark(dir->dir.name); n++)
+       	dir = dir->next;		/* keep moving until points to end tag */
+
+			/* if end tag is found, and non-empty section */
+			if (dir && n>0)	
+			{
+    		/* add the names from master dir. */
+    		dir = cdir;
+    		for (m = 0; dir &&  m < n; m++)
+				{	/* add each new flat name */
+       		FTexture[ NumFTexture + m] = (char*)GetMemory( 9 * sizeof( char));
+       		strncpy( FTexture[ NumFTexture + m], dir->dir.name, 8);
+       		FTexture[ NumFTexture + m][ 8] = '\0';
+					dir = dir->next;
+    		}		
+    		NumFTexture += m;
+				cdir = dir; /*JFF continue search where last it left off */
+			}
+		}
+	}
 }
 
 
@@ -1003,12 +882,115 @@ void ForgetFTextureNames()
     /* forget all names */
     for (n = 0; n < NumFTexture; n++)
         FreeMemory( FTexture[ n]);
+	NumFTexture = 0;
+}
 
-    /* forget the array */
-    NumFTexture = 0;
-    FreeMemory( FTexture);
+/*
+   read in the colormap names
+   */
+
+void ReadCMapNames()
+{
+  BCINT i, j;
+	
+	NumCMaps=0;		 // Add COLORMAP, WATERMAP to the list of valid colormap names
+	CMaps[NumCMaps] = (char*)GetMemory( 9 * sizeof( char));
+	strncpy(CMaps[NumCMaps], "COLORMAP", 8);
+	CMaps[NumCMaps++][8] = '\0';
+	CMaps[NumCMaps] = (char*)GetMemory( 9 * sizeof( char));
+	strncpy(CMaps[NumCMaps], "WATERMAP", 8);
+	CMaps[NumCMaps++][8] = '\0';
+
+  ReadCMapNamesIn("C"); // Append any added by PWADs C_START/C_END blocked
+
+	dupname = FALSE;
+  qsort( CMaps, NumCMaps, sizeof( char *), SortTextures);
+
+  if (dupname)
+	{
+    /* Grrr. We now have to fool about with the array. */
+    i = 0; j = 1;
+
+		while (j<NumCMaps)		// jff fix logic for eliminating duplicates
+		{
+			int j0=j;
+			while (j<NumCMaps && !strcmp(CMaps[i],CMaps[j++]));
+			NumCMaps -= j-j0;
+		  if (j<NumCMaps)
+				CMaps[++i] = CMaps[j++];
+		}
+//    while(j < NumCMaps)
+//		{
+//    	if(!strcmp(CMaps[j++], CMaps[i++]))
+//			{
+//    		NumCMaps--;
+//    		j++;
+//    	}
+//    	CMaps[i] = CMaps[j];
+//    }
+  }
+}
+
+
+void ReadCMapNamesIn(char *section)
+{
+  MDirPtr dir,cdir;/*jff*/
+  BCINT n, m;
+  char start[16];
+  char end[16];
+	
+	strcpy(start, section); strcat(start, "_START");
+	strcpy(end, section); strcat(end, "_END");
+	
+    /* while blocks delimited by start and end exist */
+
+	cdir = MasterDir; 	/*JFF use a variable start pointer to support loop */
+  while (cdir && (dir = FindMasterDir( cdir, start)))
+	{ 												/*JFF keep looking for more */
+		cdir = dir = dir->next;
+		/*	count the names */
+
+		if (dir && !isamark(dir->dir.name))
+		{
+    	for (n = 0; dir && !isamark(dir->dir.name); n++)
+       	dir = dir->next;		/* keep moving until points to end tag */
+
+			/* if end tag is found, and non-empty section */
+			if (dir && n>0)	
+			{
+    		/* add the names from master dir. */
+    		dir = cdir;
+    		for (m = 0; dir &&  m < n; m++)
+				{	/* add each new colormap name */
+       		CMaps[NumCMaps + m] = (char*)GetMemory( 9 * sizeof( char));
+       		strncpy(CMaps[NumCMaps + m], dir->dir.name, 8);
+       		CMaps[NumCMaps + m][ 8] = '\0';
+					dir = dir->next;
+    		}		
+    		NumCMaps += m;
+				cdir = dir; /*JFF continue search where last it left off */
+			}
+		}
+	}
+}
+
+
+
+/*
+   forget the floor/ceiling texture names
+   */
+
+void ForgetCMapNames()
+{
+    BCINT n;
+
+  /* forget all names */
+  for (n = 0; n < NumCMaps; n++)
+    FreeMemory(CMaps[n]);
+	NumCMaps = 0;
 }
 
 
 
 /* end of file */
+

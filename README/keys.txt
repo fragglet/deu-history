@@ -1,124 +1,180 @@
+keys.doc - Guide to the keyboard commands used in DETH and HETH
+
+
 Function Keys
 ~~~~~~~~~~~~~
-F1		-	Help Screen
-F2		-	Save Pwad
-F3		-	Save Pwad As...
-F4		-	Mark and find menu
-F5		-	Preferences menu
-F8		-	Miscellaneous menu (operations available depend on mode)
-F9		-	Pre-defined objects menu
-F10		-	Check level consistency and report on number of objects
+F1              -       Help Screen
+F2              -       Save Pwad
+F3              -       Save Pwad As...
+F4              -       Toggle view type
+F5              -       Preferences menu
+F7              -       Display menu
+F8              -       Miscellaneous menu (operations available depend on mode)
+F9              -       Pre-defined objects menu (options depend on if the mouse is inside/outside a sector)
+F10             -       Check level consistency and report on number of objects
 
-
-Control Keys
-~~~~~~~~~~~~
-CTRL+A		-	Split selected LineDefs and Add a Sector
-CTRL+A		-	Add LineDef between 2 selected Vertexes and Add a Sector
-CTRL+B		-	Toggle selected LineDefs Blocks sounds flag
-CTRL+D		-	Delete selected LineDef(s) and join Sectors (same as CTRL+J)
-CTRL+D		-	Delete selected Vertex(es) and join LineDefs (same as CTRL+J)
-CRTL+D		-	Toggle selected Things Deaf flag
-CTRL+F		-	Flip selected LineDef(s)
-CTRL+H		-	Toggle selected SideDefs Hidden on Map flag
-CTRL+J		-	Delete selected LineDef(s) and Join Sectors (same as CTRL+D)
-CTRL+J		-	Delete selected Vertex(es) and Join LineDefs (same as CTRL+D)
-CTRL+L		-	Toggle selected SideDefs Lower Texture unpegged flag
-CTRL+M		-	Merge several selected Vertex(es) and join LineDefs
-CRTL+M		-	Toggle selected Things Multiplayer flag
-CTRL+M		-	Toggle selected SideDefs iMpassable flag
-CTRL+N		-	Set selected Sectors type to Normal
-CTRL+N		-	Set selected LineDefs type to Normal
-CTRL+O		-	Toggle selected SideDefs Allready On map flag
-CTRL+P		-	Toggle selected LineDefs monsters can't Pass flag
-CTRL+R		-	Toggle selected SideDefs secRet flag
-CTRL+S		-	Swap selected SideDef(s)
-CTRL+T		-	Next free Tag number
-CTRL+U		-	Toggle selected SideDefs Upper Texture unpegged flag
-CTRL+V		-	Split selected LineDef(s) and add Vertex(es)
-CTRL+X		-	Align selected LineDefs Textures on X axis without Texture checking
-CTRL+Y		-	Align selected LineDefs Textures on Y axis without Texture checking
-
-CTRL+2          -       Toggle selected SideDefs 2 sided flag
-
-
-
-
-Alt Keys
-~~~~~~~~	
-ALT+E		-	Edit menu
-ALT+F		-	File menu
-ALT+H		-	Help screen
-ALT+I		-	Miscellaneous menu (operations available depend on mode)
-ALT+M		-	Mode menu
-ALT+0		-	Pre-defined Objects menu
-ALT+S		-	Search menu
-
-
-Normal Keys
-~~~~~~~~~~~
-A		-	Repeat last find Again
-C		-	Clear selected objects
-D		-	Drag highlighted/selected object(s)
-F		-	Filter Things menu
-G		-	Decrease Grid scale
-Shift+G		-	Increase Grid scale
-H		-	Hide grid
-Shift+H		-	Hide grid and set grid scale to 0
-I		-	Toggle Information bar on/off
-J		-	Jump to object number
-K		-	Kill grid (set grid scale to 0)
-L		-	Line mode
-M		-	Mark highlighted object
-N		-	Jump to Next object	
-O		-	Copy highlighted/selected Object(s)	
-P		-	Jump to Previous object	
-Q		-	Quit (brings up SaveAs box if QisQuit is set to false)
-R		-	Ruler on/off
-S		-	Sector mode
-T		-	Thing mode
-V		-	Vertex mode
-X		-	Align selected LineDefs Textures on X axis with Texture checking
-Y		-	Align selected LineDefs Textures on Y axis with Texture checking
-
--		-	Zoom out
-+		-	Zoom in
-,		-	Rotate highlighted/selected Thing(s) anti-clockwise
-.		-	Rotate highlighted/selected Thing(s) clockwise
->		-	Jump to next object	
-<		-	Jump to previous object	
-
-1,2,3,...,0	-	Change zoom
-	
+Menu Keys
+~~~~~~~~~
+ALT+F           -       File menu
+ALT+E           -       Edit menu
+ALT+S           -       Search menu
+ALT+M           -       Mode menu
+ALT+I           -       Miscellaneous menu (operations available depend on mode)
+ALT+O           -       Pre-defined Objects menu (options depend on if the mouse is inside/outside a sector)
+ALT+C           -       Checks menu
+ALT+H           -       Help menu
 
 Miscellaneous Keys
 ~~~~~~~~~~~~~~~~~~
-Cursors		-	Move mouse pointer
-Delete		-	Delete highlighted/selected object(s)
-End		-	Move screen right
-Enter		-	Edit highlighted/selected object(s)
-Escape		-	Quit
-Home		-	Move screen left
-Insert		-	Add a Thing, make Sector from LineDefs, add LineDefs between Vertexes and
-			add a Vertex etc.
-Shift+Insert	-	Same as Insert but closes LineDefs, Inserts 2 Sided Sectors etc.
-PageUp		-	Move screen up
-PageDown	-	Move screen down
+Delete          -       Delete highlighted/selected object(s)
+Enter           -       Edit highlighted/selected object(s)
+Escape          -       Quit
+Insert          -       Add an object, read section at end of this document for more information
+Shift+Insert	-	Same as Insert but closes LineDefs, Inserts SideDefs etc.
 ScrollLock	-	Toggle screen from scrolling/not scrolling when mouse is near edge of screen
 Spacebar	-	Toggle screen scroll between slow & fast
-Shift		-	Enabled multiple selection of objects with mouse
-Tab		-	Next mode
+Shift+Mouse	-	Enabled multiple selection of objects
+Tab             -       Next mode and select bound objects (not Thing mode)
 Shift+Tab	-	Previous mode and select bound objects (not Thing mode)
-
 
 Mouse
 ~~~~~
-Move mouse	-	highlights objects and scrolls screen when near edge
+Move mouse	-	Highlights objects and scrolls screen when near edge
 Left Button	-	Select object
 Middle Button	-	Edit object
 Right Button	-	Drag highlighted/selected objects
+Shift+Mouse	-	Enabled multiple selection of object
 
+Standard Keys
+~~~~~~~~~~~~~
+C               -       Clear selection and redraw screen
+D               -       Toggle Drag mode
+G               -       Decrease Grid scale
+Shift+G         -       Increase Grid scale
+H               -       Hide grid
+Shift+H         -       Hide grid and set grid scale to 0
+I               -       Toggle Information bar
+Shift+I         -       Toggle graphical inforamtion displays
+J               -       Jump to a given object number
+K               -       Kill grid (set grid scale to 0)
+L               -       LineDef mode
+M               -       Mark highlighted object
+N               -       Jump to Next object 
+O               -       Copy highlighted/selected Object(s) 
+P               -       Jump to Previous object 
+Q               -       Quit (brings up SaveAs box if 'qisquit'(ini file) is set to false)
+R               -       Toggle Ruler
+S               -       Sector mode
+T               -       Thing mode
+U               -       Undo last operation
+V               -       Vertex mode
 
++               -       - Zoom in/out
+> <             -       Jump to next/previous object
 
+1,2,3,...,0	-	Change zoom
 
+Thing Mode
+~~~~~~~~~~
+CRTL+B          H-      Toggle Blind/Dormant flag
+CRTL+D          D-      Toggle Deaf flag
+CTRL+F          -       Flags menu
+CTRL+G          -       Reset all ArGuments to 0
+CRTL+M          D-      Toggle Multiplayer flag
+CRTL+T          -       Change Type
+.               -       Rotate clockwise
+,               -       Rotate anti-clockwise
+A               -       Repeat last Find
+B               H-      Jump to Thing TID
+F               -       Find?Mark/Filter menu
+>               H-      Increase height by 16
+<               H-      Decrease height by 16
+F4              -       Toggle Graphical display
 
--end-
+Vertex Mode
+~~~~~~~~~~~
+CTRL+A          -       Add LineDef between 2 selected Vertexes and Add a Sector
+CTRL+D          -       Delete Vertex(es) and join LineDefs (same as CTRL+J)
+CTRL+J          -       Delete Vertex(es) and Join LineDefs (same as CTRL+D)
+CTRL+M          -       Merge several selected Vertex(es) and join LineDefs
+F4              -       Toggle Dimension display
+
+Sector Mode
+~~~~~~~~~~~
+CTRL+C          -       Change Ceiling height
+CTRL+F          -       Change Floor height
+CRTL+G          -       Change LineDef taG
+CTRL+N          -       Set type to Normal and Tag to 0
+CRTL+T          -       Change Type
+.               -       Increase floor height by 'increment'(ini file)
+,               -       Decrease floor height by 'increment'(ini file)
+>               -       Increase ceiling height by 'increment'(ini file)
+<               -       Increase ceiling height by 'increment'(ini file)
+
+Line Mode
+~~~~~~~~~
+CTRL+2          -       Toggle 2 sided flag
+CTRL+A          -       Split LineDefs and Add a Sector
+CTRL+B          -       Toggle Blocks sounds flag
+CTRL+C          -       Flags menu
+CTRL+D          -       Delete LineDef(s) and join Sectors (same as CTRL+J)
+CTRL+E          H-      Trigger menu
+CTRL+F          -       Flip LineDefs SideDef(s)
+CRTL+G          D-      Change Sector taG
+CRTL+G          H-      Reset all ArGument to 0
+CTRL+H          -       Toggle Hidden on Map flag
+CTRL+J          -       Delete LineDef(s) and Join Sectors (same as CTRL+D)
+CTRL+K          -       Connect Facing LineDefs and Split Donut Sector
+CTRL+L          -       Toggle Lower Texture unpegged flag
+CTRL+M          -       Toggle iMpassable flag
+CTRL+N          -       Set type to Normal and Tag to 0
+CTRL+O          -       Toggle Allready On map flag
+CTRL+P          -       Toggle monsters can't Pass flag
+CTRL+R          -       Toggle secRet flag
+CTRL+S          -       Swap SideDef(s)
+CRTL+T          -       Change Type
+CTRL+U          -       Toggle Upper Texture unpegged flag
+CTRL+V          -       Split LineDef(s) and add Vertex(es)
+CTRL+X          -       Align LineDefs Textures on X axis without Texture checking
+CTRL+Y          -       Align LineDefs Textures on Y axis without Texture checking
+X               -       Align LineDefs Textures on X axis with Texture checking
+Y               -       Align LineDefs Textures on Y axis with Texture checking
+F4              -       Toggle Doom style Automap display
+CTRL+<          -	Renumber Selected Lines Lowest
+
+Notes on the Insert key
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Thing Mode
+~~~~~~~~~~
+Inserts a new Thing, the type being that of the last selected Thing, if no Thing is selected or you have just 
+deleted a Thing then a player 1 Thing will be inserted.
+
+Vertex Mode
+~~~~~~~~~~~
+Inserts a single Vertex, unless;
+
+If 2 or more Vertexes are selected then LineDefs will be inserted bewteen them and mode will change to 
+LineDef mode.
+
+If 3 of more Vertexes are selected and you press Shift+Insert then LineDefs will be inserted between them 
+and the the last Vertex will connect to the first Vertex. Will also change to LineDef Mode.
+
+If you insert a Vertex close to a LineDef, then the LineDef will split to form a new LineDef, how close you 
+have to be depends on the setting 'closetoline', which can be set in the preference menu and a default set in 
+the ini file.
+
+Sector Mode
+~~~~~~~~~~~
+Inserts a new Sector, be warned: the new sector will have no SideDefs bound to it, but is very useful in the 
+development of pwads.
+
+LineDef Mode
+~~~~~~~~~~~~
+Brings up a 'From Vertex ? To Vertex ?' type dialog, unless;
+
+If 2 or more LineDefs are selected then a new Sector is added and 1st SideDefs are created, if however 1st 
+SideDefs already exist then 2nd SideDefs are created instead.
+
+EOF
+

@@ -1,294 +1,1177 @@
-Changes from DETH 2.4 --> DETH 2.5 (Compiled 18th July '95)
------------------------------------------------------------
+------------------------------
+DETH 4.24 [5tht Dec 98]
+------------------------------
 
-Bugs Fixed
-----------
-Search (F4) would crash when item not found.
-(E)dit level could only handle 32 levels not 38 as in Ultimate Doom
+Removed some debug code I forgot about that showed keypresses in the
+Undo operation field
 
-Additions
----------
-Change Sectors Floor/Ceiling or Light level by any amount - very useful
+Increased tag limits for linedefs and sectors to 32767
 
-Hot Keys:-
-Objects must be clicked (selected) for the hot keys to work, not just
-highlighted with the mouse.
+------------------------------
+DETH 4.23 [21st Oct 98]
+------------------------------
 
-Hot Keys All Modes
-~~~~~~~~~~~~~~~~~~
-CTRL+T - Next Free (T)ag
+Fixed a bug in the code that removed duplicate textures, flats, and
+colormap names on wad load. Now, as originally intended, duplicates
+are simply ignored.
 
-Hot Keys Line Mode
-~~~~~~~~~~~~~~~~~~
-CTRL+2 - Toggle (2) sided flag
-CTRL+A - Split LineDef and (A)dd a Sector
-CTRL+B - Toggle (B)locks sound flag
-CTRL+D - (D)elete LineDefs and Join Sectors (same as CTRL+J)
-CTRL+F - (F)lip LineDef
-CTRL+H - Toggle (H)idden on map flag
-CTRL+J - Delete LineDef and (J)oin Sectors (same as CTRL+D)
-CTRL+L - Toggle (L)ower texture unpegged flag
-CTRL+M - Toggle i(M)passible flag
-CTRL+N - Set LineDef type to (N)ormal
-CTRL+O - Toggle already (O)n map flag
-CTRL+P - Toggle monsters can't (P)ass flag
-CTRL+R - Toggle sec(R)et flag
-CTRL+S - (S)wap SideDef
-CTRL+U - Toggle (U)pper texture unpegged flag
-CTRL+V - Split LineDef and Add a (V)ertex
-CTRL+X - Align Textures on (X) without Texture Checking
-     X - Align Textures on (X) with Texture Checking
-CTRL+Y - Align Textures on (Y) without Texture Checking
-     Y - Align Textures on (Y) witht Texture Checking
+Fixed a misalignment in the Alt-I/F8 menu that was preventing some
+functions below the new hallway function from working.
 
-Hot Keys Vertex Mode
-~~~~~~~~~~~~~~~~~~~~
-CTRL+A - Add LineDef and (A)dd a Sector
-CTRL+D - (D)elete Vertex and Join LineDefs (same as CTRL+J)
-CTRL+J - Delete Vertex and (J)oin LineDefs (same as CTRL+D)
-CTRL+M - (M)erge Several Vertices and Join LineDefs
+------------------------------
+DETH 4.22 [21st Oct 98]
+------------------------------
 
-Hot Keys Things Mode
-~~~~~~~~~~~~~~~~~~~~
-CTRL+D - Toggle (D)eaf flag
-CTRL+M - Toggle (M)ultiplayer flag
+Added default lighting to preferences scheme
+Initial value in INI is 255, compatible with present default
 
-Hot Keys Sector Mode
-~~~~~~~~~~~~~~~~~~~~
-CTRL+N - Set Sector type to (N)ormal
+------------------------------
+DETH 4.21 [20th Oct 98]
+------------------------------
+
+Ctrl-C, Ctrl-Break handling disabled to prevent
+inadvertant exit and loss of edit
+
+Added "Connect Linedefs and Add Hallway" to Linedef Misc
+menu. This supports basic operation of door/window sector 
+creation. Two 1S lines facing away from each other must
+be selected. A hallway thru void space between the two
+lines is created.
+
+------------------------------
+DETH 4.20 [21st Sep 98]
+------------------------------
+
+Added a Replace All textures command for each of the six possible
+wall texture match targets - 1st/2nd and Upper,Lower,Normal. No more
+doing it three times to replace a texture. Also added feature that if
+linedefs are selected, only those walls are replaced.
+
+Added a Replace Both flats command for each of the floor texture 
+match targets - floor,ceiling. No more doing it twice to replace a
+flat. Also added feature that if sectors are selected, only those 
+floors and ceilings are replaced.
+
+------------------------------
+DETH 4.19b [29th Aug 98]
+------------------------------
+
+Fixed display of "large" textures, those with height>254, so that
+DETH will accept and display them if they each have at most one
+post per column.
+
+Changed loading DETH.FNT so that it will be found in current
+directory or any path directory. This allows DETH.EXE to be
+run from the path, with DETH.INI the only required file in
+the editing directory. The config file paths in DETH.INI should 
+point to a common copy of the configs in the DETH directory, and
+the include of common.cfg in doom?.cfg should use that path as well.
+Now that Pwads = is supported in DETH.INI each editing directory
+can load a particular set of resource and level wads automatically
+when DETH is typed there. This simplifies shortcut creation for
+Win'9x quite a bit.
+
+------------------------------
+DETH 4.18b [16th Aug 98]
+------------------------------
+
+Rotation code improved thru use of double throughout calculation and
+removal of DEU superstition that vertices have to be on the 8 unit
+grid.
+
+Fixed a buglet pointed out by Andre Majorel in the texture display
+routine that failed to clip the texture start to 0 if it was
+negative.
+
+Added checks for triggers and tags (boom compatible) to error checker
+
+  Invalid line type
+  Line Acts on Tag 0
+  Push Action on 1S line
+  Line requires a tag and doesn't have one
+  Line has Special and Tag, unused
+  Line has unneeded Tag
+  Sector has tag, but isn't used
+
+Added capability to write error check out as CHECK.LOG text file
+
+If the SpecialEffects variable is true in DETH.INI then facing
+linedef open sector checks are skipped, floor above ceiling checks
+are skipped and all missing upper and lower texture errors are
+suppressed.
+
+Fixed error checks given by colormap and translucency map textures.
+Textures on 242 linedefs are checked against C_START/C_END marked
+names, plus COLORMAP and WATERMAP, if BOOM Enable ON.
+
+The ability to load pwads under PWads = in DETH.INI is now
+supported.
+
+Two new sectors mode Alt-I(F8) Misc menu functions have been added. 
+"Clear all Secret Sectors"
+"Renumber Selected Sectors Lowest"
+
+A new line mode Alt-I(F8) Misc menu function has been added. 
+"Renumber Selected Lines Lowest".
+
+Added -lemu to the makefile to support machines without floating
+point coprocessors.
+
+Fixed another hang situation in the sector splitter. This should be
+the last one, since a level would need an infinite number of linedefs
+to hang now.
+
+N, P now jump thru the marked objects if any are marked. Otherwise
+it selects each object in numeric order as before.
+
+------------------------------
+DETH 4.17b [30th May 98]
+------------------------------
+
+1) Made line-line triggers highlight triggers and matching tags
+
+------------------------------
+DETH 4.16b [20th May 98]
+------------------------------
+
+1) Upped local limit on number of levels loaded from 64 to 100
+
+------------------------------
+DETH 4.15b [16th May 98]
+------------------------------
+
+1) Upped limit on numeric thing type entry to 32767 from 10503.
+
+------------------------------
+DETH 4.14b [10th Apr 98]
+------------------------------
+
+1) Added M_NOPAINT to mouse event polling call to not erase mouse
+cursor after events polled.
+
+2) Made search for texture name case insensitive so id's lower case
+textures would display in the info box.
+
+------------------------------
+DETH 4.14 [8th Apr 98]
+------------------------------
+
+1) Fixed bug in Thing flags display preventing Not DM and Not Coop
+from showing up
+
+2) Unlimited numeric sector type entry to allow for general types
+
+------------------------------
+DETH 4.13 [6th Apr 98]
+------------------------------
+
+1) Removed check for texture names from list browser to allow
+sentential texture names for colormaps and (someday) sounds to be
+entered. Also allows textures in a resource wad to be used in the
+edit if you know their names, without loading the resource wad.
+
+------------------------------
+DETH 4.12 [21th Mar 98]
+------------------------------
+
+1) Found problem causing immediate exit to DOS on insertion of vertex
+or thing before anything else
+
+2) Added new linedef flag to enable push to work thru a linedef and
+activate further specials behind it.
+
+------------------------------
+DETH 4.11 [19th Mar 98]
+------------------------------
+
+1) Combined sector bits for Icy and Sludgy, and their names
+
+2) Removed thing flags for wind - no longer needed
+
+3) Fixed click outside of menu crash to DOS bug
+
+4) upped prefab rectangle limits to 16384X16384
+
+5) made prefab stairs angle limit 32767
+
+------------------------------
+DETH 4.10 [16th Mar 98]
+------------------------------
+
+1) Added code to prompt before merging point to linedef
+or linedef to linedef if VertConf is true in Expert Mode.
+
+------------------------------
+DETH 4.09 [7th Mar 98]
+------------------------------
+
+1) Added support for BOOM generalized sector types
+
+------------------------------
+DETH 4.08 [7th Mar 98]
+------------------------------
+
+1) Added Wind Controller thing name
+
+2) Added flags to Thing Flags menu for Wind Controller
+
+3) Updated COMMON.CFG for new BOOM line types and sector
+   types, and thing type.
+
+
+------------------------------
+DETH 4.07 [9th Feb 98]
+------------------------------
+
+1) Fixed hang problem in split sector routine
+
+2) Added "Connect Linedefs and Split Donut" function to Misc menu. 
+Two facing linedefs across a donut sector are marked, the function
+creates a new quadrilateral sector between them.
+
+------------------------------
+DETH 4.06 [6th Feb 98]
+------------------------------
+
+1) Fixed the single texture browser to only display 256 if the
+horizontal resolution is less than 800.
+
+2) Added primitive support for BOOM generalized linedefs. Updated
+COMMON.CFG for the new ordinary types added as well.
+
+3) Added parser routine to print out generalized linedef properties
+when highlighed.
+
+------------------------------
+DETH 4.05 [2nd Dec 97]
+------------------------------
+
+1) Widened the single texture browser to display textures up to
+512 in width.
+
+
+------------------------------
+DETH 4.04 [26th Oct 97]
+------------------------------
+
+Bugs removed
+------------
+
+1) Found what really should be the last WallBrowser problem. It was
+being called with an unallocated pointer to the texture name already
+on the sidedef, in Normal, Lower, and Upper cases.
+
+Changes
+-------
+
+1) Fixed the linedef tag limits to allow 999 tags for BSP22X
+
+------------------------------
+DETH 4.03 [19th Sep 97]
+------------------------------
+
+Bugs removed
+------------
+
+1) Found yet one more instance of indexing past array end in the Wall
+Browser. This was causing an exception and loss of edit changes. Hope
+this is the last.
+
+------------------------------
+DETH 4.02 [15th Aug 97]
+------------------------------
+
+Bugs removed
+------------
+
+1) Fixed a remaining instability in the Flats browser causing the
+array of flat names to be indexed past end.
+
+2) Repaired the PWAD and flat loading routines so they work in nearly all
+circumstances. As it was, only FF_START/FF_END delimited sections of
+flats could be added. To operate with any wad your doom2.cfg should have its
+[ftextures] section changed to look like:
+
+[ftextures]
+F1, F2, F3, FF, F
+
+3) Fixed a problem with the limits for manually entering thing
+position. The y check was using the x map limits instead of the y.
+
+4) An obscure bug that caused the wall texture browser to crash after
+changing video mode in the edit was repaired.
+
+Addresses modified
+------------------
+
+5) My contact address is now jflynn@pacbell.net
+
+------------------------------
+DETH 4.01 [5th June 97]
+------------------------------
+
+Bugs removed
+------------
+
+1.  Fixed two memory glitches that caused exceptions during configuration
+
+2.  Linedef #0 now splits with Ctrl-V, even when not selected
+
+3.  Missing line type 48 and extra type 78 corrected in COMMON.CFG
+
+4.  Pressing ESC during the savename dialog from File, Save no longer
+    quits the edit losing all changes. It only quits the dialog.
+
+5.  Alt-I operations no longer clear the selection of the current object
+    during their execution.
+
+6.  Instability in Wall texture browser and caching fixed
+
+7.  Stray lines no longer fold into view at very high zooms
+
+8.  Map still scrolls at highest zoom
+
+9.  DETH.FNT now loads reliably from the DETH directory at runtime
+
+Changes
+-------
+
+1.  Ported to DJGPP v2 so it works with Win'95 in full screen DOS windows
+
+2.  Limits for texture offset entry, floor/ceiling diffs now -16K to +16K
+
+3.  New flats now loadable from any wad on command line, not just the IWAD
+
+4.  Since v2 doesn't yet support thick lines, added primitive for same
+
+5.  Support for all games but DOOM2 removed from this version for now.
+
+6.  DETH directory structure flattened - all files in DETH directory now -
+    part of general attempt to simplify installation.
+
+7.  INSTALL.TXT added with instructions for installing this version only.
+
+8.  CSDPMI3B.ZIP added to provide DPMI platform for DOS users.
+
+------------------------------
+DETH/HETH 3.92 [23rd April 96]
+------------------------------
+
+Bugs removed
+------------
+
+1. If you pressed escape while inputing an initial offset then funny numbers
+   would be used.
+
+2. Removed error that caused DETH to crash if adding the first sidedef of a 
+   new (c)reated pwad.
+
+3. Interactive Texture Alignment should not have been displayed on SideDef menu
+   this was messing up the Search and Replace functions.
+
+4. Suspended the writing of Pwads (to automatically load) to the ini files
+   until I clean up this operation.
+
+Changes
+-------
+
+1. Can now use the keys 'F' and 'C' in the sector texture display area to copy
+   Floor and Ceiling textures as you can wall textures.
+
+2. When aligning textures with an initial offset, the current offset is set as
+   default in the prompt.
+
+3. Updated the Heretic config file to accept the new levels present in the 
+   new update Heretic - Shadow of the Serpent Riders, the new levels are:
+   E4M1 - E4M9, E5M1 - E5M9 and E6M1 - E6M3.
+
+4. Stop producing the SLIM version, as nobody reported that this fixed the
+   graphic and font problems, I suspect that it didn't anyway and that the
+   new video drivers have actually resolved this.
+   If anyone would like me to continue then drop me a message.
 
 
 
 
-Changes from DETH 2.3 --> DETH 2.4 (Compiled 6th July '95)
-----------------------------------------------------------
+All changes apply to both the SLIM and FULL version of DETH & HETH
 
-Bugs Fixed
-----------
-None
+-----------------------------
+DETH/HETH 3.91 [3rd April 96]
+-----------------------------
 
-Additions
----------
-(F4) Search facility now improved, Search or Search & Select any Thing type.
-(F)ilter, used to show/hide things by difficulty class and Deathmatch flag.
-Drawing of grid is now slightly faster.
-Menus now stay when clicked with mouse.
-How close you have to be to a LineDef to split it when Inserting Vertices
-	is now definable. see the deth.ini file and F5 - Preferences.
-Doom.cfg updated to handle Ultimate Doom.
-Heretic.cfg updated to handle hidden E4M1.
-LineDefs and Sectors colors are now configurable in .cfg files
-Auto insert of next free tag number
+Bugs removed
+------------
 
+1. Things angle was being drawn wrong, an oversite in 3.90 :(
 
+Changes
+-------
 
+1. Cleaner scrolling, the mouse doesn't pickup on objects when scrolling now.
+   resulting in un-interupted smoother scrolling.
 
-Changes from DETH 2.2 --> DETH 2.3 (Compiled 3rd May '95)
----------------------------------------------------------
+2. Can now navigate the texture browsers with the cursor keys and enter to
+   accept.
 
-Bugs Fixed
-----------
-You can now (C)reate levels again!
-
-Additions
----------
-VertConf option added to deth.ini, this will ask for confirmation of merging
-	vertices when in expert mode.
+3. Added a small delay in wall texture browser, when using the buttons to
+   page up and page down.
 
 
 
+-----------------------------
+DETH/HETH 3.90 [1st April 96]
+-----------------------------
 
-Changes from DETH 2.1 --> DETH 2.2
-----------------------------------
+Bugs removed
+------------
 
-Bugs Fixed
-----------
-Major MAP01 Load/save bug now fixed.
-Texture hangup fixed.
+1. Fixed the SaveIniFile = False option.
 
-Additions
----------
-Find (F4) added for finding Things, use in conjunction with A(gain) and M(ark).
-Can now disable the internal node builder from the ini file.
+2. Fixed the routine that saves the ini file, now saves much faster.
 
+3. Rotating ('[' or ']') a single Thing, caused DETH to crash.
 
-Changes from DETH 2.0 --> DETH 2.1
-----------------------------------
+4. Fixed a problem with writing the default textures to the ini files.
 
-Bugs Fixed
-----------
-Upon loading or checking a WAD, DETH would delete the last vertex.
-Last menu in LineDefs wouldn't work.
-Couldn't escape properly from LineDef sub-menus.
+Changes
+-------
 
-Additions
----------
-LineDef descriptions now resemble descriptions in lndfs2.zip (Lib 18, ACTION, CIS)
+1. Increased the scaling limits.
 
+2. Removed the scrolling limits, if you get lost use '/' to return to the
+   center of the map.
 
+3. Wall textures that are shown on main screen and within the browser are now
+   clipped correctly.
+
+4. Wall texture browser now much improved, takes up less memory, and once
+   cached, draws a screen of textures instantly.
+
+5. Added separate pwad path options for each game type.
 
 
-Changes from DETH 1.2b --> DETH 2.0 (only released for 24 hours as a beta)
+
+------------------------------
+DETH/HETH 3.89 [13th March 96]
+------------------------------
+
+Bugs removed
+------------
+
+1. Stairs created inside Sectors had all the LineDef flags set to Impassible.
+
+2. The Create and Edit buttons on the front-end have been fixed.
+
+3. Fixed the common.cfg file, the painful sector types were screwed.
+
+Changes
+-------
+
+1. When LineDefs are copied, the SideDef information gets copied aswell,
+   this makes duplicating objects faster and easier.
+
+   This option can be switched on/off in the F5 - ini options menu and set with
+   CopySideDefs = True.
+
+2. When you highlight(blue square) an area of the texture display(main screen,
+   bottom right), you can press the following keys:
+   '-' set highlighted texture to nothing.
+   'U' set highlighted texture to same as upper texture on same SideDef.
+   'N' set highlighted texture to same as normal texture on same SideDef.
+   'L' set highlighted texture to same as lower texture on same SideDef.
+
+   This is not a new addition, but the routine has been improved.
+
+3. Using the '[' and ']' keys you can rotate objects by +90 or -90 degrees.
+
+   Note: the rotation and scaling routines have always been a lump of crap, I 
+   have improved the 90 degree turn, but the angles in between and scaling
+   still needs improvement, if anyone can come up with a better routine, I'd be
+   very grateful.
+
+4. Improved the speed at which the screen scrolls or zooms, especially if the
+   mouse is over the map.
+
+5. Increased the limits of the screen scroll.
+
+
+------------------------------
+DETH/HETH 3.88 [12th March 96]
+------------------------------
+
+Bugs removed
+------------
+1. Fixed the problems with DETH crashing when you exited from some menus.
+
+Changes
+-------
+1. All ini settings are automatically saved when you (Q)uit from DETH\HETH. 
+   This can be turned off with SaveIniFile = False.
+   If turned off, then you can manually save the settings from the File menu.
+   Other setting saved include - current editing mode, grid settings and game.
+   When saved, a backup file is created, and called either DETH.BAK or HETH.BAK.
+
+2. When you startup DETH, you are now asked which game you wish to edit.
+   This question can be turned off with, ChooseGame = False.
+   
+   Enter: DOOM, D  or 1 for Doom\Ultimate Doom.
+         DOOM2, D2 or 2 for Doom II
+       HERETIC, H  or 3 for Heretic
+        STRIFE, S  or 4 for Strife ** config files not complete yet **
+                   or just hit enter for the last game type you edited.
+              QUIT or Q to quit
+
+3. You can now turn off the graphical front-end, GraphFront = False. 
+   This option only works with the full version.
+
+4. All ini settings can now be changed from within the Preferences(F5) menu. 
+   The Preferences(F5), Display(F7) menus now stay displayed until you escape
+   or choose the exit menu item.
+
+
+
+--------------------------------------------------
+Deth version 3.87a SLIM (Compiled on 7th March 96)
+--------------------------------------------------
+Introduced a SLIM version of DETH to try and eliminate the problems with
+graphics and mouse drivers that some people seem to be experiencing.
+
+The differences between deth.exe and deths.exe are:
+
+1. No Graphical Front-end
+
+2. No External Font
+
+3. No Internal Node Builder Routines(they were there, but not used)
+
+4. No View Sprite Command
+
+5. No Help
+
+6. No Special Prefab tools, i.e stairs, crates teleports etc. 
+
+
+
+
+--------------------------------------------------------------------
+Deth version 3.87 (Compiled on 4th March 96) also includes Heth 3.87
+--------------------------------------------------------------------
+Bugs Removed 
+------------
+
+Tidied up the pwad path option.
+
+Tidied up the Flip and Swap SideDef routines.
+
+Changes/Additions
+-----------------
+
+New command line command - DIR, this shows the wads present in the pwad path.
+If the option usepromptonly = true is set, then a small listing also appears
+on the main screen.
+
+Can now enter -1 in the on-screen 'SideDef Sector Ref' entry box, to
+delete a SideDef.
+
+New buttons for manually adding SideDefs to LineDefs.
+
+New ini file option: hidegrid, this works in conjunction with initgrid to 
+hide an initial grid upon startup.
+
+Two new check options to quickly replace invalid and missing textures.
+
+New options added to Sector Misc. Menu and LineDef Misc. Menu:-
+Search and Replace Textures, replaces all textures that match the currently
+highlighted choice.
+
+
+
+------------------------------------------------------------------------
+Deth version 3.86 (Compiled on 27th February 96) also includes Heth 3.86
+------------------------------------------------------------------------
+Bugs Removed 
+------------
+
+New font caused special symbols in Thing Flag and Thing Filter menus to not
+show up, so the've been replaced with asterisks.
+
+Fixed bug that, after dragging a single vertice, caused it to be selected.
+this was happening unknown to the user so was causing strange error messages.
+
+Stopped the selection counter, from displaying stupid numbers.
+
+Fixed error that was not allowing the auto-marquee to work if scroll was on.
+
+
+Changes/Additions
+-----------------
+
+Thing Flag and Thing Filter menus now don't return to top item after selection.
+
+Added the ability to state the path to your pwads, set this in the ini file
+e.g  path = c:\pwads\
+make sure that you place a '\' at the end.
+
+
+
 --------------------------------------------------------------------------
+Deth version 3.85a (Compiled on 19th February 96) also includes Heth 1.85a
+--------------------------------------------------------------------------
+Bugs Removed 
+------------
 
-Bugs Fixed
-----------
-None
-
-Additions
----------
-Edits Heretic, read readme.1st
-All data is now in user editable files (things, linedefs, sectors and more....)
+Pressing escape whilst within a sub menu of 'change sector type' would hang the
+program.
 
 
+Changes/Additions
+-----------------
 
+New VESADRV.VDR video driver, this may solve some graphical errors that people
+have been experiencing. - Take a backup of the old one first.
 
-Changes from DETH 1.2a --> DETH 1.2b
-------------------------------------
+New external & internal fonts used, this too, may improve on display errors.
 
-Bugs Fixed
-----------
-none
+Fixed the ini files, there was a couple of errors, mainly the button-bar stuff
+was still present(these options have moved to F5 and F7) and selectiondelay
+should have read stretchdelay, this is the amount of time to wait for the
+automatic marquee select box to appear.
 
-Additions
----------
-You can now Zoom in another 2 factors
-Vertices now don't merge until they are very close, useful for fiddly bits
-	this will be a definable factor in a later release.
+Tidied up the vertex 'show line length' mode (F4) by using a thinner font.
 
 
 
+------------------------------------------------------------------------
+Deth version 3.85 (Compiled on 13th February 96) also includes Heth 1.85
+------------------------------------------------------------------------
 
-Changes from DETH 1.2 --> DETH 1.2a
------------------------------------
+Changes/Additions
+-----------------
+F5 Preferences menu split up and new options added.
 
-Bugs Fixed
-----------
-The Info bar wouldn't disappear properly when you pressed I
-X alignment on the 2nd SideDef would get the very first value wrong
-X alignment would cause a violation if you selected only 1 SideDef
+Made some changes to the menu system:
+Can now move left and right between the pull-down menus.
+Cooler looking design, with better highlighting.
+Left and right cursors now cancel standard menus, this is the same as
+pressing the escape key or right mouse button, makes operations quicker, as
+you don't have to reach for the escape key!
 
-Additions
----------
-Secret lines now shown in magenta
-Invisible lines now shown in lightish brown, best used in Thing mode
-Info on number of patches or transparent textures shown in texture screen
+Cleaned up the map scrolling, no more "clutter" drawn on the top bar.
 
+Cut down on the amount of rougue lines/objects that can be drawn if you
+are zoomed right in to the highest levels.
 
-
-
-Changes from DETH 1.1c --> DETH 1.2
------------------------------------
-
-Bugs Fixed
-----------
-Texture selection now shows additional SKY patches
-Some more Texture errors !
-
-Additions
----------
-Optional showing of Thing angle, see deth.ini
-Textures and sprite routines sped up - again !
-Y Alignment now as X alignment, see texture.txt
+If the wording 'Help', on the top bar, turns orange then by pressing F1,
+help will be displayed about the item under the mouse.
 
 
 
+-----------------------------------------------------------------------
+Deth version 3.84 (Compiled on 9th February 96) also includes Heth 1.84
+-----------------------------------------------------------------------
+*********************************************
+* VERSION 3.84 WAS AN IN-HOUSE RELEASE ONLY *
+*********************************************
 
-Changes from DETH 1.1b --> DETH 1.1c
-------------------------------------
+Bugs Removed 
+------------
 
-Bugs Fixed
-----------
-Sector type menu was incorrect
-Texture selection was unstable
-
-Additions
----------
-Arrow heads smaller
-Help screen (F1) now upto date
+Fixed front-end error that was stopping the use of the quick keys and buttons.
 
 
+Changes/Additions
+-----------------
 
+New ini option - stretchdelay, this is a value of how long to wait after
+pressing the left mouse button to automaticaly start-up the marquee select box.
 
-Changes from DETH 1.1a --> DETH 1.1b
-------------------------------------
+New display on the alternative info bar, shows amount of objects currently
+selected.
 
-Bugs Fixed
-----------
-Texture Selection box would stretch across the screen and mess up text
-Grid would not go from 256 -> 512 upon Shift G
-Sector types Menu fixed
+Object highlighting improved.
 
-Additions
----------
-The Q key is now definable as either Quit or SaveAs
-The K key Kills the grid, i.e it sets it to 0
-Highlight lines thiner and arrow drawing more stable
-X Texture Alignment now much improved, no need to select 1st or 2nd SideDef
-	See texture.txt for more info
-Scrolling now even smoother and less flickery
-Re-written the texture routines for faster processing.
+New option in F5, Prefab Texture, Preferences, Load Texture Scheme:
+this points at a new area of the config files: [schemes] where you can set
+up any amount of texture 'motifs', if you want lots of schemes I would
+suggest creating more sub menus.
 
+example:
 
+[schemes]
+"Scheme 1"
+1, "Big Bricks","BIGBRICK1","BIGBRICK1","BIGBRICK1","FLOOR7_1","RROCK09"
+2, "Classic","STARTAN3","STARTAN3","STARTAN3","FLOOR4_8","CEIL3_6"
 
-
-Changes from DETH 1.1 --> DETH 1.1a
------------------------------------
-
-Bugs Fixed
-----------
-Fixed Bug which stopped DETH editing DOOM 1
-Bug fixed in the preferences menu
-
-Additions
----------
-Map comes up quicker i.e when you type: e 1 or e 1 1
+You don't get asked for a sub menu, if only one menu exists, as above.
 
 
 
+-----------------------------------------------------------------------
+Deth version 3.83 (Compiled on 7th February 96) also includes Heth 1.83
+-----------------------------------------------------------------------
 
-Changes from DETH 1.0 --> DETH 1.1
-----------------------------------
+Bugs Removed 
+------------
 
-Bugs Fixed
-----------
-None
-
-Additions
----------
-Grid scale now 4 -> 512, was 4 -> 256
-Grid and Menus Darker
-Blocks sounds lines shown in dark red
-Monsters can't pass lines shown in dark green
-Distribute Sector Light levels
-User definable large scroll factor
-Default Door Texture and Door Track definable in the .ini file
+Removed bug that was automaticaly changing object 0.
 
 
+Changes/Additions
+-----------------
+
+Thing Filter now works again, and has been updated for HETH, now accesed via
+the Search menu in Thing mode or 'F' in Thing Mode.
+
+F4 in thing mode toggles the display between showing the Things as
+Sprites or not.
+
+F7 brings up new menu, where changed to the display con be made.
+
+New ini file options, griddashed, showthings and automap.
+
+New items in Help menu
 
 
-Changes from DEU 5.2 (GO32 version) --> DETH 1.0
+
+-----------------------------------------------------------------------
+Deth version 3.82 (Compiled on 5th February 96) also includes Heth 1.82
+-----------------------------------------------------------------------
+
+Bugs Removed 
+------------
+
+The top menus, if selected via mouse were screwed.
+
+Couldn't scroll then screen down if information bar wasn't on.
+
+
+Changes/Additions
+-----------------
+
+Top Menus can now be drawn nested rather than on the middle of the screen
+(nestmenus=true).
+
+F6 - Special keys, now mode sensitive and upto date.
+
+F1 - Standard keys now upto date.
+
+Flat and Wall Texture browers now start on page containing current texture,
+and current texture is highlighted.
+
+Browsers now show more info about Texture.
+
+F4  - In LineDef mode nows toggle Doom style Automap display.
+
+Thing flags now shown under graphical display, they can be toggled by
+clicking on them.
+
+The file keys.txt is now upto date.
+
+
+
+-----------------------------------------------------------------------
+Deth version 3.81 (Compiled on 2nd February 96) also includes Heth 1.81
+-----------------------------------------------------------------------
+*********************************************
+* VERSION 3.81 WAS AN IN-HOUSE RELEASE ONLY *
+*********************************************
+
+Bugs Removed 
+------------
+
+Screen redraw wasn't happening after direct editing, if the mouse was over
+an info box.
+
+In Heth, the Trigger menu would lead onto the Special menu.
+
+Many functions still didn't work on object number 0(the first item created
+in a new WAD).
+
+Direct editing of Sector Refs was limited to 255, now set to current high
+sector number+1.
+
+Changes/Additions
+-----------------
+
+Limits to Texture Offsets increased to -2048 -> +2048, if input via the
+direct editing.
+
+Started implementation of Context Sensitive Help.
+
+Started routines to bring back(via an option) Nesting of Menus.
+
+
+
+-----------------------------------------------------------------------
+Deth version 3.80 (Compiled on 26th January 96) also includes Heth 1.80
+-----------------------------------------------------------------------
+
+Bugs Removed 
+------------
+
+In Deth you couldn't highlight the Thing Sprite display to bring up 
+the 'Choose Type' menu.
+
+Many functions wouldn't work on object number 0(the first item
+created in a new WAD).
+
+Age-old bug of Vertices being de-selected after moveing them has been removed, 
+they do how-ever de-select if an auto-merge takes place.
+
+Changes/Additions
+-----------------
+
+When you highlight(blue square) an area of the texture display(main screen,
+bottom right), you can press the following keys:
+'-' set highlighted texture to nothing.
+'U' set highlighted texture to same as upper texture on same SideDef.
+'L' set highlighted texture to same as normal texture on same SideDef.
+'L' set highlighted texture to same as lower texture on same SideDef.
+
+
+
+----------------------------------------------------------------------
+Deth version 3.70 (Compiled on 8th January 96) also includes Heth 1.70
+----------------------------------------------------------------------
+
+Changes/Additions
+-----------------
+
+F4 while in Vertex mode switches LineDef length on/off.
+
+New Video mode - Set Mode to 5 to use DETH\HETH in 1280x1024 resolution.
+
+
+
+---------------------------------------------------------------------------
+Deth version 3.60 BETA (Compiled on 5th January 96) also includes Heth 1.60
+---------------------------------------------------------------------------
+
+Changes/Additions
+-----------------
+
+DETH and HETH are now in the one zip file.
+
+Any changes/additions from previous versions of HETH now also apply to DETH.
+
+Config files have been merged.
+
+The source code has been stream-lined and a lot of function calls
+have been re-written and tidied up, the result is a slightly smaller
+execuatable and better/smoother functionality.
+
+New friendly hightlighting of the information boxes, when an area is
+highlighted blue, it means that you can click that area to edit it.
+
+Cleaner dragging of objects, you may not notice much here, but be assured,
+it is cleaner and has slightly better screen redraw.
+
+Added 'usepromptonly' to ini files, this sets a simpler front-end. 
+
+
+------------------------------------------------
+Heth version 1.06 (Compiled on 21st December 95)
 ------------------------------------------------
 
-Bugs Fixed
-----------
+Bugs Removed 
+------------
+Something, but I can't remember!
+
+Changes/Additions
+-----------------
+Gamma setting added to ini file, also change this with the F7 key.
+
+Scaled textures mean more of the graphic shown in main display and
+more selection shown in browsers.
+
+Now uses the same source as DETH but is complied differently, so any
+changes made to either program will be present in both.
+
+
+
+-----------------------------------------------
+Heth version 1.05 (Compiled on 5th December 95)
+-----------------------------------------------
+
+Bugs Removed 
+------------
 None
 
-Additions
----------
-Edits and saves Doom 2 files
-All new Linedefs, Things and Textures from Doom2 now included
-Grid scale now 4 -> 256, was 8 -> 256
-Thing number shown
-LineDefs flag screen stays until esc pressed
-Things colors now make sense
-Thing angle can be changed with . and , keys
-Longer Thing descriptions now displayed
-Rulers can be shown as squares instead of circles with -sq
-Vertices now shown as small squares, instead of a large cross
-Mouse not so sensitive near edge of screen
-Arrow heads smaller
-Scrolling of map now faster and smoother as info boxes and objects not shown
-Sector Height shown
-Texture selection faster
-More sector types included
+Changes/Additions
+-----------------
+Can now use Home and End to navigate through the texture browsers.
+
+New buttons bars, can be turned on/off with the 'buttonbars = true' setting.
+Choose style with 'barstyle = 1' for top aligned buttons or 'barstyle = 2'
+for left justified buttons.
+Also choose to close the buttons on use with - 'closeonuse = true' setting.
+
+Change video modes while editing!
+
+Added reference to my WWW homepage.
+
+
+
+
+------------------------------------------------
+Heth version 1.04 (Compiled on 29th November 95)
+------------------------------------------------
+
+Bugs Removed 
+------------
+None
+
+Changes/Additions
+-----------------
+Tidied up the Sector colors.
+
+Took a few old/unnecessary options out of the ini file.
+
+New Flats/Texture browser, click on the textures in the main edit screen
+or choose Browse.... from the menus, and you'll be presented with a screen of
+textures, use the mouse to select, escape to cancel, use the buttons or
+PageUp and PageDown to page up and page down!!!  
+To stop the editor selecting other objects when you move the mouse around just
+hold down the shift key.
+
+New 'initgrid' option, set this in the ini file for the starting grid level.
+
+New 'keepinfo' option, set this to TRUE in the ini file and 
+the MAPINFO and SNDINFO lumps will be saved along with the PWAD.
+
+New 'caching' option, set this in the ini file to turn texture cahcing on,
+but be warned, it will eat just over 4 megs, and doesn't have much effect with
+fast machines.
+This feature is turned off by default.
+
+
+
+------------------------------------------------
+Heth version 1.03 (Compiled on 22nd November 95)
+------------------------------------------------
+
+Bugs Removed 
+------------
+Heth had a problem grouping more than 1 MAP, this has now been fixed.
+
+Changes/Additions
+-----------------
+
+Command 'O' converts a renamed compiled script to BEHAVIOR.WAD
+Compile your script with the acc.exe utility,
+rename the file from MYSCRIPT.O to MYSCRIPT.RAW,
+Edit or Read a level.
+at the command line type:-
+O MYSCRIPT.RAW
+then Group them to form a new PWAD:-
+G NEWPWAD.WAD
+This is a quick addition, as inserting lumps this way only works for map01,
+a proper command from within the editor itself will be implemented soon.
+
+
+
+------------------------------------------------
+Heth version 1.02 (Compiled on 20th November 95)
+------------------------------------------------
+
+Bugs Removed 
+------------
+More Menu bugs removed, when setting objects to 0 or pressing escape.
+
+Intelligent Highlighting fixed/upgraded.
+
+Front-end errors removed.
+
+Heth would quit if you entered the command 'R'.
+
+Heth no longer copies the MAPINFO lump, this should be inserted after editing,
+just as you would insert a BEHAVIOR lump or SNDINFO lump.
+
+Changes/Additions
+-----------------
+Increment floor/ceiling heights now has a limit of 8192 not 1024.
+
+Pressing 'A' in LineDef or Thing Mode brings up a 6 entry window, which prompts 
+for the Special & Argument values, use the Tab/BackTab/Enter to move around.
+
+Pressing CTRL + 'F' in Thing Mode brings up Things Flags window.
+
+Pressing CTRL + 'C' in LineDef Mode brings up LineDef Flags window.
+You may be wonder what 'C' has got to do with Flags, the truth is I'm running
+out of keys!
+
+Pressing CTRL + 'E' in LineDef Mode brings up Trigger window.
+See the comment above! 
+
+Clicking on the information boxes will bring up direct editing of values.
+This is still under development and doesn't yet work on the following fields:-
+SideDef1 - Normal/Upper/Lower Textures.
+SideDef2 - Normal/Upper/Lower Textures.
+Sectors  - Floor/Ceiling Textures.
+To stop the editor selecting other objects when you move the mouse around just
+hold down the shift key.
+Pressing escape when prompted for a field will set that field to 0.
+
+In thing mode pressing 'B' will ask for a TID and jump to the first object
+which matches.
+
+Can you find the hidden front-end message?
+
+
+
+
+Heth version 1.01 (Compiled on 16th November 95)
+------------------------------------------------
+
+Bugs Removed 
+------------
+LineDef Trigger, option to set trigger type to "Walk" wasn't working.
+
+Filter option removed, until I have it working again :-)
+
+LineDef Menu Item "Normal" now works properly.
+
+Spawn list item "0 - None" now shows up.
+
+Spawn list descriptions/numbers corrected.
+
+Long Spawn descriptions would crash Heth, now fixed.
+
+Grouping of Pwads fixed, went wrong when I added the new front-end.
+
+Next Free Tag Fixed.
+
+
+Changes/Additions
+-----------------
+Sector height check increased from 1024 to 8192.
+
+Things that can contain other Things now bring up the Spawnable object
+menu (arg1).
+
+Intelligent object highlighting.
+
+Next Free Tid added to Misc menu (Thing Mode only).
+
+New Quick buttons and keys on front-end, this is still in development.
+
+Click in the lower area to access the prompt or just hit "enter".
+
+New Drop to Dos feature, use the quick key, button or enter "!" at the prompt.
+
+If a level is not found, then Heth will default to MAP01 instead of crashing.
+
+
+
+------------------------------------------------
+Heth version 1.00 (Compiled on 13th November 95)
+------------------------------------------------
+
+Changes/Additions
+-----------------
+
+New graphical front-end.
+
+"ldtypes.hex" file renamed to "specials.hex".
+
+"hexen.cfg" file renamed to "config.hex", so that all Hexen files end in .hex.
+
+Restructured Special Argument routines to allow more flexability,
+See the "specials.hex" file for more information.
+
+Things angle display changed so that at lower zooms the direction is still
+visible.
+
+Tidied up the menus and display boxes again!
+
+Tag checks removed, as they didn't work!
+
+Spawnable name now displays properly in arg2.
+
+
+
+
+----------------------
+Heth version 0.13 beta
+----------------------
+
+Sprite frames of 8 characters long now display in selection.
+
+Cleaned up the display boxes and Hot-Keys screen(F6).
+
+All config files i.e Things/Specials/Sectors now correct.
+
+Can now select Spawnable objects from LineDefs and Things.
+
+List of Spawnable objects now complete 
+
+Spawnable name doesn't display properly in arg2(will be fixed)
+
+
+
+
+----------------------
+Heth version 0.12 beta
+----------------------
+
+LineDef wording of "Type" changed to "Special".
+
+Thing Flags input and display changed to:   EMH|FCM|SCD Deaf Dormant
+EMH - Easy, Medium, Hard skill levels.
+FCM - Fighter, Cleric, Mage.
+Deaf - Thing is Deaf until hurt or sees you.
+Dormant - Thing is Blind/Frozen until activated.
+
+LineDef Activation flags now changed to Trigger type:
+(000) 0 - Walkover,    Player crosses the line.
+(001) 1 - Switch,      Player uses the line with the use key.
+(010) 2 - Monster,     Monster crosses the line.
+(011) 3 - Hit,         Projectile impacts on the wall
+(100) 4 - Push,        Player pushes the wall.
+(101) 5 - Projectile,  Projectile crosses the line.
+
+LineDef Special flag renamed to Repeatable.
+
+Spawnable objects now listed for special types 134-136. (./config/spawn.hex)
+
+CTRL + 'B' in Thing mode sets Blind flag.
+
+'>' in Thing mode increases Thing Height by 16.
+
+'<' in Thing mode decreases Thing Height by 16.
+
+Thing descriptions now include:-
+[f] - Z value is height of object above the Floor.
+[fg] - Z value is height of object above the Floor but is subject to Gravity.
+[c] - Object starts life on the Ceiling and Z value is taken from Ceiling.
+[d] - Object is Desctructable
+[dc] - Object is Desctructable and can also contain an Object
+
+
+
+
+----------------------
+Heth version 0.11 beta
+----------------------
+
+CTRL + 'G' in LineDef mode resets all LineDef Arguments to 0.
+
+CTRL + 'G' in Thing mode resets all Thing Arguments to 0.
+
+Arguments in the display and menus are now displayed in the correct
+terminology for that type.
+
+All Things descriptions have now been entered, except the sprites but not tested.
+
+All LineDef descriptions have now been entered but not tested.
+
+All Sector descriptions have now been entered but not tested.
+
+Can now enter the Thing Special (this is the same as LineDef Type).
+
+Thing and LineDef Flags now correct.
+
+When an Argument requires an input i.e type of key, or type of sound, then you are
+presented with a list, not just an decimal input box.
+
+

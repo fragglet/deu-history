@@ -1,0 +1,68 @@
+              ###################################
+               DETH v4.01 and later Installation
+              ###################################
+
+Installation:
+-------------
+
+1) Create a new directory to install DETH in
+
+2) Copy and unzip DETH.ZIP there (no -d required)
+
+3) Edit DOOM2.CFG and/or DOOM1.CFG and change the [wad] entry to the path for
+   the DOOM2.WAD and/or DOOM.WAD on your system.
+
+4) Make sure the VESA driver for your video card is installed or that
+   you are running UniVBE or SDD or one of the universal VESA drivers.
+
+5) Type DETH to start the editor (CWSDPMI.EXE in zip must be in
+   current directory or path if DPMI manager not supplied by other
+   means, like the Windows OS).
+
+
+Troubleshooting
+---------------
+
+1) If it says it can't find DOOM2.WAD or DOOM.WAD, check the path to
+   DOOM2.CFG, DOOM1.CFG in  DETH.INI and insure it reads:
+
+	#Path to config files
+	Doom = doom1.cfg
+	Doom2 = doom2.cfg
+
+   Also check the [wad] entry in DOOM2.CFG or DOOM1.CFG and insure it
+   correctly locates your DOOM2.WAD or DOOM.WAD.
+
+2) If the BOOM extended functions don't appear in the menus make sure
+   DETH.INI has the Boom variable set to True. Running "DETH -boom" once
+   should do this.
+
+3) If the editor comes up - but most of the text is missing on the
+   displays and menus, make sure DETH.FNT is in the directory you are
+   running DETH from, or somewhere in the path.. 
+
+4) Do not run DETH by double clicking DETH.EXE or a shortcut to it in
+   Win'95 until you have created a shortcut, set the Program tab in
+   the shortcut's properties to specify the DETH directory as the
+   working directory, and set the Window properties to Full-Screen. You
+   may not get fonts or load the config files properly otherwise. If you
+   don't know how to edit shortcuts, start an MS-DOS prompt, make it
+   full-screen with Alt-Enter, change to the DETH directory, and
+   start DETH with a command line.
+   
+5) Write me at jflynn@pacbell.net, and explain the problem.
+   I'll do my best to get you running.
+
+
+Thanks to
+---------
+
+id Software for a great game and an open architecture
+Raphael Quinet and Brendon Wyber for the original DEU sources
+Antony Burden and Simon Oke for creating DETH
+
+Ty Halderman, Bob Evans, Paul Schmitz, Gary Gosson, Paul Fleschute,
+and too many others to name who have suggested features and
+improvements, and endured my bugs.
+
+

@@ -1,5 +1,6 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   DETH - Doom Editor for Total Headcases, by Simon Oke and Antony Burden.
+   HETH - Hexen Editor for Total Headcases, by Antony Burden.
    
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -29,14 +30,13 @@ void OpenMainWad( char *filename)
     long n;
     WadPtr wad;
     
-    /* open the wad file */
-    if	(ShowConfig)
-		printf( "Loading main WAD file: %s...\n", filename);
+    /* open the iwad file */
     wad = BasicWadOpen( filename);
     if (strncmp( wad->type, "IWAD", 4))
         ProgError( "\"%s\" is not the main WAD file", filename);
     
     /* create the master directory */
+	/* linked list of directory entries and file they came from */
     lastp = NULL;
     for (n = 0; n < wad->dirsize; n++) {
         newp = (MDirPtr) GetMemory( sizeof( struct MasterDirectory));
@@ -76,6 +76,22 @@ int isalev(char *s)
 	return 0;
 }
 
+int isamark(char *mrk)
+{
+	if (!strchr("FSP",mrk[0]))
+		return 0;
+
+	if (mrk[1]!=mrk[0] && !strchr("123_",mrk[1]))
+		return 0;
+
+	if (mrk[1]=='_' && (strncmp(mrk+2,"START",5)==0 || strncmp(mrk+2,"END",3)==0))
+		return 1;
+
+	if (mrk[2]=='_' && (strncmp(mrk+3,"START",5)==0 || strncmp(mrk+3,"END",3)==0))
+		return 1;
+
+	return 0;
+}
 
 /*
    open a patch wad file, read in its directory and alter the master
@@ -88,7 +104,6 @@ void OpenPatchWad( char *filename)
     MDirPtr mdir = NULL;
     BCINT n, l;
     char entryname[9];
-
     /* ignore the file if it doesn't exist */
     if (! Exists( filename)) {
         printf( "Warning: patch WAD file \"%s\" doesn't exist.  Ignored.\n", filename);
@@ -102,8 +117,6 @@ void OpenPatchWad( char *filename)
     ForgetAllResources();
     
     /* open the wad file */
-    if (ShowConfig)
-		printf( "Loading patch WAD file: %s...\n", filename);
     LogMessage( "Loading patch WAD file: %s...\n", filename);
     wad = BasicWadOpen( filename);
     if (strncmp( wad->type, "PWAD", 4))
@@ -117,8 +130,7 @@ void OpenPatchWad( char *filename)
         if (l == 0) {
             mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
             /* if this entry is not in the master directory, then add it */
-            if (mdir == NULL) {
-                printf( "   [Adding new entry %s]\n", entryname);
+            if (mdir == NULL || isamark(wad->directory[n].name)) {
                 mdir = MasterDir;
                 while (mdir->next)
                     mdir = mdir->next;
@@ -126,19 +138,21 @@ void OpenPatchWad( char *filename)
                 mdir = mdir->next;
                 mdir->next = NULL;
             }
-            /* if this is a level, then copy this entry and the next 10 */
+            /* if this is a level, then copy this entry and the next 10 or 11 */
             else if (isalev(wad->directory[ n].name)) {
-                printf( "   [Updating level %s]\n", entryname);
                 LogMessage( "   [Updating level %s] from %s\n", entryname, wad->filename);
+#ifdef GAME_HEXEN
+                l = 11;
+#else
                 l = 10;
+#endif
 				mdir->wadfile = wad;
             }
-            else
-                printf( "   [Updating entry %s]\n", entryname);
         }
         else {
             mdir = mdir->next;
             /* the level data should replace an existing level */
+			/* the level entries must be in the standard order */
             if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
                 ProgError( "\\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
             l--;
@@ -249,6 +263,8 @@ WadPtr BasicWadOpen( char *filename)
         /* SO 26/4/95 */
         curw->filename = strdup(filename);
     }
+	else
+        fclose( curw->fileinfo);
     
     /* open the file */
     if ((curw->fileinfo = fopen( filename, "rb")) == NULL) {
@@ -397,10 +413,19 @@ void BuildNewMainWad( char *filename, Bool patchonly)
     long dirnum;
     
     /* open the file and store signatures */
+    SetColor(BLUE);
+
+#ifndef SLIM
     if (patchonly)
-        printf( "Building a compound Patch Wad file \"%s\".\n", filename);
+        DrawScreenText(10, 170, "Building a compound Patch Wad file \"%s\".", filename);
     else
-        printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
+        DrawScreenText(10, 170, "Building a new Main Wad file \"%s\" (size approx 20 Meg)", filename);
+#else
+    if (patchonly)
+        printf("Building a compound Patch Wad file \"%s\".\n", filename);
+    else
+        printf("Building a new Main Wad file \"%s\" (size approx 20 Meg)\n", filename);
+#endif
     if (!Registered)
         ProgError( "You were warned: you are not allowed to do this.");
     if ((file = fopen( filename, "wb")) == NULL)
@@ -420,18 +445,38 @@ void BuildNewMainWad( char *filename, Bool patchonly)
         counter += size;
         BasicWadSeek( cur->wadfile, cur->dir.start);
         CopyBytes( file, cur->wadfile->fileinfo, size);
-        printf( "Size: %ldK\r", counter / 1024);
+#ifndef SLIM
+		if (GraphFront) {
+			SetColor(DARKGRAY);
+			DrawScreenBox( 48, 180, 100, 190);
+			SetColor(BLUE);
+    	}
+		if (GraphFront)
+			DrawScreenText( 10, 180, "Size: %ld K", counter / 1024);
+		else
+			printf("Size: %ld K/r", counter / 1024);
+#else
+        printf("Size: %ld K/r", counter / 1024);
+#endif
     }
     
     /* output the directory */
     dirstart = counter;
     counter = 12;
     dirnum = 0;
+#ifndef SLIM
+    SetColor(BLUE);
+	if (GraphFront)
+		DrawScreenText( 10, 190, "Building Directory");
+	else
+		printf("Building Directory\n");
+#else
+	printf("Building Directory\n");
+#endif
     for (cur = MasterDir; cur; cur = cur->next) {
         if (patchonly && cur->wadfile == WadFileList)
             continue;
-        if (dirnum % 100 == 0)
-            printf( "Outputting directory %04ld...\r", dirnum);
+        /* if (dirnum % 100 == 0) */
         if (cur->dir.start)
             WriteBytes( file, &counter, 4L);
         else
@@ -449,7 +494,6 @@ void BuildNewMainWad( char *filename, Bool patchonly)
     WriteBytes( file, &dirstart, 4L);
     
     /* close the file */
-    printf( "                            \r");
     fclose( file);
 }
 
@@ -649,7 +693,7 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
     
     for (counter = 0L; counter < 8L; counter++)
         name8[ counter] = '\0';
-    strncpy( name8, entryname, 8);
+		strncpy( name8, entryname, 8);
     WriteBytes( file, "PWAD", 4L);     /* PWAD file */
     counter = 1L;
     WriteBytes( file, &counter, 4L);   /* 1 entry */
@@ -672,3 +716,4 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
 
 
 /* end of file */
+
