@@ -16,22 +16,30 @@
 #include <string.h>
 #include <stdarg.h>
 #include <ctype.h>
+
+
+#if defined(__TURBOC__)
+
 #include <graphics.h>
 #include <alloc.h>
 #include <dos.h>
 #include <bios.h>
-
-
-/*
-   the version information
-*/
-
 #define DEU_VERSION	"5.2"	/* the version number */
+typedef int            BCINT;
+typedef unsigned int   UBCINT;
 
+#elif defined(__GNUC__)
+
+#include "deu-go32.h"
+#define DEU_VERSION     "5.2 - DJGPP/GO32 version"
+typedef short int            BCINT;
+typedef unsigned short int   UBCINT;
+
+#endif
 
 
 /*
-   the directory structure is the structre used by DOOM to order the
+   the directory structure is the structure used by DOOM to order the
    data in it's WAD files
 */
 
@@ -89,14 +97,14 @@ typedef struct SelectionList *SelPtr;
 struct SelectionList
 {
    SelPtr next;			/* next in list */
-   int objnum;			/* object number */
+   BCINT objnum;			/* object number */
 };
 
 
 /*
    syntactic sugar
 */
-typedef int Bool;               /* Boolean data: true or false */
+typedef BCINT Bool;               /* Boolean data: true or false */
 
 
 /*
@@ -107,15 +115,15 @@ typedef struct
 {
    char *short_name;		/* abbreviated command line argument */
    char *long_name;		/* command line arg. or keyword */
-   enum				/* type of this option */
+   enum                         /* type of this option */
    {
-      OPT_BOOLEAN,			/* boolean (toggle) */
-      OPT_INTEGER,			/* integer number */
-      OPT_STRING,			/* character string */
-      OPT_STRINGACC,			/* character string, but store in a list */
-      OPT_STRINGLIST,			/* list of character strings */
-      OPT_END				/* end of the options description */
-   } opt_type;
+      OPT_BOOLEAN,                      /* boolean (toggle) */
+      OPT_INTEGER,                      /* integer number */
+      OPT_STRING,                       /* character string */
+      OPT_STRINGACC,                    /* character string, but store in a list */
+      OPT_STRINGLIST,                   /* list of character strings */
+      OPT_END                          /* end of the options description */
+   } opt_type;                    
    char *msg_if_true;		/* message printed if option is true */
    char *msg_if_false;		/* message printed if option is false */
    void *data_ptr;              /* pointer to the data */
@@ -133,12 +141,12 @@ typedef struct
 #define DEU_LOG_FILE		"DEU.LOG"
 
 /* convert screen coordinates to map coordinates */
-#define MAPX(x)			(OrigX + (int) (((x) - ScrCenterX) / Scale))
-#define MAPY(y)			(OrigY + (int) ((ScrCenterY - (y)) / Scale))
+#define MAPX(x)			(OrigX + (BCINT) (((x) - ScrCenterX) / Scale))
+#define MAPY(y)			(OrigY + (BCINT) ((ScrCenterY - (y)) / Scale))
 
 /* convert map coordinates to screen coordinates */
-#define SCREENX(x)		(ScrCenterX + (int) (((x) - OrigX) * Scale))
-#define SCREENY(y)		(ScrCenterY + (int) ((OrigY - (y)) * Scale))
+#define SCREENX(x)		(ScrCenterX + (BCINT) (((x) - OrigX) * Scale))
+#define SCREENY(y)		(ScrCenterY + (BCINT) ((OrigY - (y)) * Scale))
 
 /* object types */
 #define OBJ_THINGS		1
@@ -153,8 +161,11 @@ typedef struct
 #define OBJ_BLOCKMAP		10
 
 /* boolean constants */
+
+#ifndef TRUE
 #define TRUE			1
 #define FALSE			0
+#endif
 
 /* half the size of an object (Thing or Vertex) in map coords */
 #define OBJSIZE			7
@@ -165,21 +176,21 @@ typedef struct
 */
 
 /* from deu.c */
+extern Bool  CirrusCursor;      /* use hardware cursor on Cirrus Logic VGA cards */
+extern Bool  Select0;           /* select object 0 by default when switching modes */
 extern Bool  Registered;	/* registered or shareware WAD file? */
 extern Bool  Debug;		/* are we debugging? */
 extern Bool  SwapButtons;	/* swap right and middle mouse buttons */
 extern Bool  Quiet;		/* don't play a sound when an object is selected */
 extern Bool  Quieter;		/* don't play any sound, even when an error occurs */
 extern Bool  Expert;		/* don't ask for confirmation for some operations */
-extern int   InitialScale;	/* initial zoom factor for map */
-extern int   VideoMode;		/* default video mode for VESA cards */
+extern BCINT InitialScale;	/* initial zoom factor for map */
+extern BCINT VideoMode;	  	/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
 extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
-extern Bool  CirrusCursor;	/* use hardware cursor on Cirrus Logic VGA cards */
 extern Bool  Colour2;		/* use the alternate set for things colors */
 extern Bool  AdditiveSelBox;	/* additive selection box or select in box only? */
-extern int   SplitFactor;	/* factor used by the Nodes builder */
-extern Bool  Select0;		/* select object 0 by default when switching modes */
+extern BCINT SplitFactor;       /* factor used by the nodes builder */
 extern char *MainWad;		/* name of the main wad file */
 extern FILE *logfile;		/* filepointer to the error log */
 
@@ -191,16 +202,16 @@ extern MDirPtr MasterDir;	/* the master directory */
 extern Bool InfoShown;          /* is the bottom line displayed? */
 
 /* from gfx.c */
-extern int   GfxMode;		/* current graphics mode, or 0 for text */
+extern BCINT GfxMode;		/* current graphics mode, or 0 for text */
 extern float Scale;		/* scale to draw map 20 to 1 */
-extern int   OrigX;		/* the X origin */
-extern int   OrigY;		/* the Y origin */
-extern int   PointerX;		/* X position of pointer */
-extern int   PointerY;		/* Y position of pointer */
-extern int   ScrMaxX;		/* maximum X screen coord */
-extern int   ScrMaxY;		/* maximum Y screen coord */
-extern int   ScrCenterX;	/* X coord of screen center */
-extern int   ScrCenterY;	/* Y coord of screen center */
+extern BCINT OrigX;		/* the X origin */
+extern BCINT OrigY;		/* the Y origin */
+extern BCINT PointerX;		/* X position of pointer */
+extern BCINT PointerY;		/* Y position of pointer */
+extern BCINT ScrMaxX;		/* maximum X screen coord */
+extern BCINT ScrMaxY;		/* maximum Y screen coord */
+extern BCINT ScrCenterX;	/* X coord of screen center */
+extern BCINT ScrCenterY;	/* Y coord of screen center */
 
 /* from mouse.c */
 extern Bool UseMouse;		/* is there a mouse driver? */
@@ -219,7 +230,7 @@ void Usage( FILE *);
 void Credits( FILE *);
 void FunnyMessage( FILE *);
 void Beep( void);
-void PlaySound( int, int);
+void PlaySound( BCINT , BCINT );
 void ProgError( char *, ...);
 void LogMessage( char *, ...);
 void MainLoop( void);
@@ -246,14 +257,14 @@ void ListFileDirectory( FILE *, WadPtr);
 void BuildNewMainWad( char *, Bool);
 void WriteBytes( FILE *, void huge *, long);
 void CopyBytes( FILE *, FILE *, long);
-int Exists( char *);
+BCINT  Exists( char *);
 void DumpDirectoryEntry( FILE *, char *);
 void SaveDirectoryEntry( FILE *, char *);
 void SaveEntryToRawFile( FILE *, char *);
 void SaveEntryFromRawFile( FILE *, FILE *, char *);
 
 /* from levels.c */
-void ReadLevelData( int, int); /* SWAP! */
+void ReadLevelData( BCINT , BCINT ); /* SWAP! */
 void ForgetLevelData( void); /* SWAP! */
 void SaveLevelData( char *); /* SWAP! */
 void ReadWTextureNames( void);
@@ -262,12 +273,12 @@ void ReadFTextureNames( void);
 void ForgetWTextureNames( void);
 
 /* from edit.c */
-void EditLevel( int, int, Bool);
-void SelectLevel( int *, int *);
-void EditorLoop( int, int); /* SWAP! */
-void DrawMap( int, int, Bool); /* SWAP! */
-void CenterMapAroundCoords( int, int);
-void GoToObject( int, int); /* SWAP! */
+void EditLevel( BCINT , BCINT , Bool);
+void SelectLevel( BCINT  *, BCINT  *);
+void EditorLoop( BCINT , BCINT ); /* SWAP! */
+void DrawMap( BCINT , BCINT, Bool ); /* SWAP! */
+void CenterMapAroundCoords( BCINT , BCINT );
+void GoToObject( BCINT , BCINT ); /* SWAP! */
 
 /* from gfx.c */
 void InitGfx( void);
@@ -275,134 +286,133 @@ Bool SwitchToVGA256( void);
 Bool SwitchToVGA16( void);
 void TermGfx( void);
 void ClearScreen( void);
-void SetColor( int);
-void DrawMapLine( int, int, int, int);
-void DrawMapCircle( int, int, int);
-void DrawMapVector( int, int, int, int);
-void DrawMapArrow( int, int, unsigned);
-void DrawScreenLine( int, int, int, int);
-void DrawScreenBox( int, int, int, int);
-void DrawScreenBox3D( int, int, int, int);
-void DrawScreenBoxHollow( int, int, int, int);
-void DrawScreenMeter( int, int, int, int, float);
-void DrawScreenText( int, int, char *, ...);
+void SetColor( BCINT );
+void DrawMapLine( BCINT , BCINT , BCINT , BCINT );
+void DrawMapCircle( BCINT , BCINT , BCINT );
+void DrawMapVector( BCINT , BCINT , BCINT , BCINT );
+void DrawMapArrow( BCINT , BCINT , UBCINT);
+void DrawScreenLine( BCINT , BCINT , BCINT , BCINT );
+void DrawScreenBox( BCINT , BCINT , BCINT , BCINT );
+void DrawScreenBox3D( BCINT , BCINT , BCINT , BCINT );
+void DrawScreenBoxHollow( BCINT , BCINT , BCINT , BCINT );
+void DrawScreenMeter( BCINT , BCINT , BCINT , BCINT , float);
+void DrawScreenText( BCINT , BCINT , char *, ...);
 void DrawPointer( Bool);
-void SetDoomPalette( int);
-int TranslateToDoomColor( int);
-unsigned ComputeAngle( int, int);
-unsigned ComputeDist( int, int);
-void InsertPolygonVertices( int, int, int, int);
-void RotateAndScaleCoords( int *, int *, double, double);
-#ifdef CIRRUS_PATCH
-void SetHWCursorPos( unsigned, unsigned);
-void SetHWCursorCol( long, long);
-void SetHWCursorMap( char *);
-#endif /* CIRRUS_PATCH */
+void SetDoomPalette( BCINT );
+BCINT  TranslateToDoomColor( BCINT );
+UBCINT ComputeAngle( BCINT , BCINT );
+UBCINT ComputeDist( BCINT , BCINT );
+void InsertPolygonVertices( BCINT , BCINT , BCINT , BCINT );
+void RotateAndScaleCoords( BCINT  *, BCINT  *, double, double);
 
 /* from things.c */
-int GetThingColour( int);
-char *GetThingName( int);
-int GetThingRadius( int);
-char *GetAngleName( int);
-char *GetWhenName( int);
+BCINT  GetThingColour( BCINT );
+char *GetThingName( BCINT );
+BCINT  GetThingRadius( BCINT );
+char *GetAngleName( BCINT );
+char *GetWhenName( BCINT );
 
 /* from names.c */
-char *GetObjectTypeName( int);
-char *GetEditModeName( int);
-char *GetLineDefTypeName( int);
-char *GetLineDefTypeLongName( int);
-char *GetLineDefFlagsName( int);
-char *GetLineDefFlagsLongName( int);
-char *GetSectorTypeName( int);
-char *GetSectorTypeLongName( int);
+char *GetObjectTypeName( BCINT );
+char *GetEditModeName( BCINT );
+char *GetLineDefTypeName( BCINT );
+char *GetLineDefTypeLongName( BCINT );
+char *GetLineDefFlagsName( BCINT );
+char *GetLineDefFlagsLongName( BCINT );
+char *GetSectorTypeName( BCINT );
+char *GetSectorTypeLongName( BCINT );
 
 /* from mouse.c */
 void CheckMouseDriver( void);
 void ShowMousePointer( void);
 void HideMousePointer( void);
-void GetMouseCoords( int *, int *, int *);
-void SetMouseCoords( int, int);
-void SetMouseLimits( int, int, int, int);
+void GetMouseCoords( BCINT  *, BCINT  *, BCINT  *);
+void SetMouseCoords( BCINT , BCINT );
+void SetMouseLimits( BCINT , BCINT , BCINT , BCINT );
 void ResetMouseLimits( void);
-void MouseCallBackFunction( void);
 
 /* from menus.c */
-int DisplayMenuArray( int, int, char *, int, int *, char *[ 30], int [30]);
-int DisplayMenu( int, int, char *, ...);
-int PullDownMenu( int, int, ...);
-int InputInteger( int, int, int *, int, int);
-int InputIntegerValue( int, int, int, int, int);
-void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, int, int, char *));
-void InputNameFromList( int, int, char *, int, char **, char *);
-void InputFileName( int, int, char *, int, char *);
-Bool Confirm( int, int, char *, char *);
-void Notify( int, int, char *, char *);
-void DisplayMessage( int, int, char *, ...);
+BCINT  DisplayMenuArray( BCINT , BCINT , char *, BCINT , BCINT  *, char *[ 30], BCINT  [30]);
+BCINT  DisplayMenu( BCINT , BCINT , char *, ...);
+BCINT  PullDownMenu( BCINT , BCINT , ...);
+BCINT  InputInteger( BCINT , BCINT , BCINT  *, BCINT , BCINT );
+BCINT  InputIntegerValue( BCINT , BCINT , BCINT , BCINT , BCINT );
+void InputNameFromListWithFunc( BCINT , BCINT , char *, BCINT , char **, BCINT , char *, BCINT , BCINT , void (*hookfunc)(BCINT , BCINT , BCINT , BCINT , char *));
+void InputNameFromList( BCINT , BCINT , char *, BCINT , char **, char *);
+void InputFileName( BCINT , BCINT , char *, BCINT , char *);
+Bool Confirm( BCINT , BCINT , char *, char *);
+void Notify( BCINT , BCINT , char *, char *);
+void DisplayMessage( BCINT , BCINT , char *, ...);
 void NotImplemented( void);
 
 /* from objects.c */
-void HighlightSelection( int, SelPtr); /* SWAP! */
-Bool IsSelected( SelPtr, int);
-void SelectObject( SelPtr *, int);
-void UnSelectObject( SelPtr *, int);
+BCINT  GetMaxObjectNum(BCINT );
+void HighlightSelection( BCINT , SelPtr); /* SWAP! */
+Bool IsSelected( SelPtr, BCINT );
+void SelectObject( SelPtr *, BCINT );
+void UnSelectObject( SelPtr *, BCINT );
 void ForgetSelection( SelPtr *);
-int GetMaxObjectNum( int);
-int GetCurObject( int, int, int, int, int); /* SWAP! */
-SelPtr SelectObjectsInBox( int, int, int, int, int); /* SWAP! */
-void HighlightObject( int, int, int); /* SWAP! */
-void DeleteObject( int, int); /* SWAP! */
-void DeleteObjects( int, SelPtr *); /* SWAP! */
-void InsertObject( int, int, int, int); /* SWAP! */
-Bool IsLineDefInside( int, int, int, int, int); /* SWAP - needs Vertexes & LineDefs */
-int GetOppositeSector( int, Bool); /* SWAP! */
-void CopyObjects( int, SelPtr); /* SWAP! */
-Bool MoveObjectsToCoords( int, SelPtr, int, int, int); /* SWAP! */
-void GetObjectCoords( int, int, int *, int *); /* SWAP! */
-void RotateAndScaleObjects( int, SelPtr, double, double); /* SWAP! */
-int FindFreeTag( void); /* SWAP! */
+BCINT GetMaxObjectNum( BCINT);
+BCINT  GetCurObject( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
+SelPtr SelectObjectsInBox( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
+void HighlightObject( BCINT , BCINT , BCINT ); /* SWAP! */
+void DeleteObject( BCINT , BCINT ); /* SWAP! */
+void DeleteObjects( BCINT , SelPtr *); /* SWAP! */
+void InsertObject( BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
+BCINT GetOppositeSector( BCINT, Bool); /* SWAP ! */
+Bool IsLineDefInside( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP - needs Vertexes & LineDefs */
+void CopyObjects( BCINT , SelPtr); /* SWAP! */
+Bool MoveObjectsToCoords( BCINT , SelPtr, BCINT , BCINT , BCINT ); /* SWAP! */
+void GetObjectCoords( BCINT , BCINT , BCINT  *, BCINT  *); /* SWAP! */
+void RotateAndScaleObjects( BCINT , SelPtr, double, double); /* SWAP! */
+BCINT  FindFreeTag(void); /* SWAP! */
 void FlipLineDefs( SelPtr, Bool); /* SWAP! */
 void DeleteVerticesJoinLineDefs( SelPtr ); /* SWAP! */
 void MergeVertices( SelPtr *); /* SWAP! */
 Bool AutoMergeVertices( SelPtr *); /* SWAP! */
 void SplitLineDefs( SelPtr); /* SWAP! */
-void SplitSector( int, int); /* SWAP! */
-void SplitLineDefsAndSector( int, int); /* SWAP! */
+void SplitSector( BCINT , BCINT ); /* SWAP! */
+void SplitLineDefsAndSector( BCINT , BCINT ); /* SWAP! */
 void MergeSectors( SelPtr *); /* SWAP! */
 void DeleteLineDefsJoinSectors( SelPtr *); /* SWAP! */
-void MakeDoorFromSector( int); /* SWAP! */
-void MakeLiftFromSector( int); /* SWAP! */
+void MakeDoorFromSector( BCINT ); /* SWAP! */
+void MakeLiftFromSector( BCINT ); /* SWAP! */
 void AlignTexturesY( SelPtr *); /* SWAP! */
 void AlignTexturesX( SelPtr *); /* SWAP! */
 void DistributeSectorFloors( SelPtr); /* SWAP! */
 void DistributeSectorCeilings( SelPtr); /* SWAP! */
 
+
 /* from editobj.c */
-void DisplayObjectInfo( int, int); /* SWAP! */
-int DisplayThingsMenu( int, int, char *, ...);
-int DisplayLineDefTypeMenu( int, int, char *, ...);
-int InputObjectNumber( int, int, int, int);
-int InputObjectXRef( int, int, int, Bool, int);
-Bool Input2VertexNumbers( int, int, char *, int *, int *);
-void EditObjectsInfo( int, int, int, SelPtr);
-void CheckLevel( int, int); /* SWAP! */
+void DisplayObjectInfo( BCINT , BCINT ); /* SWAP! */
+BCINT  DisplayThingsMenu( BCINT , BCINT , char *, ...);
+BCINT  DisplayLineDefTypeMenu( BCINT , BCINT , char *, ...);
+BCINT  InputObjectNumber( BCINT , BCINT , BCINT , BCINT );
+BCINT  InputObjectXRef( BCINT , BCINT , BCINT , Bool, BCINT );
+Bool Input2VertexNumbers( BCINT, BCINT, char *, BCINT *, BCINT *);
+void EditObjectsInfo( BCINT , BCINT , BCINT , SelPtr);
+void CheckLevel( BCINT , BCINT ); /* SWAP! */
 Bool CheckStartingPos( void); /* SWAP! */
-void InsertStandardObject( int, int, int, int); /* SWAP! */
-void MiscOperations( int, int, int, SelPtr *); /* SWAP! */
-void Preferences( int, int);
+void InsertStandardObject( BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
+void MiscOperations( BCINT , BCINT , BCINT , SelPtr *); /* SWAP! */
+void Preferences( BCINT , BCINT );
 
 /* from nodes.c */
-void ShowProgress( int);
+void ShowProgress( BCINT );
 
 /* from textures.c */
-void ChooseFloorTexture( int, int, char *, int, char **, char *);
-void ChooseWallTexture( int, int, char *, int, char **, char *);
-void ChooseSprite( int, int, char *, char *);
-void GetWallTextureSize( int *, int *, char *);
+void ChooseFloorTexture( BCINT , BCINT , char *, BCINT , char **, char *);
+void ChooseWallTexture( BCINT , BCINT , char *, BCINT , char **, char *);
+void ChooseSprite( BCINT , BCINT , char *, char *);
+void GetWallTextureSize( BCINT *, BCINT *, char *);
 
 /* from swapmem.c */
+
+#if defined(__TURBOC__)
 void InitSwap( void);
 void FreeSomeMemory( void);
-void ObjectsNeeded( int, ...);
-
+void ObjectsNeeded( BCINT , ...);
+#endif
 
 /* end of file */
+

@@ -26,12 +26,10 @@
    display some informations while the user is waiting
 */
 
-void ShowProgress( int objtype)
+void ShowProgress( BCINT objtype)
 {
-   static int SavedNumVertexes = 0;
+   static BCINT SavedNumVertexes = 0;
 
-   if (UseMouse)
-      HideMousePointer();
    switch (objtype)
    {
    case OBJ_VERTEXES:
@@ -50,8 +48,6 @@ void ShowProgress( int objtype)
       DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, (float) NumSegs / (float) (NumSideDefs + NumVertexes - SavedNumVertexes));
       break;
    }
-   if (UseMouse)
-      ShowMousePointer();
 }
 
 
@@ -60,7 +56,7 @@ void ShowProgress( int objtype)
    find the point of intersection for two lines (return FALSE if there is none)
 */
 
-Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - needs Vertexes */
+Bool ComputeIntersection( BCINT *x, BCINT *y, SEPtr seg1, SEPtr seg2) /* SWAP - needs Vertexes */
 {
    /* floating-point required because long integers cause errors */
    double x1  = Vertexes[ seg1->start].x;
@@ -79,8 +75,8 @@ Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - need
       x1 = y1 * dx1 - x1 * dy1;
       x2 = y2 * dx2 - x2 * dy2;
       /* (*x, *y) = intersection */
-      *x = (int) ((dx1 * x2 - dx2 * x1) / d);
-      *y = (int) ((dy1 * x2 - dy2 * x1) / d);
+      *x = (BCINT) ((dx1 * x2 - dx2 * x1) / d);
+      *y = (BCINT) ((dy1 * x2 - dy2 * x1) / d);
       /* check if the intersection is not at one end of a Seg (vertex grid = 8*8) */
       if (*x >= Vertexes[ seg1->start].x - 7 && *x <= Vertexes[ seg1->start].x + 7 && *y >= Vertexes[ seg1->start].y - 7 && *y <= Vertexes[ seg1->start].y + 7)
       {
@@ -112,18 +108,18 @@ Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - need
 
 SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
 {
-   int   splits;
+   BCINT   splits;
 #ifdef OLD_ALGORITHM
-   int   minsplits = 32767;
+   BCINT   minsplits = 32767;
 #endif /* OLD_ALGORITHM */
-   int   mindiff = 32767;
-   int   num1, num2;
+   BCINT   mindiff = 32767;
+   BCINT   num1, num2;
    SEPtr nodeline, bestnodeline;
    SEPtr curseg;
    long  x, y;
    long  dx, dy;
    long  a, b, c, d;
-   int   dummyx, dummyy;
+   BCINT   dummyx, dummyy;
    /* ***DEBUG*** */
    static SEPtr lastnodeline = NULL;
 
@@ -239,7 +235,7 @@ void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend) /* SWAP - needs
    compute the bounding box (limits on X, Y) for a list of Segs
 */
 
-void ComputeBoundingBox( SEPtr seglist, int *minx, int *maxx, int *miny, int *maxy) /* SWAP - needs Vertexes */
+void ComputeBoundingBox( SEPtr seglist, BCINT *minx, BCINT *maxx, BCINT *miny, BCINT *maxy) /* SWAP - needs Vertexes */
 {
    SEPtr curseg;
 
@@ -275,7 +271,7 @@ void ComputeBoundingBox( SEPtr seglist, int *minx, int *maxx, int *miny, int *ma
    create a SSector from a list of Segs
 */
 
-int CreateSSector( SEPtr seglist)
+BCINT CreateSSector( SEPtr seglist)
 {
    /* update the SSectors list */
    NumSSectors++;
@@ -315,7 +311,7 @@ int CreateSSector( SEPtr seglist)
    create all Nodes from a list of Segs
 */
 
-Bool CreateNodes( NPtr *node_r, int *ssector_r, SEPtr seglist) /* SWAP - needs Vertexes */
+Bool CreateNodes( NPtr *node_r, BCINT *ssector_r, SEPtr seglist) /* SWAP - needs Vertexes */
 {
    NPtr         node;
    SEPtr        segs1, segs2;
@@ -365,7 +361,7 @@ Bool CreateNodes( NPtr *node_r, int *ssector_r, SEPtr seglist) /* SWAP - needs V
 	 StoreInSegList( curseg, &segs1, &lastseg1);
 	 if (c < d)
 	 {
-	    int newx, newy;
+	    BCINT newx, newy;
 
 	    /* the ending Vertex is on the other side: split the Seg in two */
 	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
@@ -389,7 +385,7 @@ Bool CreateNodes( NPtr *node_r, int *ssector_r, SEPtr seglist) /* SWAP - needs V
 	 StoreInSegList( curseg, &segs2, &lastseg2);
 	 if (c > d)
 	 {
-	    int newx, newy;
+	    BCINT newx, newy;
 
 	    /* the ending Vertex is on the other side: split the Seg in two */
 	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
@@ -493,3 +489,4 @@ Bool CreateNodes( NPtr *node_r, int *ssector_r, SEPtr seglist) /* SWAP - needs V
 
 
 /* end of file */
+

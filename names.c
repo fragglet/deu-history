@@ -14,7 +14,7 @@
 /*
    get the name of an object type
 */
-char *GetObjectTypeName( int objtype)
+char *GetObjectTypeName( BCINT objtype)
 {
    switch (objtype)
    {
@@ -47,7 +47,7 @@ char *GetObjectTypeName( int objtype)
 /*
    what are we editing?
 */
-char *GetEditModeName( int objtype)
+char *GetEditModeName( BCINT objtype)
 {
    switch (objtype)
    {
@@ -76,7 +76,7 @@ char *GetEditModeName( int objtype)
    get a short (2 + 13 char.) description of the type of a linedef
 */
 
-char *GetLineDefTypeName( int type)
+char *GetLineDefTypeName( BCINT type)
 {
    switch (type)
    {
@@ -293,7 +293,7 @@ char *GetLineDefTypeName( int type)
    get a long description of the type of a linedef
 */
 
-char *GetLineDefTypeLongName( int type)
+char *GetLineDefTypeLongName( BCINT type)
 {
    switch (type)
    {
@@ -512,7 +512,7 @@ char *GetLineDefTypeLongName( int type)
    get a short description of the flags of a linedef
 */
 
-char *GetLineDefFlagsName( int flags)
+char *GetLineDefFlagsName( BCINT flags)
 {
    static char temp[ 20];
 
@@ -566,7 +566,7 @@ char *GetLineDefFlagsName( int flags)
    get a long description of one linedef flag
 */
 
-char *GetLineDefFlagsLongName( int flags)
+char *GetLineDefFlagsLongName( BCINT flags)
 {
    if (flags & 0x0100)
       return "Already on the map at startup";
@@ -595,7 +595,7 @@ char *GetLineDefFlagsLongName( int flags)
    get a short (13 char.) description of the type of a sector
 */
 
-char *GetSectorTypeName( int type)
+char *GetSectorTypeName( BCINT type)
 {
    switch (type)
    {
@@ -639,7 +639,7 @@ char *GetSectorTypeName( int type)
    get a long description of the type of a sector
 */
 
-char *GetSectorTypeLongName( int type)
+char *GetSectorTypeLongName( BCINT type)
 {
    switch (type)
    {
@@ -678,3 +678,4 @@ char *GetSectorTypeLongName( int type)
 }
 
 /* end of file */
+                                  

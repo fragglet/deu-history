@@ -1,0 +1,215 @@
+               =======================
+                         DEU
+
+                DOOM EDITOR UTILITIES
+
+                     Version 5.2
+
+                 DJGPP/GO32  version
+
+               =======================
+
+
+
+
+A FIRST WORD
+============
+
+ Before you read this, you should read "README.1ST", which contains
+ information about DEU in general.
+
+
+
+WHAT IS DEU 5.2 - DJGPP/GO32?
+=============================
+
+
+ A 32-bit version of Deu 5.2.
+
+
+
+
+WHAT IS DJGPP/GO32?
+===================
+
+  DJGPP - Copyright (C) DJ Delorie
+  GO32  - Copyright (C) DJ Delorie
+
+
+ GO32 is a 32-bit 80386 DOS extender. It supports full virtual memory
+ with paging to disk.
+
+ DJGPP is DJ Delorie's port of GCC to DOS.
+
+
+ (see the file 'COPYLEFT' for full information !!!)
+
+
+
+WHAT'S DIFFERENT FROM THE "ORIGINAL" 5.2 ?
+==========================================
+
+
+ It's faster, can use all of your available memory (including that on
+ your harddrive). That should be enough.
+
+ Also, you won't be able to run it on systems having DPMI. This means
+ that it won't work under Windows or OS/2, for example... The reason
+ for this is that it makes use of a graphics library, GRX, which doesn't
+ work with DPMI (see 'COPYLEFT'). Hopefully this will be fixed when
+ the next version of GRX is released. (soon?!?)
+
+
+ Remember this : If you can't get it running - use the "original" version
+ instead. See under DOCUMENTATION below where you can get it.
+
+ *NO* documention (except this file), examples etc. is included in
+ this distribution. To get that, get the "original" version.
+
+
+
+RUNNING DEU 5.2 DJGPP/GO32
+==========================
+
+ Requirements:
+ ~~~~~~~~~~~~~
+
+  Basicly, you need a 386 or 486 which is able to run programs for
+  go32. A miminum of 512K RAM is required. You'll also need a VGA
+  screen (and card) supporting a minimal resolution of 640x480x256.
+
+  But as I said above, it's possible that you can't get it running
+  on your system, if so use the "original" version! (see below)
+
+
+ Installation:
+ ~~~~~~~~~~~~~
+
+ Unzip it into any directory on your hard drive using commands like:
+
+       mkdir \games\doom\deu                [create a directory for it.]
+
+       pkunzip a:deu52gcc.zip \games\doom\deu  [unzip from your a: drive.]
+
+
+ You will also have to set up things for go32:
+
+
+  [ The following is an excerpt from the docs for go32 ]
+
+
+  * Edit the included file 'runme.bat' to meet your requirements:
+
+
+    set GO32TMP=c:/tmp
+                ^^^ this is where your paging file goes - if not set, the
+                variables TMP and TEMP are checked in that order.  This
+                should be a real drive.
+    set GO32=driver c:/djgpp/drivers/SOMETHING.grd gw 1024 gh 768
+                    ^^^ whatever driver works with your VGA
+
+
+   The GO32 environment variable:
+
+
+   This variable controls the options available in go32.  The syntax of
+   this variable is:
+
+     SET GO32=[parm [value]] [parm [value]] . . .
+
+    Parameters:  ( excerpt )
+
+      nodpmi         don't use dpmi even if you find it.
+
+      emu [path]     Use the specified file as the 80387 emulator
+
+      driver [path]  Use the specified file as the graphics driver
+      gw [width]     Default graphics width
+      gh [height]    Default graphics height
+      nc [colors]    Number of colors
+
+    These parameters may occur in any order.
+
+    Examples:
+
+        set GO32=driver c:/games/doom/deu/drivers/tseng4k.grd gw 800 gh 600 nc 256
+
+     if you need a 387-emulator:
+
+        set GO32=emu c:/games/doom/deu/emu/emu387 driver ...
+
+
+
+DOCUMENTATION
+=============
+
+ You should get the documentation with the original DEU ( Borland C version )
+
+ The latest version of DEU and DEU DJGPP/GO32 is available at the following
+ FTP sites:
+
+ For European users:
+     bear.montefiore.ulg.ac.be (139.165.8.25)
+     /pub/doom/deu/deu52.zip     ("original" version, docs, examples, source)
+     /pub/doom/deu/deu52gcc.zip  (djgpp/go32 version, source, NO docs/ex:s)
+
+ For other countries:
+     infant2.sphs.indiana.edu (129.79.234.115)
+     /pub/doom/deu/deu52{gcc}.zip
+
+
+ You will probably also find it on other FTP sites, such as ftp.uwp.edu,
+ wuarchive.wustl.edu, hope.cit.hope.edu...
+
+ If you cannot use FTP (because you have no direct Internet access), you
+ can get the files using FTPmail.  Send E-mail to: ftpmail@decwrl.dec.com,
+ with "HELP" as the only word in the message (no subject, no signature).
+ When you are familiar with FTPmail, you can use it to retreive the files
+ from one of the Doom FTP servers.
+
+
+
+CREDITS
+=======
+
+ DEU has been created by Brendon Wyber (b.wyber@csc.canterbury.ac.nz) and
+ Rapha‰l Quinet (quinet@montefiore.ulg.ac.be). The original port to
+ DJGPP/GO32 has been done by Per Allansson (c91peral@und.ida.liu.se),
+ with good help from Per Kofod (per@ollie.dnk.hp.com). A lot of other
+ people have contributed to the DEU project, see the DEU documentation.
+
+ If you have contributions to make, read README.1ST to find out how
+ to contribute to DEU.
+
+
+
+A LAST WORD
+===========
+
+ Remember, I only ported this. And it was fairly easy too. All the "real"
+ work has been done by others. I just tweaked their work a bit.
+
+       /allan  ( c91peral@und.ida.liu.se )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

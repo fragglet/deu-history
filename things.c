@@ -19,7 +19,7 @@
    get the colour of a thing
 */
 
-int GetThingColour( int type)
+BCINT GetThingColour( BCINT type)
 {
    if (Colour2)
    {
@@ -213,7 +213,7 @@ int GetThingColour( int type)
    get the name of a thing
 */
 
-char *GetThingName( int type)
+char *GetThingName( BCINT type)
 {
    static char temp[ 20];
 
@@ -440,7 +440,7 @@ char *GetThingName( int type)
    get the size of a thing
 */
 
-int GetThingRadius( int type)
+BCINT GetThingRadius( BCINT type)
 {
    switch (type)
    {
@@ -507,7 +507,7 @@ int GetThingRadius( int type)
    get the name of the angle
 */
 
-char *GetAngleName( int angle)
+char *GetAngleName( BCINT angle)
 {
    switch (angle)
    {
@@ -537,7 +537,7 @@ char *GetAngleName( int angle)
    get string of when something will appear
 */
 
-char *GetWhenName( int when)
+char *GetWhenName( BCINT when)
 {
    static char temp[ 40];
 

@@ -18,64 +18,32 @@
 /* if your graphics driver doesn't like circles, draw squares instead */
 #ifdef NO_CIRCLES
 #define circle( x, y, r)	line( x - r, y - r, x - r, y + r); \
-				line( x - r, y + r, x + r, y + r); \
-				line( x + r, y + r, x + r, y - r); \
-				line( x + r, y - r, x - r, y - r)
+   				line( x - r, y + r, x + r, y + r); \
+   		    		line( x + r, y + r, x + r, y - r); \
+   				line( x + r, y - r, x - r, y - r)
 #endif /* NO_CIRCLES */
 
+#define BGI_PATH "."
+
 /* the global variables */
-int GfxMode = 0;	/* graphics mode number, or 0 for text */
-			/* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
-			/* positive = 16 colors, negative = 256 colors */
-int OrigX;		/* the X origin */
-int OrigY;		/* the Y origin */
+BCINT GfxMode = 0;	/* graphics mode number, or 0 for text */
+   			/* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
+   			/* positive = 16 colors, negative = 256 colors */
+BCINT OrigX;		/* the X origin */
+BCINT OrigY;		/* the Y origin */
 float Scale;		/* the scale value */
-int PointerX;		/* X position of pointer */
-int PointerY;		/* Y position of pointer */
-int ScrMaxX;		/* maximum X screen coord */
-int ScrMaxY;		/* maximum Y screen coord */
-int ScrCenterX;		/* X coord of screen center */
-int ScrCenterY;		/* Y coord of screen center */
+BCINT PointerX;		/* X position of pointer */
+BCINT PointerY;		/* Y position of pointer */
+BCINT ScrMaxX;		/* maximum X screen coord */
+BCINT ScrMaxY;		/* maximum Y screen coord */
+BCINT ScrCenterX;	/* X coord of screen center */
+BCINT ScrCenterY;	/* Y coord of screen center */
 
-#ifdef CIRRUS_PATCH
-char mp[ 256];
 
-char HWCursor[] =
-{
-   0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00,
-   0x30, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x00, 0x00,
-   0x1F, 0x00, 0x00, 0x00, 0x1F, 0xC0, 0x00, 0x00,
-   0x0F, 0xF0, 0x00, 0x00, 0x0F, 0xE0, 0x00, 0x00,
-   0x07, 0xC0, 0x00, 0x00, 0x07, 0xE0, 0x00, 0x00,
-   0x03, 0x70, 0x00, 0x00, 0x02, 0x38, 0x00, 0x00,
-   0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-   0x3F, 0xFF, 0xFF, 0xFF, 0x0F, 0xFF, 0xFF, 0xFF,
-   0x83, 0xFF, 0xFF, 0xFF, 0x80, 0xFF, 0xFF, 0xFF,
-   0xC0, 0x3F, 0xFF, 0xFF, 0xC0, 0x0F, 0xFF, 0xFF,
-   0xE0, 0x07, 0xFF, 0xFF, 0xE0, 0x0F, 0xFF, 0xFF,
-   0xF0, 0x1F, 0xFF, 0xFF, 0xF0, 0x0F, 0xFF, 0xFF,
-   0xF8, 0x07, 0xFF, 0xFF, 0xF8, 0x83, 0xFF, 0xFF,
-   0xFD, 0xC7, 0xFF, 0xFF, 0xFF, 0xEF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
-};
-#endif /* CIRRUS_PATCH */
+#if defined(__GNUC__)
+static int res[5][3] = {{640,480,16},{320,200,256},{640,480,256},
+                        {800,600,256},{1024,768,256}};
+#endif
 
 
 /*
@@ -90,31 +58,30 @@ void InitGfx()
    int         errorcode = grNoInitGraph;
 
    printf( "Switching to graphics mode...\n");
-#ifdef CIRRUS_PATCH
-   if (CirrusCursor == TRUE)
-      SetHWCursorMap( HWCursor);
-#endif /* CIRRUS_PATCH */
+
+#if defined(__TURBOC__)
+
    if (firsttime)
    {
       if (VideoMode > 0)
       {
-	 gdriver = installuserdriver( BGIDriver, NULL);
-	 gmode = VideoMode;
-	 initgraph( &gdriver, &gmode, NULL);
-	 errorcode = graphresult();
+       	 gdriver = installuserdriver( BGIDriver, NULL);
+       	 gmode = VideoMode;
+       	 initgraph( &gdriver, &gmode, BGI_PATH);
+       	 errorcode = graphresult();
       }
       if (errorcode != grOk)
       {
-	 gdriver = VGA;
-	 gmode = VGAHI;
+       	 gdriver = VGA;
+       	 gmode = VGAHI;
       }
    }
    if (gdriver == VGA || !firsttime)
    {
-      initgraph( &gdriver, &gmode, NULL);
+      initgraph( &gdriver, &gmode, BGI_PATH);
       errorcode = graphresult();
       if (errorcode != grOk)
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
+       	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
    }
    if (gdriver == VGA)
       GfxMode = 2; /* 640x480x16 */
@@ -123,6 +90,29 @@ void InitGfx()
       GfxMode = -gmode; /* 640x480x256, 800x600x256, or 1024x768x256 */
       SetDoomPalette( 0);
    }
+
+#elif defined(__GNUC__)
+
+   FakeCursor = FALSE;
+
+   if (VideoMode < 0 || VideoMode > 4)
+      VideoMode = 0;
+   set_BGI_mode_whc( &gdriver, &gmode, res[VideoMode][0], res[VideoMode][1], res[VideoMode][2]);
+   initgraph( &gdriver, &gmode, BGI_PATH);
+   errorcode = graphresult();
+   if(errorcode != grOk)
+       ProgError( "graphics error: %s", grapherrormsg( errorcode));
+
+
+   if (VideoMode == 0)
+      GfxMode = 2; /* 640x480x16 */
+   else
+   {
+      GfxMode = -VideoMode; /* 640x480x256, 800x600x256, or 1024x768x256 */
+      SetDoomPalette( 0);
+   }
+#endif
+
    setlinestyle( 0, 0, 1);
    setbkcolor( TranslateToDoomColor( BLACK));
    settextstyle( 0, 0, 1);
@@ -159,31 +149,48 @@ Bool SwitchToVGA256()
    static int gdriver = -1;
    int gmode, errorcode;
 
+#if defined(__TURBOC__)
+
    if (GfxMode > 0 && gdriver != VGA) /* if 16 colors and not failed before */
    {
       if (gdriver == -1)
       {
-	 gdriver = installuserdriver( "VGA256", NULL);
-	 errorcode = graphresult();
+      	 gdriver = installuserdriver( "VGA256", NULL);
+   	 errorcode = graphresult();
       }
-      if (UseMouse)
-	 HideMousePointer();
       closegraph();
       gmode = 0;
-      initgraph( &gdriver, &gmode, NULL);
+      initgraph( &gdriver, &gmode, BGI_PATH);
       errorcode = graphresult();
       if (errorcode != grOk)
       {
-	 /* failed for 256 colors - back to 16 colors */
-	 gdriver = VGA;
-	 gmode = VGAHI;
-	 initgraph( &gdriver, &gmode, NULL);
-	 errorcode = graphresult();
+   	 /* failed for 256 colors - back to 16 colors */
+   	 gdriver = VGA;
+   	 gmode = VGAHI;
+   	 initgraph( &gdriver, &gmode, BGI_PATH);
+   	 errorcode = graphresult();
       }
+
+#elif defined(__GNUC__)
+
+   if (GfxMode > 0)
+   {
+      closegraph();
+      set_BGI_mode_whc( &gdriver, &gmode, res[1][0], res[1][1], res[1][2]);
+      initgraph( &gdriver, &gmode, BGI_PATH);
+      errorcode = graphresult();
+      if(errorcode != grOk)
+      {
+         /* failed for 256 colors - back to 16 colors */
+         set_BGI_mode_whc( &gdriver, &gmode, res[0][0], res[0][1], res[0][2]);
+         initgraph( &gdriver, &gmode, BGI_PATH);
+         errorcode = graphresult();
+      }
+
+#endif
+
       if (errorcode != grOk) /* shouldn't happen */
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
-      if (UseMouse)
-	 ShowMousePointer();
+       	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
       GfxMode = -1 /* 320x200x256 */;
       SetDoomPalette( 0);
       ScrMaxX = getmaxx();
@@ -192,6 +199,7 @@ Bool SwitchToVGA256()
       ScrCenterY = ScrMaxY / 2;
       return TRUE;
    }
+
    return FALSE;
 }
 
@@ -203,26 +211,32 @@ Bool SwitchToVGA256()
 
 Bool SwitchToVGA16()
 {
-   int gdriver, gmode, errorcode;
-
    if (GfxMode == -1) /* switch only if we are in 320x200x256 colors */
    {
-      if (UseMouse)
-	 HideMousePointer();
+#if defined(__TURBOC__)
+      int gdriver, gmode, errorcode;
+
       closegraph();
       gdriver = VGA;
       gmode = VGAHI;
-      initgraph( &gdriver, &gmode, NULL);
+      initgraph( &gdriver, &gmode, BGI_PATH);
       errorcode = graphresult();
       if (errorcode != grOk) /* shouldn't happen */
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
-      if (UseMouse)
-	 ShowMousePointer();
+       	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
       GfxMode = 2; /* 640x480x16 */
       ScrMaxX = getmaxx();
       ScrMaxY = getmaxy();
       ScrCenterX = ScrMaxX / 2;
       ScrCenterY = ScrMaxY / 2;
+
+#elif defined(__GNUC__)
+      TermGfx();    /* This is a hack, I just didn't have the time to */
+      InitGfx();    /* find out why "the other way" didn't work ... */
+      CheckMouseDriver();
+      if (UseMouse)
+         ShowMousePointer();
+#endif
+
       return TRUE;
    }
    return FALSE;
@@ -245,7 +259,7 @@ void ClearScreen()
    set the current drawing color
 */
 
-void SetColor( int color)
+void SetColor( BCINT color)
 {
    if (GfxMode < 0)
       setcolor( TranslateToDoomColor(color));
@@ -259,7 +273,7 @@ void SetColor( int color)
    draw a line on the screen from map coords
 */
 
-void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
+void DrawMapLine( BCINT mapXstart, BCINT mapYstart, BCINT mapXend, BCINT mapYend)
 {
    line( SCREENX( mapXstart), SCREENY( mapYstart), SCREENX( mapXend), SCREENY( mapYend));
 }
@@ -270,7 +284,7 @@ void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
    draw a circle on the screen from map coords
 */
 
-void DrawMapCircle( int mapXcenter, int mapYcenter, int mapRadius)
+void DrawMapCircle( BCINT mapXcenter, BCINT mapYcenter, BCINT mapRadius)
 {
    circle( SCREENX( mapXcenter), SCREENY( mapYcenter), (int) (mapRadius * Scale));
 }
@@ -281,15 +295,15 @@ void DrawMapCircle( int mapXcenter, int mapYcenter, int mapRadius)
    draw an arrow on the screen from map coords
 */
 
-void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
+void DrawMapVector( BCINT mapXstart, BCINT mapYstart, BCINT mapXend, BCINT mapYend)
 {
-   int    scrXstart = SCREENX( mapXstart);
-   int    scrYstart = SCREENY( mapYstart);
-   int    scrXend   = SCREENX( mapXend);
-   int    scrYend   = SCREENY( mapYend);
+   BCINT  scrXstart = SCREENX( mapXstart);
+   BCINT  scrYstart = SCREENY( mapYstart);
+   BCINT  scrXend   = SCREENX( mapXend);
+   BCINT  scrYend   = SCREENY( mapYend);
    double r         = hypot( (double) (scrXstart - scrXend), (double) (scrYstart - scrYend));
-   int    scrXoff   = (r >= 1.0) ? (int) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
-   int    scrYoff   = (r >= 1.0) ? (int) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
+   BCINT  scrXoff   = (r >= 1.0) ? (BCINT) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
+   BCINT  scrYoff   = (r >= 1.0) ? (BCINT) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
 
    line( scrXstart, scrYstart, scrXend, scrYend);
    scrXstart = scrXend + 2 * scrXoff;
@@ -308,17 +322,17 @@ void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
    draw an arrow on the screen from map coords and angle (0 - 65535)
 */
 
-void DrawMapArrow( int mapXstart, int mapYstart, unsigned angle)
+void DrawMapArrow( BCINT mapXstart, BCINT mapYstart, UBCINT angle)
 {
-   int    mapXend   = mapXstart + (int) (50 * cos(angle / 10430.37835));
-   int    mapYend   = mapYstart + (int) (50 * sin(angle / 10430.37835));
-   int    scrXstart = SCREENX( mapXstart);
-   int    scrYstart = SCREENY( mapYstart);
-   int    scrXend   = SCREENX( mapXend);
-   int    scrYend   = SCREENY( mapYend);
+   BCINT  mapXend   = mapXstart + (BCINT) (50 * cos(angle / 10430.37835));
+   BCINT  mapYend   = mapYstart + (BCINT) (50 * sin(angle / 10430.37835));
+   BCINT  scrXstart = SCREENX( mapXstart);
+   BCINT  scrYstart = SCREENY( mapYstart);
+   BCINT  scrXend   = SCREENX( mapXend);
+   BCINT  scrYend   = SCREENY( mapYend);
    double r         = hypot( scrXstart - scrXend, scrYstart - scrYend);
-   int    scrXoff   = (r >= 1.0) ? (int) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
-   int    scrYoff   = (r >= 1.0) ? (int) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
+   BCINT  scrXoff   = (r >= 1.0) ? (BCINT) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
+   BCINT  scrYoff   = (r >= 1.0) ? (BCINT) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
 
    line( scrXstart, scrYstart, scrXend, scrYend);
    scrXstart = scrXend + 2 * scrXoff;
@@ -333,7 +347,7 @@ void DrawMapArrow( int mapXstart, int mapYstart, unsigned angle)
    draw a line on the screen from screen coords
 */
 
-void DrawScreenLine( int Xstart, int Ystart, int Xend, int Yend)
+void DrawScreenLine( BCINT Xstart, BCINT Ystart, BCINT Xend, BCINT Yend)
 {
    line( Xstart, Ystart, Xend, Yend);
 }
@@ -344,7 +358,7 @@ void DrawScreenLine( int Xstart, int Ystart, int Xend, int Yend)
    draw a filled in box on the screen from screen coords
 */
 
-void DrawScreenBox( int Xstart, int Ystart, int Xend, int Yend)
+void DrawScreenBox( BCINT Xstart, BCINT Ystart, BCINT Xend, BCINT Yend)
 {
    setfillstyle( 1, getcolor());
    bar( Xstart, Ystart, Xend, Yend);
@@ -356,7 +370,7 @@ void DrawScreenBox( int Xstart, int Ystart, int Xend, int Yend)
    draw a filled-in 3D-box on the screen from screen coords
 */
 
-void DrawScreenBox3D( int Xstart, int Ystart, int Xend, int Yend)
+void DrawScreenBox3D( BCINT Xstart, BCINT Ystart, BCINT Xend, BCINT Yend)
 {
    setfillstyle( 1, TranslateToDoomColor( LIGHTGRAY));
    bar( Xstart + 1, Ystart + 1, Xend - 1, Yend - 1);
@@ -383,7 +397,7 @@ void DrawScreenBox3D( int Xstart, int Ystart, int Xend, int Yend)
    draw a hollow 3D-box on the screen from screen coords
 */
 
-void DrawScreenBoxHollow( int Xstart, int Ystart, int Xend, int Yend)
+void DrawScreenBoxHollow( BCINT Xstart, BCINT Ystart, BCINT Xend, BCINT Yend)
 {
    setfillstyle( 1, TranslateToDoomColor( BLACK));
    bar( Xstart + 1, Ystart + 1, Xend - 1, Yend - 1);
@@ -410,16 +424,16 @@ void DrawScreenBoxHollow( int Xstart, int Ystart, int Xend, int Yend)
    draw a meter bar on the screen from screen coords (in a hollow box); max. value = 1.0
 */
 
-void DrawScreenMeter( int Xstart, int Ystart, int Xend, int Yend, float value)
+void DrawScreenMeter( BCINT Xstart, BCINT Ystart, BCINT Xend, BCINT Yend, float value)
 {
    if (value < 0.0)
       value = 0.0;
    if (value > 1.0)
       value = 1.0;
    setfillstyle( 1, TranslateToDoomColor( BLACK));
-   bar( Xstart + 1 + (int) ((Xend - Xstart - 2) * value), Ystart + 1, Xend - 1, Yend - 1);
+   bar( Xstart + 1 + (BCINT) ((Xend - Xstart - 2) * value), Ystart + 1, Xend - 1, Yend - 1);
    setfillstyle( 1, TranslateToDoomColor( LIGHTGREEN));
-   bar( Xstart + 1, Ystart + 1, Xstart + 1 + (int) ((Xend - Xstart - 2) * value), Yend - 1);
+   bar( Xstart + 1, Ystart + 1, Xstart + 1 + (BCINT) ((Xend - Xstart - 2) * value), Yend - 1);
 }
 
 
@@ -428,10 +442,10 @@ void DrawScreenMeter( int Xstart, int Ystart, int Xend, int Yend, float value)
    write text to the screen
 */
 
-void DrawScreenText( int Xstart, int Ystart, char *msg, ...)
+void DrawScreenText( BCINT Xstart, BCINT Ystart, char *msg, ...)
 {
-   static int lastX;
-   static int lastY;
+   static BCINT lastX;
+   static BCINT lastY;
    char temp[ 120];
    va_list args;
 
@@ -455,7 +469,7 @@ void DrawScreenText( int Xstart, int Ystart, char *msg, ...)
 
 void DrawPointer( Bool rulers)
 {
-   int r;
+   BCINT r;
 
    /* use XOR mode : drawing the pointer twice erases it */
    setwritemode( XOR_PUT);
@@ -463,7 +477,7 @@ void DrawPointer( Bool rulers)
    if ( rulers)
    {
       SetColor( MAGENTA);
-      r = (int) (512 * Scale);
+      r = (BCINT) (512 * Scale);
       circle( PointerX, PointerY, r);
       r >>= 1;
       circle( PointerX, PointerY, r);
@@ -471,7 +485,7 @@ void DrawPointer( Bool rulers)
       circle( PointerX, PointerY, r);
       r >>= 1;
       circle( PointerX, PointerY, r);
-      r = (int) (1024 * Scale);
+      r = (BCINT) (1024 * Scale);
       line( PointerX - r, PointerY, PointerX + r, PointerY);
       line( PointerX, PointerY - r, PointerX, PointerY + r);
    }
@@ -491,30 +505,46 @@ void DrawPointer( Bool rulers)
    load one "playpal" palette and change all palette colours
 */
 
-void SetDoomPalette( int playpalnum)
+void SetDoomPalette( BCINT playpalnum)
 {
    MDirPtr             dir;
    unsigned char huge *dpal;
-   int                 n;
+   BCINT                 n;
 
    if (playpalnum < 0 && playpalnum > 13)
       return;
    dir = FindMasterDir( MasterDir, "PLAYPAL");
    if (dir)
    {
-      dpal = GetFarMemory( 768 * sizeof( char));
+      dpal = (unsigned char*)GetFarMemory( 768 * sizeof( char));
       BasicWadSeek( dir->wadfile, dir->dir.start);
       for (n = 0; n <= playpalnum; n++)
-	 BasicWadRead( dir->wadfile, dpal, 768L);
+   	 BasicWadRead( dir->wadfile, dpal, 768L);
+
+#if defined(__GNUC__)
+
+      GrResetColors();
+      for(n=0;n<254;n++)
+         GrAllocCell();
+      
+      for(n=0;n<256;n++)
+         GrSetColor(n,dpal[3*n],dpal[3*n+1],dpal[3*n+2]);
+           
+#elif defined(__TURBOC__)
+
       for (n = 0; n < 768; n++)
-	 dpal[ n] /= 4;
+      	 dpal[ n] /= 4;
+
       _AX = 0x1012;
       _BX = 0;
       _CX = 256;
       _ES = FP_SEG( dpal);
       _DX = FP_OFF( dpal);
       __int__( 0x10);
-      FreeFarMemory( dpal);
+
+#endif
+
+      FreeFarMemory( dpal );
     }
 }
 
@@ -524,44 +554,45 @@ void SetDoomPalette( int playpalnum)
    translate a standard color to Doom palette 0 (approx.)
 */
 
-int TranslateToDoomColor( int color)
+BCINT TranslateToDoomColor( BCINT color)
 {
-   if (GfxMode < 0)
+   if (GfxMode < 0) {
+      if (color == WHITE) return 4;
       switch (color)
       {
-      case BLACK:
-	 return 0;
+#ifdef __TURBOC__
+      case BLACK: return 0;
+#endif
       case BLUE:
-	 return 202;
+ 	 return 202;
       case GREEN:
-	 return 118;
+ 	 return 118;
       case CYAN:
-	 return 194;
+ 	 return 194;
       case RED:
-	 return 183;
+ 	 return 183;
       case MAGENTA:
-	 return 253;
+ 	 return 253;
       case BROWN:
-	 return 144;
+ 	 return 144;
       case LIGHTGRAY:
-	 return 88;
+ 	 return 88;
       case DARKGRAY:
-	 return 96;
+ 	 return 96;
       case LIGHTBLUE:
-	 return 197;
+ 	 return 197;
       case LIGHTGREEN:
-	 return 112;
+ 	 return 112;
       case LIGHTCYAN:
-	 return 193;
+ 	 return 193;
       case LIGHTRED:
-	 return 176;
+ 	 return 176;
       case LIGHTMAGENTA:
-	 return 250;
+ 	 return 250;
       case YELLOW:
-	 return 231;
-      case WHITE:
-	 return 4;
+ 	 return 231;
       }
+   }
    return color;
 }
 
@@ -571,9 +602,9 @@ int TranslateToDoomColor( int color)
    translate (dx, dy) into an integer angle value (0-65535)
 */
 
-unsigned ComputeAngle( int dx, int dy)
+UBCINT ComputeAngle( BCINT dx, BCINT dy)
 {
-   return (unsigned) (atan2( (double) dy, (double) dx) * 10430.37835 + 0.5);
+   return (UBCINT) (atan2( (double) dy, (double) dx) * 10430.37835 + 0.5);
    /* Yes, I know this function could be in another file, but */
    /* this is the only source file that includes <math.h>...  */
 }
@@ -584,9 +615,9 @@ unsigned ComputeAngle( int dx, int dy)
    compute the distance from (0, 0) to (dx, dy)
 */
 
-unsigned ComputeDist( int dx, int dy)
+UBCINT ComputeDist( BCINT dx, BCINT dy)
 {
-   return (unsigned) (hypot( (double) dx, (double) dy) + 0.5);
+   return (UBCINT) (hypot( (double) dx, (double) dy) + 0.5);
    /* Yes, I know this function could be in another file, but */
    /* this is the only source file that includes <math.h>...  */
 }
@@ -597,12 +628,12 @@ unsigned ComputeDist( int dx, int dy)
    insert the vertices of a new polygon
 */
 
-void InsertPolygonVertices( int centerx, int centery, int sides, int radius)
+void InsertPolygonVertices( BCINT centerx, BCINT centery, BCINT sides, BCINT radius)
 {
-   int n;
+   BCINT n;
 
    for (n = 0; n < sides; n++)
-      InsertObject( OBJ_VERTEXES, -1, centerx + (int) ((double) radius * cos( 6.28 * (double) n / (double) sides)), centery + (int) ((double) radius * sin( 6.2832 * (double) n / (double) sides)));
+      InsertObject( OBJ_VERTEXES, -1, centerx + (BCINT) ((double) radius * cos( 6.28 * (double) n / (double) sides)), centery + (BCINT) ((double) radius * sin( 6.2832 * (double) n / (double) sides)));
    /* Yes, I know... etc. */
 }
 
@@ -612,111 +643,15 @@ void InsertPolygonVertices( int centerx, int centery, int sides, int radius)
    move (x, y) to a new position: rotate and scale around (0, 0)
 */
 
-void RotateAndScaleCoords( int *x, int *y, double angle, double scale)
+void RotateAndScaleCoords( BCINT *x, BCINT *y, double angle, double scale)
 {
    double r, theta;
 
    r = hypot( (double) *x, (double) *y);
    theta = atan2( (double) *y, (double) *x);
-   *x = (int) (r * scale * cos( theta + angle) + 0.5);
-   *y = (int) (r * scale * sin( theta + angle) + 0.5);
+   *x = (BCINT) (r * scale * cos( theta + angle) + 0.5);
+   *y = (BCINT) (r * scale * sin( theta + angle) + 0.5);
    /* Yes, I know... etc. */
 }
-
-
-
-#ifdef CIRRUS_PATCH
-/*
-   Cirrus Logic Hardware Mouse Cursor Stuff
-*/
-
-#define CRTC 0x3D4
-#define ATTR 0x3C0
-#define SEQ  0x3C4
-#define GRC  0x3CE
-#define LOBYTE(w)           ((unsigned char)(w))
-#define HIBYTE(w)           ((unsigned char)((unsigned int)(w) >> 8))
-
-unsigned rdinx( unsigned pt, unsigned inx)
-{
-   if (pt == ATTR)
-      inportb( CRTC + 6);
-   outportb( pt, inx);
-   return inportb( pt + 1);
-}
-
-void wrinx( int pt, unsigned inx, unsigned val)
-{
-   if (pt == ATTR)
-   {
-      inportb( CRTC + 6);
-      outportb( pt, inx);
-      outportb( pt, val);
-   }
-   else
-   {
-      outportb( pt, inx);
-      outportb( pt + 1, val);
-   }
-}
-
-void modinx( unsigned pt, unsigned inx, unsigned mask, unsigned nwv)
-{
-   unsigned temp;
-
-   temp = (rdinx( pt, inx) & ~mask) + (nwv & mask);
-   wrinx( pt, inx, temp);
-}
-
-void clrinx( unsigned pt, unsigned inx, unsigned val)
-{
-   unsigned x;
-
-   x = rdinx( pt, inx);
-   wrinx( pt, inx, x & ~val);
-}
-
-void SetHWCursorPos( unsigned x, unsigned y)
-{
-   outport( SEQ, (x << 5) | 0x10);
-   outport( SEQ, (y << 5) | 0x11);
-}
-
-void SetHWCursorCol( long fgcol, long bgcol)
-{
-   modinx( SEQ, 0x12, 3, 2);
-   outportb( 0x3C8, 0xFF);
-   outportb( 0x3C9, LOBYTE( fgcol) >> 2);
-   outportb( 0x3C9, HIBYTE( bgcol) >> 2);
-   outportb( 0x3C8, 0);
-   outportb( 0x3C9, LOBYTE( bgcol) >> 2);
-   outportb( 0x3C9, HIBYTE( bgcol) >> 2);
-   outportb( 0x3C9, bgcol >> 18);
-   modinx( SEQ, 0x12, 3, 1);
-}
-
-void CopyHWCursorMap( unsigned bytes)
-{
-   char    *curmapptr = 0xA000FF00L;
-   unsigned lbank = (1024 / 64) - 1;
-
-   if ((rdinx( GRC, 0x0B) & 32)==0)
-      lbank = lbank << 2;
-   wrinx( GRC, 9, lbank << 2);
-   memmove( curmapptr, &mp, bytes);
-}
-
-void SetHWCursorMap( char *map)
-{
-   memmove( &mp, map, 128);
-   memmove( &mp + 128, &mp, 128);
-   CopyHWCursorMap( 256);
-   SetHWCursorCol( 0xFF00000L, 0xFF);
-   wrinx( SEQ, 0x13, 0x3F);
-}
-
-#endif /* CIRRUS_PATCH */
-
-
 
 /* end of file */

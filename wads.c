@@ -39,7 +39,7 @@ void OpenMainWad( char *filename)
    lastp = NULL;
    for (n = 0; n < wad->dirsize; n++)
    {
-      newp = GetMemory( sizeof( struct MasterDirectory));
+      newp = (MDirPtr) GetMemory( sizeof( struct MasterDirectory));
       newp->next = NULL;
       newp->wadfile = wad;
       memcpy( &(newp->dir), &(wad->directory[ n]), sizeof( struct Directory));
@@ -75,7 +75,7 @@ void OpenPatchWad( char *filename)
 {
    WadPtr wad;
    MDirPtr mdir;
-   int n, l;
+   BCINT n, l;
    char entryname[9];
 
    /* ignore the file if it doesn't exist */
@@ -107,7 +107,7 @@ void OpenPatchWad( char *filename)
 	    mdir = MasterDir;
 	    while (mdir->next)
 	       mdir = mdir->next;
-	    mdir->next = GetMemory( sizeof( struct MasterDirectory));
+	    mdir->next = (MDirPtr) GetMemory( sizeof( struct MasterDirectory));
 	    mdir = mdir->next;
 	    mdir->next = NULL;
 	 }
@@ -125,7 +125,7 @@ void OpenPatchWad( char *filename)
 	 mdir = mdir->next;
 	 /* the level data should replace an existing level */
 	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
-	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
+	    ProgError( "\\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
 	 l--;
       }
       mdir->wadfile = wad;
@@ -230,7 +230,7 @@ WadPtr BasicWadOpen( char *filename)
    /* if this entry doesn't exist, add it to the WadFileList */
    if (curw == NULL)
    {
-      curw = GetMemory( sizeof( struct WadFileInfo));
+      curw = (WadPtr) GetMemory( sizeof( struct WadFileInfo));
       if (prevw == NULL)
 	 WadFileList = curw;
       else
@@ -241,8 +241,18 @@ WadPtr BasicWadOpen( char *filename)
 
    /* open the file */
    if ((curw->fileinfo = fopen( filename, "rb")) == NULL)
+   {
+      if (!prevw) 
+      {                
+         WadFileList = NULL;
+      }
+      else
+      {
+         prevw->next = curw->next;
+      }
+      FreeMemory( curw);
       ProgError( "error opening \"%s\"", filename);
-
+   }
    /* read in the WAD directory info */
    BasicWadRead( curw, curw->type, 4);
    if (strncmp( curw->type, "IWAD", 4) && strncmp( curw->type, "PWAD", 4))
@@ -251,7 +261,7 @@ WadPtr BasicWadOpen( char *filename)
    BasicWadRead( curw, &curw->dirstart, sizeof( curw->dirstart));
 
    /* read in the WAD directory itself */
-   curw->directory = GetMemory( sizeof( struct Directory) * curw->dirsize);
+   curw->directory = (DirPtr) GetMemory( sizeof( struct Directory) * curw->dirsize);
    BasicWadSeek( curw, curw->dirstart);
    BasicWadRead( curw, curw->directory, sizeof( struct Directory) * curw->dirsize);
 
@@ -311,7 +321,7 @@ void ListMasterDirectory( FILE *file)
    char dataname[ 9];
    MDirPtr dir;
    char key;
-   int lines = 3;
+   BCINT lines = 3;
 
    dataname[ 8] = '\0';
    fprintf( file, "The Master Directory\n");
@@ -343,7 +353,7 @@ void ListFileDirectory( FILE *file, WadPtr wad)
 {
    char dataname[ 9];
    char key;
-   int lines = 5;
+   BCINT lines = 5;
    long n;
 
    dataname[ 8] = '\0';
@@ -407,7 +417,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
       counter += size;
       BasicWadSeek( cur->wadfile, cur->dir.start);
       CopyBytes( file, cur->wadfile->fileinfo, size);
-      printf( "Size: %dK\r", counter / 1024);
+      printf( "Size: %ldK\r", counter / 1024);
    }
 
    /* output the directory */
@@ -419,7 +429,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
       if (patchonly && cur->wadfile == WadFileList)
 	 continue;
       if (dirnum % 100 == 0)
-	 printf( "Outputting directory %04d...\r", dirnum);
+	 printf( "Outputting directory %04ld...\r", dirnum);
       if (cur->dir.start)
 	 WriteBytes( file, &counter, 4L);
       else
@@ -517,7 +527,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
    MDirPtr entry;
    char dataname[ 9];
    char key;
-   int lines = 5;
+   BCINT lines = 5;
    long n, c, i;
    unsigned char buf[16];
 
@@ -536,7 +546,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
 	 i = -1;
 	 for (c = 0; c < entry->dir.size; c += i)
 	 {
-	    fprintf( file, "%04X: ", n);
+	    fprintf( file, "%04lX: ", n);
 	    for (i = 0; i < 16; i++)
 	    {
 	       BasicWadRead( entry->wadfile, &(buf[ i]), 1);
@@ -555,7 +565,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
 	    if (file == stdout && lines++ > 21)
 	    {
 	       lines = 0;
-	       printf( "[%d%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
+	       printf( "[%ld%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
 	       key = bioskey( 0);
 	       printf( "\r                                                                    \r");
 	       if (key == 'S' || key == 's')
@@ -673,3 +683,4 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
 
 
 /* end of file */
+

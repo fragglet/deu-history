@@ -13,19 +13,16 @@
 /* the includes */
 #include "deu.h"
 #include "levels.h"
-extern Bool InfoShown;		/* should we display the info bar? */
-#ifdef CIRRUS_PATCH
-extern char HWCursor[];		/* Cirrus hardware cursor data */
-#endif /* CIRRUS_PATCH */
 
-int  MoveSpeed = 20;		/* movement speed */
+extern Bool InfoShown;		/* should we display the info bar? */
+BCINT  MoveSpeed = 20;		/* movement speed */
 
 
 /*
    the driving program
 */
 
-void EditLevel( int episode, int mission, Bool newlevel)
+void EditLevel( BCINT episode, BCINT mission, Bool newlevel)
 {
    ReadWTextureNames();
    ReadFTextureNames();
@@ -67,24 +64,24 @@ void EditLevel( int episode, int mission, Bool newlevel)
    select a level
 */
 
-void SelectLevel( int *episode, int *mission)
+void SelectLevel( BCINT *episode, BCINT *mission)
 {
    MDirPtr dir;
    char name[ 7];
    char **levels;
-   int n = 0;
+   int ep,mi,n = 0;
 
    dir = MasterDir;
    while (dir)
    {
       if (dir->dir.size == 0 && dir->dir.name[ 0] == 'E' && dir->dir.name[ 2] == 'M' && dir->dir.name[ 4] == '\0')
       {
-	 if (n == 0)
-	    levels = GetMemory( sizeof( char *));
-	 else
-	    levels = ResizeMemory( levels, (n + 1) * sizeof( char *));
-	 levels[ n] = dir->dir.name;
-	 n++;
+      	 if (n == 0)
+      	    levels = (char**)GetMemory( sizeof( char *));
+      	 else
+      	    levels = (char**)ResizeMemory( levels, (n + 1) * sizeof( char *));
+      	 levels[ n] = dir->dir.name;
+      	 n++;
       }
       dir = dir->next;
    }
@@ -96,7 +93,11 @@ void SelectLevel( int *episode, int *mission)
    InputNameFromList( -1, -1, "Select an episode and a mission number:", n, levels, name);
    FreeMemory( levels);
    if (*name)
-      sscanf( name, "E%dM%d", episode, mission);
+   {
+      sscanf( name, "E%dM%d", &ep, &mi);
+      *episode = (BCINT) ep;
+      *mission = (BCINT) mi;
+   }
    else
    {
       *episode = 0;
@@ -110,9 +111,9 @@ void SelectLevel( int *episode, int *mission)
    get the name of the new WAD file
 */
 
-char *GetWadFileName( int episode, int mission)
+char *GetWadFileName( BCINT episode, BCINT mission)
 {
-   char *outfile = GetMemory( 80);
+   char *outfile = (char*)GetMemory( 80);
    char *dotp;
    WadPtr wad;
 
@@ -164,10 +165,10 @@ char *GetWadFileName( int episode, int mission)
    display the help screen
  */
 
-void DisplayHelp( int objtype, int grid) /* SWAP! */
+void DisplayHelp( BCINT objtype, BCINT grid) /* SWAP! */
 {
-   int x0 = 137;
-   int y0 = 50;
+   BCINT x0 = 137;
+   BCINT y0 = 50;
 
    if (UseMouse)
       HideMousePointer();
@@ -192,7 +193,7 @@ void DisplayHelp( int objtype, int grid) /* SWAP! */
    DrawScreenText( -1, -1, "Esc   - Exit without saving changes");
    DrawScreenText( -1, -1, "Tab   - Switch to the next editing mode");
    DrawScreenText( -1, -1, "Space - Change the move/scroll speed");
-   DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", (int) (1.0 / Scale + 0.5));
+   DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", (BCINT) (1.0 / Scale + 0.5));
    DrawScreenText( -1, -1, "G     - Change the grid scale (cur.: %d)", grid);
    DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
    DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
@@ -231,25 +232,26 @@ void DisplayHelp( int objtype, int grid) /* SWAP! */
    the editor main loop
 */
 
-void EditorLoop( int episode, int mission) /* SWAP! */
+void EditorLoop( BCINT episode, BCINT mission) /* SWAP! */
 {
-   int    EditMode = OBJ_THINGS;
-   int    CurObject = -1;
-   int    OldObject = -1;
+   BCINT  EditMode = OBJ_THINGS;
+   BCINT  CurObject = -1;
+   BCINT  OldObject = -1;
    Bool   RedrawMap = TRUE;
    Bool   RedrawObj = FALSE;
    Bool   DragObject = FALSE;
-   int    key, altkey, buttons, oldbuttons;
-   int    GridScale = 0;
+   int    key, altkey;
+   BCINT  buttons, oldbuttons;
+   BCINT  GridScale = 0;
    Bool   GridShown = TRUE;
    SelPtr Selected = NULL;
    char   keychar;
-   int    SelBoxX = 0;
-   int    SelBoxY = 0;
-   int    OldPointerX = 0;
-   int    OldPointerY = 0;
+   BCINT  SelBoxX = 0;
+   BCINT  SelBoxY = 0;
    Bool   StretchSelBox = FALSE;
    Bool   ShowRulers = FALSE;
+   BCINT  OldPointerX = 0;
+   BCINT  OldPointerY = 0;
 
    MadeChanges = FALSE;
    MadeMapChanges = FALSE;
@@ -264,13 +266,6 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       ResetMouseLimits();
       SetMouseCoords( PointerX, PointerY);
       ShowMousePointer();
-#ifdef CIRRUS_PATCH
-      if (CirrusCursor == TRUE)
-      {
-	 SetHWCursorMap( HWCursor);
-	 SetHWCursorPos( PointerX, PointerY);
-      }
-#endif /* CIRRUS_PATCH */
       oldbuttons = 0;
    }
    else
@@ -330,24 +325,24 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       {
 	       case 1:
 		  if (SwapButtons)
-		     key = 0x000D;
-		  else
-		     key = 'M';      /* Press left button = Mark/Unmark ('M') */
-		  break;
+	   	     key = 0x000D;
+	   	  else
+	   	     key = 'M';      /* Press left button = Mark/Unmark ('M') */
+	       	  break;
 	       case 2:
-		  if (! DragObject)
-		     key = 'D';      /* Press right button = Drag */
-		  break;
+	   	  if (! DragObject)
+	   	     key = 'D';      /* Press right button = Drag */
+	   	  break;
 	       case 3:
 	       case 4:
-		  if (SwapButtons)
-		     key = 'M';
-		  else
-		     key = 0x000D;   /* Press middle button = Edit ('Enter') */
-		  break;
+	      	  if (SwapButtons)
+	   	     key = 'M';
+	   	  else
+	   	     key = 0x000D;   /* Press middle button = Edit ('Enter') */
+	   	  break;
 	       default:
-		  if (StretchSelBox) /* Release left button = End Selection Box */
-		     key = 'M';
+	   	  if (StretchSelBox) /* Release left button = End Selection Box */
+	   	     key = 'M';
 		  if (DragObject)    /* Release right button = End Drag */
 		     key = 'D';
 		  break;
@@ -361,7 +356,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       /* drag object(s) */
       if (DragObject)
       {
-	 int forgetit = FALSE;
+	 BCINT forgetit = FALSE;
 
 	 if (IsSelected( Selected, CurObject) == FALSE)
 	    ForgetSelection( &Selected);
@@ -391,30 +386,22 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       }
       else if (StretchSelBox)
       {
-	 int x = MAPX( PointerX);
-	 int y = MAPY( PointerY);
+	 BCINT x = MAPX( PointerX);
+	 BCINT y = MAPY( PointerY);
 
 	 /* draw selection box */
 	 SetColor( CYAN);
 	 setwritemode( XOR_PUT);
-	 if (UseMouse)
-	    HideMousePointer();
 	 DrawMapLine( SelBoxX, SelBoxY, SelBoxX, y);
 	 DrawMapLine( SelBoxX, y, x, y);
 	 DrawMapLine( x, y, x, SelBoxY);
 	 DrawMapLine( x, SelBoxY, SelBoxX, SelBoxY);
-	 if (UseMouse)
-	    ShowMousePointer();
 	 delay( 50);
-	 if (UseMouse)
-	    HideMousePointer();
 	 DrawMapLine( SelBoxX, SelBoxY, SelBoxX, y);
 	 DrawMapLine( SelBoxX, y, x, y);
 	 DrawMapLine( x, y, x, SelBoxY);
 	 DrawMapLine( x, SelBoxY, SelBoxX, SelBoxY);
 	 setwritemode( COPY_PUT);
-	 if (UseMouse)
-	    ShowMousePointer();
       }
       else if (!RedrawObj)
       {
@@ -429,38 +416,28 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       /* draw the map */
       if (RedrawMap)
       {
-	 if (UseMouse)
-	    HideMousePointer();
 	 DrawMap( EditMode, GridScale, GridShown);
 	 HighlightSelection( EditMode, Selected);
-	 if (UseMouse)
-	    ShowMousePointer();
       }
 
       /* highlight the current object and display the information box */
       if (RedrawMap || CurObject != OldObject || RedrawObj)
       {
 	 RedrawObj = FALSE;
-	 if (UseMouse)
-	    HideMousePointer();
 	 if (!RedrawMap && OldObject >= 0)
-	    HighlightObject( EditMode, OldObject, YELLOW);
+  	    HighlightObject( EditMode, OldObject, YELLOW);
 	 if (CurObject != OldObject)
 	 {
 	    PlaySound( 50, 10);
 	    OldObject = CurObject;
 	 }
 	 if (CurObject >= 0)
-	    HighlightObject( EditMode, CurObject, YELLOW);
+  	    HighlightObject( EditMode, CurObject, YELLOW);
 	 if (bioskey( 1)) /* speedup */
 	    RedrawObj = TRUE;
 	 else
 	    DisplayObjectInfo( EditMode, CurObject);
-	 if (UseMouse)
-	    ShowMousePointer();
       }
-
-      /* redraw the pointer if necessary */
       if (RedrawMap && (FakeCursor || ShowRulers))
       {
 	 if (UseMouse)
@@ -473,12 +450,12 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       /* display the current pointer coordinates */
       if (RedrawMap || PointerX != OldPointerX || PointerY != OldPointerY)
       {
-	 SetColor( LIGHTGRAY);
-	 DrawScreenBox( ScrMaxX - 170, 4, ScrMaxX - 50, 12);
-	 SetColor( BLUE);
-	 DrawScreenText( ScrMaxX - 170, 4, "%d, %d", MAPX( PointerX), MAPY( PointerY));
-	 OldPointerX = PointerX;
-	 OldPointerY = PointerY;
+      	 SetColor( LIGHTGRAY);
+      	 DrawScreenBox( ScrMaxX - 170, 4, ScrMaxX - 50, 12);
+      	 SetColor( BLUE);
+      	 DrawScreenText( ScrMaxX - 170, 4, "%d, %d", MAPX( PointerX), MAPY( PointerY));
+      	 OldPointerX = PointerX;
+      	 OldPointerY = PointerY;
       }
 
       /* the map is up to date */
@@ -498,47 +475,47 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 {
 	    if ((key & 0xFF00) == 0x2100)       /* Scan code for F */
 	       key = PullDownMenu( 18, 19,
-				   "Save         F2", 0x3C00,    (int) 'S', 1,
-				   "Save As ExMx F3", 0x3D00,    (int) 'A', 6,
-				   "Print          ", -1,        (int) 'P', -1,
-				   "Quit          Q", (int) 'Q', (int) 'Q', 1,
-				   NULL);
+	       	    		   "Save         F2", 0x3C00,    (BCINT) 'S', 1,
+	       			   "Save As ExMx F3", 0x3D00,    (BCINT) 'A', 6,
+	       			   "Print          ", -1,        (BCINT) 'P', -1,
+	       			   "Quit          Q", (BCINT) 'Q', (BCINT) 'Q', 1,
+       	       			   NULL);
 	    else if ((key & 0xFF00) == 0x1200)  /* Scan code for E */
 	    {
 	       key = PullDownMenu( 66, 19,
-				   "Copy object(s)      O", (int) 'O', (int) 'C', 1,
-				   "Add object        Ins", 0x5200,    (int) 'A', 1,
-				   "Delete object(s)  Del", 0x5300,    (int) 'D', 1,
+	       			   "Copy object(s)      O", (BCINT) 'O', (BCINT) 'C', 1,
+	       			   "Add object        Ins", 0x5200,    (BCINT) 'A', 1,
+				   "Delete object(s)  Del", 0x5300,    (BCINT) 'D', 1,
 				   ((EditMode == OBJ_VERTEXES) ?
 				   NULL :
-				   "Preferences        F5"), 0x3F00,   (int) 'P', 1,
+				   "Preferences        F5"), 0x3F00,   (BCINT) 'P', 1,
 				   NULL);
 	    }
 	    else if ((key & 0xFF00) == 0x1F00)  /* Scan code for S */
 	       key = PullDownMenu( 114, 19,
-				   "Find/Change       F4", -1,        (int) 'F', -1,
-				   "Repeat last find    ", -1,        (int) 'R', -1,
-				   "Next object        N", (int) 'N', (int) 'N', 1,
-				   "Prev object        P", (int) 'P', (int) 'P', 1,
-				   "Jump to object...  J", (int) 'J', (int) 'J', 1,
+				   "Find/Change       F4", -1,        (BCINT) 'F', -1,
+				   "Repeat last find    ", -1,        (BCINT) 'R', -1,
+				   "Next object        N", (BCINT) 'N', (BCINT) 'N', 1,
+			   	   "Prev object        P", (BCINT) 'P', (BCINT) 'P', 1,
+	     			   "Jump to object...  J", (BCINT) 'J', (BCINT) 'J', 1,
 				   NULL);
 	    else if ((key & 0xFF00) == 0x3200)  /* Scan code for M */
 	       key = PullDownMenu( 178, 19,
 				   ((EditMode == OBJ_THINGS) ?
-				   "û Things              T" :
-				   "  Things              T"), (int) 'T', (int) 'T', 3,
+       				   "û Things              T" :
+	       			   "  Things              T"), (BCINT) 'T', (BCINT) 'T', 3,
 				   ((EditMode == OBJ_LINEDEFS) ?
 				   "û Linedefs+Sidedefs   L" :
-				   "  Linedefs+Sidedefs   L"), (int) 'L', (int) 'L', 3,
+				   "  Linedefs+Sidedefs   L"), (BCINT) 'L', (BCINT) 'L', 3,
 				   ((EditMode == OBJ_VERTEXES) ?
 				   "û Vertexes            V" :
-				   "  Vertexes            V"), (int) 'V', (int) 'V', 3,
-				   ((EditMode == OBJ_SECTORS) ?
+				   "  Vertexes            V"), (BCINT) 'V', (BCINT) 'V', 3,
+	 			   ((EditMode == OBJ_SECTORS) ?
 				   "û Sectors             S" :
-				   "  Sectors             S"), (int) 'S', (int) 'S', 3,
-				   "  Next mode         Tab",  0x0009,    (int) 'N', 3,
-				   "  Last mode   Shift+Tab",  0x0F00,    (int) 'L', 3,
-				   "  3D Preview          3",  (int) '3', (int) '3', -1,
+	      			   "  Sectors             S"), (BCINT) 'S', (BCINT) 'S', 3,
+				   "  Next mode         Tab",  0x0009,    (BCINT) 'N', 3,
+	      			   "  Last mode   Shift+Tab",  0x0F00,    (BCINT) 'L', 3,
+				   "  3D Preview          3",  (BCINT) '3', (BCINT) '3', -1,
 				   NULL);
 	    else if ((key & 0xFF00) == 0x1700)  /* Scan code for I */
 	    {
@@ -548,7 +525,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  MiscOperations( 234, 19, EditMode, &Selected);
 	       else
 	       {
-		  if (CurObject >= 0)
+       		  if (CurObject >= 0)
 		     SelectObject( &Selected, CurObject);
 		  MiscOperations( 234, 19, EditMode, &Selected);
 		  if (CurObject >= 0)
@@ -560,18 +537,18 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    }
 	    else if ((key & 0xFF00) == 0x1800)  /* Scan code for O */
 	    {
-	       int savednum, i;
+	       BCINT savednum, i;
 
 	       key = 0;
 	       /* don't want to create the object behind the menu bar... */
 	       if (PointerY < 20)
 	       {
-		  PointerX = ScrCenterX;
+	     	  PointerX = ScrCenterX;
 		  PointerY = ScrCenterY;
 	       }
 	       /* code duplicated from 'F9' - I hate to do that */
 	       savednum = NumLineDefs;
-	       InsertStandardObject( 282, 19, MAPX( PointerX), MAPY( PointerY));
+       	       InsertStandardObject( 282, 19, MAPX( PointerX), MAPY( PointerY));
 	       if (NumLineDefs > savednum)
 	       {
 		  ForgetSelection( &Selected);
@@ -579,8 +556,8 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  for (i = savednum; i < NumLineDefs; i++)
 		     SelectObject( &Selected, i);
 		  CurObject = NumLineDefs - 1;
-		  OldObject = -1;
-		  DragObject = FALSE;
+	 	  OldObject = -1;
+	      	  DragObject = FALSE;
 		  StretchSelBox = FALSE;
 	       }
 	    }
@@ -591,11 +568,11 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    }
 	    else if ((key & 0xFF00) == 0x2300)  /* Scan code for H */
 	       key = PullDownMenu( ScrMaxX, 19,
-				   "  Keyboard & mouse  F1",  0x3B00,    (int) 'K', 3,
+				   "  Keyboard & mouse  F1",  0x3B00,    (BCINT) 'K', 3,
 				   (InfoShown ?
 				   "û Info bar           I" :
-				   "  Info bar           I"), (int) 'I', (int) 'I', 3,
-				   "  About DEU...        ",  -1,        (int) 'A', -1,
+				   "  Info bar           I"), (BCINT) 'I', (BCINT) 'I', 3,
+				   "  About DEU...        ",  -1,        (BCINT) 'A', -1,
 				   NULL);
 	    else
 	    {
@@ -614,7 +591,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 
 	 /* simplify the checks later on */
 	 if (isprint(key & 0x00ff))
-	    keychar = toupper(key);
+	    keychar = toupper(key & 0x00ff);
 	 else
 	    keychar = '\0';
 
@@ -651,14 +628,14 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 else if ((key & 0x00FF) == 0x001B) /* 'Esc' */
 	 {
 	    if (DragObject)
-	       DragObject = FALSE;
+	       DragObject = FALSE;                          
 	    else if (StretchSelBox)
 	       StretchSelBox = FALSE;
 	    else
 	    {
 	       ForgetSelection( &Selected);
 	       if (!MadeChanges || Confirm(-1, -1, "You have unsaved changes.  Do you really want to quit?", NULL))
-		  break;
+	     	  break;
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -674,21 +651,21 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 else if ((key & 0xFF00) == 0x3C00 && Registered) /* 'F2' */
 	 {
 	    char *outfile;
-
-	    if (CheckStartingPos())
-	    {
+            
+            if (CheckStartingPos())
+            {
 	       outfile = GetWadFileName( episode, mission);
 	       if (outfile)
-		  SaveLevelData( outfile);
-	    }
-	    RedrawMap = TRUE;
-	 }
+	          SaveLevelData( outfile);
+            }
+            RedrawMap = TRUE;
+   	 }
 
 	 /* user wants to save and change the episode and mission numbers */
 	 else if ((key & 0xFF00) == 0x3D00 && Registered) /* 'F3' */
 	 {
 	    char *outfile;
-	    int   e, m;
+	    BCINT e, m;
 	    MDirPtr newLevel, oldl, newl;
 	    char name[ 7];
 
@@ -697,42 +674,42 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       outfile = GetWadFileName( episode, mission);
 	       if (outfile)
 	       {
-		  e = episode;
-		  m = mission;
-		  SelectLevel( &e, &m);
-		  if (e > 0 && m > 0 && (e != episode || m != mission))
-		  {
-		     /* horrible but it works... */
-		     episode = e;
-		     mission = m;
-		     sprintf( name, "E%dM%d", episode, mission);
-		     newLevel = FindMasterDir( MasterDir, name);
-		     oldl = Level;
-		     newl = newLevel;
-		     for (m = 0; m < 11; m++)
-		     {
-			newl->wadfile = oldl->wadfile;
-			if (m > 0)
-			   newl->dir = oldl->dir;
-			/*
-			if (!strcmp( outfile, oldl->wadfile->filename))
-			{
-			   oldl->wadfile = WadFileList;
-			   oldl->dir = lost...
-			}
-			*/
-			oldl = oldl->next;
-			newl = newl->next;
-		     }
-		     Level = newLevel;
-		  }
-		  SaveLevelData( outfile);
+	 	  e = episode;
+	 	  m = mission;
+	 	  SelectLevel( &e, &m);
+	 	  if (e > 0 && m > 0 && (e != episode || m != mission))
+	 	  {
+	 	     /* horrible but it works... */
+	 	     episode = e;
+	 	     mission = m;
+	 	     sprintf( name, "E%dM%d", episode, mission);
+	 	     newLevel = FindMasterDir( MasterDir, name);
+	 	     oldl = Level;
+	 	     newl = newLevel;
+	 	     for (m = 0; m < 11; m++)
+	 	     {
+	 	 	newl->wadfile = oldl->wadfile;
+	 	 	if (m > 0)
+	 	 	   newl->dir = oldl->dir;
+	 	 	/*
+	 	 	if (!strcmp( outfile, oldl->wadfile->filename))
+	 	 	{
+	 	 	   oldl->wadfile = WadFileList;
+	 	 	   oldl->dir = lost...
+	 	 	}
+	 	 	*/
+	 	 	oldl = oldl->next;
+	 	 	newl = newl->next;
+	 	     }
+	 	     Level = newLevel;
+	 	  }
+	 	  SaveLevelData( outfile);
 	       }
 	    }
 	    RedrawMap = TRUE;
 	 }
 
-	 /* user wants to get the 'Preferences' menu */
+   	 /* user wants to get the 'Preferences' menu */
 	 else if ((key & 0xFF00) == 0x3F00) /* 'F5' */
 	 {
 	    Preferences( -1, -1);
@@ -746,10 +723,10 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    else
 	    {
 	       if (CurObject >= 0)
-		  SelectObject( &Selected, CurObject);
+	 	  SelectObject( &Selected, CurObject);
 	       MiscOperations( -1, -1, EditMode, &Selected);
 	       if (CurObject >= 0)
-		  UnSelectObject( &Selected, CurObject);
+	 	  UnSelectObject( &Selected, CurObject);
 	    }
 	    CurObject = -1;
 	    RedrawMap = TRUE;
@@ -760,7 +737,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 /* user wants to insert a standard shape */
 	 else if ((key & 0xFF00) == 0x4300) /* 'F9' */
 	 {
-	    int savednum, i;
+	    BCINT savednum, i;
 
 	    savednum = NumLineDefs;
 	    InsertStandardObject( -1, -1, MAPX( PointerX), MAPY( PointerY));
@@ -795,40 +772,40 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 /* user wants to change the scale */
 	 else if ((keychar == '+' || keychar == '=') && Scale < 4.0)
 	 {
-	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX += (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    if (Scale < 1.0)
 	       Scale = 1.0 / ((1.0 / Scale) - 1.0);
 	    else
 	       Scale = Scale * 2.0;
-	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX -= (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((keychar == '-' || keychar == '_') && Scale > 0.05)
 	 {
-	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX += (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    if (Scale < 1.0)
 	       Scale = 1.0 / ((1.0 / Scale) + 1.0);
 	    else
 	       Scale = Scale / 2.0;
-	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX -= (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    RedrawMap = TRUE;
 	 }
 
 	 /* user wants to set the scale directly */
 	 else if (keychar >= '0' && keychar <= '9')
 	 {
-	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX += (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    if (keychar == '0')
 	       Scale = 0.1;
 	    else
 	       Scale = 1.0 / (keychar - '0');
-	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
-	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
+	    OrigX -= (BCINT) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (BCINT) ((ScrCenterY - PointerY) / Scale);
 	    RedrawMap = TRUE;
 	 }
 
@@ -862,25 +839,25 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerX += MoveSpeed;
 	 }
 
-	 /* user wants to scroll the map (scroll one half page at a time) */
+	 /* user wants so scroll the map */
 	 else if ((key & 0xFF00) == 0x4900 && MAPY( ScrCenterY) < MapMaxY)
 	 {
-	    OrigY += (int) (ScrCenterY / Scale);
+	    OrigY += (BCINT) (ScrCenterY / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x5100 && MAPY( ScrCenterY) > MapMinY)
 	 {
-	    OrigY -= (int) (ScrCenterY / Scale);
+	    OrigY -= (BCINT) (ScrCenterY / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x4700 && MAPX( ScrCenterX) > MapMinX)
 	 {
-	    OrigX -= (int) (ScrCenterX / Scale);
+	    OrigX -= (BCINT) (ScrCenterX / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x4F00 && MAPX( ScrCenterX) < MapMaxX)
 	 {
-	    OrigX += (int) (ScrCenterX / Scale);
+	    OrigX += (BCINT) (ScrCenterX / Scale);
 	    RedrawMap = TRUE;
 	 }
 
@@ -891,7 +868,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 /* user wants to change the edit mode */
 	 else if ((key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00 || keychar == 'T' || keychar == 'V' || keychar == 'L' || keychar == 'S')
 	 {
-	    int    PrevMode = EditMode;
+	    BCINT   PrevMode = EditMode;
 	    SelPtr NewSel;
 
 	    if ((key & 0x00FF) == 0x0009) /* 'Tab' */
@@ -900,16 +877,16 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       {
 	       case OBJ_THINGS:
 		  EditMode = OBJ_VERTEXES;
-		  break;
+	       	  break;
 	       case OBJ_VERTEXES:
-		  EditMode = OBJ_LINEDEFS;
+	     	  EditMode = OBJ_LINEDEFS;
 		  break;
 	       case OBJ_LINEDEFS:
 		  EditMode = OBJ_SECTORS;
 		  break;
 	       case OBJ_SECTORS:
 		  EditMode = OBJ_THINGS;
-		  break;
+	      	  break;
 	       }
 	    }
 	    else if ((key & 0xFF00) == 0x0F00) /* 'Shift-Tab' */
@@ -920,31 +897,30 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  EditMode = OBJ_SECTORS;
 		  break;
 	       case OBJ_VERTEXES:
-		  EditMode = OBJ_THINGS;
-		  break;
+	      	  EditMode = OBJ_THINGS;
+	       	  break;
 	       case OBJ_LINEDEFS:
-		  EditMode = OBJ_VERTEXES;
-		  break;
+	      	  EditMode = OBJ_VERTEXES;
+	      	  break;
 	       case OBJ_SECTORS:
-		  EditMode = OBJ_LINEDEFS;
-		  break;
+	      	  EditMode = OBJ_LINEDEFS;
+	      	  break;
 	       }
 	    }
-	    else
-	    {
-	       if (keychar == 'T')
-		  EditMode = OBJ_THINGS;
+	    else 
+            {
+               if (keychar == 'T')
+	          EditMode = OBJ_THINGS;
 	       else if (keychar == 'V')
-		  EditMode = OBJ_VERTEXES;
+	          EditMode = OBJ_VERTEXES;
 	       else if (keychar == 'L')
-		  EditMode = OBJ_LINEDEFS;
+	          EditMode = OBJ_LINEDEFS;
 	       else if (keychar == 'S')
-		  EditMode = OBJ_SECTORS;
-	       /* unselect all */
-	       ForgetSelection( &Selected);
-	    }
+	          EditMode = OBJ_SECTORS;
+               ForgetSelection( &Selected);
+            }
 
-	    /* special cases for the selection list... */
+ 	    /* special cases for the selection list... */
 	    if (Selected)
 	    {
 	       /* select all LineDefs bound to the selected Sectors */
@@ -1041,7 +1017,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    if ((altkey & 0x03) == 0x00)  /* no shift keys */
 	    {
 	       if (GridScale == 0)
-		  GridScale = 256;
+	    	  GridScale = 256;
 	       else if (GridScale > 8)
 		  GridScale /= 2;
 	       else
@@ -1050,22 +1026,20 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    else
 	    {
 	       if (GridScale == 0)
-		  GridScale = 8;
+	    	  GridScale = 8;
 	       else if (GridScale < 256)
-		  GridScale *= 2;
+	    	  GridScale *= 2;
 	       else
-		  GridScale = 0;
+	    	  GridScale = 0;
 	    }
 	    RedrawMap = TRUE;
 	 }
-
-	 /* user wants to display or hide the grid */
 	 else if (keychar == 'H')
-	 {
-	    if ((altkey & 0x03) != 0x00)  /* shift key pressed */
-	       GridScale = 0;
+	 {  
+            if ((altkey & 0x03) != 0x00)  /* shift key pressed */
+               GridScale = 0;
 	    else
-	       GridShown = !GridShown;
+               GridShown = !GridShown;
 	    RedrawMap = TRUE;
 	 }
 
@@ -1083,7 +1057,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       if (EditMode == OBJ_VERTEXES)
 	       {
 		  if (Selected == NULL && CurObject >= 0)
-		  {
+     		  {
 		     SelectObject( &Selected, CurObject);
 		     if (AutoMergeVertices( &Selected))
 			RedrawMap = TRUE;
@@ -1129,17 +1103,17 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       else
 		  MoveObjectsToCoords( EditMode, NULL, MAPX( PointerX), MAPY( PointerY), GridScale);
 	    }
-	 }
+     	 }
 
-	 /* user wants to select the next or previous object */
+         /* user wants to select the next or previous object */
 	 else if (keychar == 'N' || keychar == '>')
 	 {
 	    if (CurObject < GetMaxObjectNum( EditMode))
-	       CurObject++;
+	      CurObject++;
 	    else if (GetMaxObjectNum( EditMode) >= 0)
-	       CurObject = 0;
+	      CurObject = 0;
 	    else
-	       CurObject = -1;
+	      CurObject = -1;
 	    RedrawMap = TRUE;
 	 }
 	 else if (keychar == 'P' || keychar == '<')
@@ -1181,7 +1155,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       Selected = SelectObjectsInBox( EditMode, SelBoxX, SelBoxY, MAPX( PointerX), MAPY( PointerY));
 	       if (AdditiveSelBox == TRUE)
 		  while (oldsel != NULL)
-		  {
+	       	  {
 		     if (! IsSelected( Selected, oldsel->objnum))
 			SelectObject( &Selected, oldsel->objnum);
 		     UnSelectObject( &oldsel, oldsel->objnum);
@@ -1189,7 +1163,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       if (Selected)
 	       {
 		  CurObject = Selected->objnum;
-		  PlaySound( 440, 10);
+	    	  PlaySound( 440, 10);
 	       }
 	       else
 		  CurObject = -1;
@@ -1203,11 +1177,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		     UnSelectObject( &Selected, CurObject);
 		  else
 		     SelectObject( &Selected, CurObject);
-		  if (UseMouse)
-		     HideMousePointer();
 		  HighlightObject( EditMode, CurObject, GREEN);
-		  if (UseMouse)
-		     ShowMousePointer();
 		  if (Selected)
 		     PlaySound( 440, 10);
 		  DragObject = FALSE;
@@ -1296,7 +1266,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    /* first special case: if several Vertices are selected, add new LineDefs */
 	    if (EditMode == OBJ_VERTEXES && Selected != NULL && Selected->next != NULL)
 	    {
-	       int firstv;
+	       BCINT firstv;
 
 	       ObjectsNeeded( OBJ_LINEDEFS, 0);
 	       if (Selected->next->next != NULL)
@@ -1319,7 +1289,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		     InsertObject( OBJ_LINEDEFS, -1, 0, 0);
 		     CurObject = NumLineDefs - 1;
 		     LineDefs[ CurObject].start = cur->next->objnum;
-		     LineDefs[ CurObject].end = cur->objnum;
+	       	     LineDefs[ CurObject].end = cur->objnum;
 		     cur->objnum = CurObject;
 		  }
 	       }
@@ -1334,7 +1304,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		     cur->objnum = CurObject;
 		  else
 		  {
-		     InsertObject( OBJ_LINEDEFS, -1, 0, 0);
+	       	     InsertObject( OBJ_LINEDEFS, -1, 0, 0);
 		     CurObject = NumLineDefs - 1;
 		     LineDefs[ CurObject].start = firstv;
 		     LineDefs[ CurObject].end = cur->objnum;
@@ -1342,7 +1312,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  }
 	       }
 	       else
-		  UnSelectObject( &Selected, cur->objnum);
+	       	  UnSelectObject( &Selected, cur->objnum);
 	    }
 	    /* second special case: if several LineDefs are selected, add new SideDefs and one Sector */
 	    else if (EditMode == OBJ_LINEDEFS && Selected != NULL)
@@ -1365,12 +1335,12 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  CurObject = NumSectors - 1;
 		  for (cur = Selected; cur; cur = cur->next)
 		  {
-		     InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
+	       	     InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
 		     SideDefs[ NumSideDefs - 1].sector = CurObject;
 		     ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-		     if (LineDefs[ cur->objnum].sidedef1 >= 0)
+	    	     if (LineDefs[ cur->objnum].sidedef1 >= 0)
 		     {
-			int s;
+			BCINT s;
 
 			s = SideDefs[ LineDefs[ cur->objnum].sidedef1].sector;
 			if (s >= 0)
@@ -1380,14 +1350,14 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 			   strncpy( Sectors[ CurObject].floort, Sectors[ s].floort, 8);
 			   strncpy( Sectors[ CurObject].ceilt, Sectors[ s].ceilt, 8);
 			   Sectors[ CurObject].light = Sectors[ s].light;
-			}
+	       		}
 			LineDefs[ cur->objnum].sidedef2 = NumSideDefs - 1;
 			LineDefs[ cur->objnum].flags = 4;
 			strncpy( SideDefs[ NumSideDefs - 1].tex3, "-", 8);
 			strncpy( SideDefs[ LineDefs[ cur->objnum].sidedef1].tex3, "-", 8);
 		     }
 		     else
-			LineDefs[ cur->objnum].sidedef1 = NumSideDefs - 1;
+	       		LineDefs[ cur->objnum].sidedef1 = NumSideDefs - 1;
 		  }
 		  ForgetSelection( &Selected);
 		  SelectObject( &Selected, CurObject);
@@ -1398,26 +1368,26 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    {
 	       ForgetSelection( &Selected);
 	       if (GridScale > 0)
-		  InsertObject( EditMode, CurObject, (MAPX( PointerX) + GridScale / 2) & ~(GridScale - 1), (MAPY( PointerY) + GridScale / 2) & ~(GridScale - 1));
+		  InsertObject( EditMode, CurObject, (BCINT) ((int)(MAPX( PointerX) + GridScale / 2)) & ((int)(~(GridScale - 1))), (BCINT) ((int)(MAPY( PointerY) + GridScale / 2)) & (int)(~(GridScale - 1)));
 	       else
 		  InsertObject( EditMode, CurObject, MAPX( PointerX), MAPY( PointerY));
 	       CurObject = GetMaxObjectNum( EditMode);
 	       if (EditMode == OBJ_LINEDEFS)
 	       {
 		  if (! Input2VertexNumbers( -1, -1, "Choose the two vertices for the new LineDef",
-					     &(LineDefs[ CurObject].start), &(LineDefs[ CurObject].end)))
-		  {
-		     DeleteObject( EditMode, CurObject);
-		     CurObject = -1;
-		  }
+			    		     &(LineDefs[ CurObject].start), &(LineDefs[ CurObject].end)))
+	       	  {
+	       	     DeleteObject( EditMode, CurObject);
+	       	     CurObject = -1;
+	       	  }
 	       }
-	       else if (EditMode == OBJ_VERTEXES)
-	       {
-		  SelectObject( &Selected, CurObject);
-		  if (AutoMergeVertices( &Selected))
-		     RedrawMap = TRUE;
-		  ForgetSelection( &Selected);
-	       }
+      	       else if (EditMode == OBJ_VERTEXES)
+    	       {
+ 		  SelectObject( &Selected, CurObject);
+ 		  if (AutoMergeVertices( &Selected))
+ 		     RedrawMap = TRUE;
+ 		  ForgetSelection( &Selected);
+ 	       }
 	    }
 	    DragObject = FALSE;
 	    StretchSelBox = FALSE;
@@ -1446,8 +1416,8 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    if (! UseMouse)
 	       PointerY += MoveSpeed;
 	    if (MAPY( ScrCenterY) < MapMaxY)
-	    {
-	       OrigY += (int) (MoveSpeed * 2.0 / Scale);
+	    {                                   
+	       OrigY += (BCINT) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1457,17 +1427,17 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerY -= MoveSpeed;
 	    if (MAPY( ScrCenterY) > MapMinY)
 	    {
-	       OrigY -= (int) (MoveSpeed * 2.0 / Scale);
+	       OrigY -= (BCINT) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
 	 if (PointerX <= (UseMouse ? 8 : 20))
 	 {
-	    if (! UseMouse)
+	    if (! UseMouse)   
 	       PointerX += MoveSpeed;
 	    if (MAPX( ScrCenterX) > MapMinX)
 	    {
-	       OrigX -= (int) (MoveSpeed * 2.0 / Scale);
+	       OrigX -= (BCINT) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1477,7 +1447,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerX -= MoveSpeed;
 	    if (MAPX( ScrCenterX) < MapMaxX)
 	    {
-	       OrigX += (int) (MoveSpeed * 2.0 / Scale);
+	       OrigX += (BCINT) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1488,23 +1458,23 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 
 
 /*
-   draw the actual game map
+   draw the actual game map                            
 */
 
-void DrawMap( int editmode, int grid, Bool drawgrid) /* SWAP! */
+void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 {
-   int  n, m;
+   BCINT  n, m;
 
    /* clear the screen */
    ClearScreen();
 
    /* draw the grid */
    if (drawgrid == TRUE && grid > 0)
-   {
-      int mapx0 = MAPX( 0) & ~(grid - 1);
-      int mapx1 = (MAPX( ScrMaxX) + grid) & ~(grid - 1);
-      int mapy0 = (MAPY( ScrMaxY) - grid) & ~(grid - 1);
-      int mapy1 = MAPY( 0) & ~(grid - 1);
+   {                       
+      BCINT mapx0 = (BCINT)(((int)MAPX( 0)) & ((int)~(grid - 1)));
+      BCINT mapx1 = (BCINT)(((int)(MAPX( ScrMaxX) + grid)) & ((int)~(grid - 1)));
+      BCINT mapy0 = (BCINT)(((int)(MAPY( ScrMaxY) - grid)) & ((int)~(grid - 1)));
+      BCINT mapy1 = (BCINT)(((int)MAPY( 0)) & ((int)~(grid - 1)));
 
       SetColor( BLUE);
       for (n = mapx0; n <= mapx1; n += grid)
@@ -1636,15 +1606,15 @@ void DrawMap( int editmode, int grid, Bool drawgrid) /* SWAP! */
    {
       DrawScreenBox3D( 0, ScrMaxY - 11, ScrMaxX, ScrMaxY);
       if (MadeMapChanges == TRUE)
-	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s #", GetEditModeName( editmode), Level->dir.name);
+        DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s #", GetEditModeName( editmode), Level->dir.name);
       else if (MadeChanges == TRUE)
-	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s *", GetEditModeName( editmode), Level->dir.name);
+       	DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s *", GetEditModeName( editmode), Level->dir.name);
       else
-	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
+      	DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
       if (Scale < 1.0)
-	 DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: 1/%d  Grid: %d", (int) (1.0 / Scale + 0.5), grid);
+      	DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: 1/%d  Grid: %d", (BCINT) (1.0 / Scale + 0.5), grid);
       else
-	 DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: %d/1  Grid: %d", (int) Scale, grid);
+ 	DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: %d/1  Grid: %d", (BCINT) Scale, grid);
       if (farcoreleft() < 50000L)
       {
 	 if (farcoreleft() < 20000L)
@@ -1662,7 +1632,7 @@ void DrawMap( int editmode, int grid, Bool drawgrid) /* SWAP! */
    center the map around the given coords
 */
 
-void CenterMapAroundCoords( int xpos, int ypos)
+void CenterMapAroundCoords( BCINT xpos, BCINT ypos)
 {
    OrigX = xpos;
    OrigY = ypos;
@@ -1676,12 +1646,12 @@ void CenterMapAroundCoords( int xpos, int ypos)
    center the map around the object and zoom in if necessary
 */
 
-void GoToObject( int objtype, int objnum) /* SWAP! */
+void GoToObject( BCINT objtype, BCINT objnum) /* SWAP! */
 {
-   int   xpos, ypos;
-   int   xpos2, ypos2;
-   int   n;
-   int   sd1, sd2;
+   BCINT xpos, ypos;
+   BCINT xpos2, ypos2;
+   BCINT n;
+   BCINT sd1, sd2;
    float oldscale;
 
    GetObjectCoords( objtype, objnum, &xpos, &ypos);
@@ -1691,15 +1661,14 @@ void GoToObject( int objtype, int objnum) /* SWAP! */
    /* zoom in until the object can be selected */
    while (Scale < 4.0 && GetCurObject( objtype, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) != objnum)
    {
-      if (Scale < 1.0)
-	 Scale = 1.0 / ((1.0 / Scale) - 1.0);
-      else
-	 Scale = Scale * 2.0;
+       if (Scale < 1.0)
+ 	 Scale = 1.0 / ((1.0 / Scale) - 1.0);
+       else
+ 	 Scale = Scale * 2.0;
    }
-
-   /* Special case for Sectors: if several Sectors are one inside another, then    */
-   /* zooming in on the center won't help.  So I choose a LineDef that borders the */
-   /* Sector, move a few pixels towards the inside of the Sector, then zoom in.    */
+   /* Special case for Sectors: if several Sectors are one inside another, then     */
+   /* zooming in on the center won't help.  So I choose a LineDef that borders the  */
+   /* the Sector and move a few pixels towards the inside of the Sector.            */
    if (objtype == OBJ_SECTORS && GetCurObject( OBJ_SECTORS, OrigX, OrigY, OrigX, OrigY) != objnum)
    {
       /* restore the Scale */
@@ -1726,12 +1695,12 @@ void GoToObject( int objtype, int objnum) /* SWAP! */
 	 CenterMapAroundCoords( xpos, ypos);
 	 /* zoom in until the sector can be selected */
 	 while (Scale > 4.0 && GetCurObject( OBJ_SECTORS, OrigX, OrigY, OrigX, OrigY) != objnum)
-	 {
-	    if (Scale < 1.0)
-	       Scale = 1.0 / ((1.0 / Scale) - 1.0);
-	    else
-	       Scale = Scale / 2.0;
-	 }
+ 	 {
+ 	    if (Scale < 1.0)
+ 	       Scale = 1.0 / ((1.0 / Scale) - 1.0);
+ 	    else
+ 	       Scale = Scale / 2.0;
+ 	 }
       }
    }
    if (UseMouse)
@@ -1741,3 +1710,4 @@ void GoToObject( int objtype, int objnum) /* SWAP! */
 
 
 /* end of file */
+

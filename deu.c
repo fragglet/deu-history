@@ -16,39 +16,40 @@
 
 */
 
+
 /* the includes */
 #include "deu.h"
 #include <time.h>
 
 /* global variables */
-FILE *logfile = NULL;		/* filepointer to the error log */
-Bool Registered = FALSE;	/* registered or shareware game? */
-Bool Debug = FALSE;		/* are we debugging? */
-Bool SwapButtons = FALSE;	/* swap right and middle mouse buttons */
-Bool Quiet = FALSE;		/* don't play a sound when an object is selected */
-Bool Quieter = FALSE;		/* don't play any sound, even when an error occurs */
-Bool Expert = FALSE;		/* don't ask for confirmation for some operations */
-char *CfgFile = DEU_CONFIG_FILE;/* name of the configuration file */
-int  InitialScale = 8;		/* initial zoom factor for map */
-int  VideoMode = 2;		/* default video mode for VESA/SuperVGA */
-char *BGIDriver = "VESA";	/* default extended BGI driver */
-Bool FakeCursor = FALSE;	/* use a "fake" mouse cursor */
-Bool CirrusCursor = FALSE;	/* use hardware cursor on Cirrus Logic VGA cards */
-Bool Colour2 = FALSE;		/* use the alternate set for things colors */
-Bool InfoShown = TRUE;		/* should we display the info bar? */
-Bool AdditiveSelBox = FALSE;	/* additive selection box or select in box only? */
-int  SplitFactor = 8;		/* factor used by the Nodes builder */
-char *DefaultWallTexture  = "GRAY4";	/* default normal wall texture */
-char *DefaultUpperTexture = "ICKWALL2";	/* default upper wall texture */
-char *DefaultLowerTexture = "GRAY1";	/* default lower wall texture */
-char *DefaultFloorTexture = "FLOOR0_3";	/* default floor texture */
-char *DefaultCeilingTexture = "FLAT18";	/* default ceiling texture */
-int  DefaultFloorHeight   = 0;		/* default floor height */
-int  DefaultCeilingHeight = 128;	/* default ceiling height */
-Bool Select0 = TRUE;		/* select object 0 by default when switching modes */
-Bool Reminder = TRUE;		/* display a funny message when DEU starts */
-char *MainWad = "DOOM.WAD";	/* name of the main wad file */
-char **PatchWads = NULL;	/* list of patch wad files */
+FILE  *logfile = NULL;		/* filepointer to the error log */
+Bool  Registered = FALSE;	/* registered or shareware game? */
+Bool  Debug = FALSE;		/* are we debugging? */
+Bool  SwapButtons = FALSE;	/* swap right and middle mouse buttons */
+Bool  Quiet = FALSE;		/* don't play a sound when an object is selected */
+Bool  Quieter = FALSE;		/* don't play any sound, even when an error occurs */
+Bool  Expert = FALSE;		/* don't ask for confirmation for some operations */
+char  *CfgFile = DEU_CONFIG_FILE;/* name of the configuration file */
+BCINT InitialScale = 8;		/* initial zoom factor for map */
+BCINT VideoMode = 2;		/* default video mode for VESA/SuperVGA */
+char  *BGIDriver = "VESA";	/* default extended BGI driver */
+Bool  FakeCursor = FALSE;	/* use a "fake" mouse cursor */
+Bool  CirrusCursor = FALSE;	/* use hardware cursor on Cirrus Logic VGA cards */
+Bool  Colour2 = FALSE;		/* use the alternate set for things colors */
+Bool  InfoShown = TRUE;		/* should we display the info bar? */
+Bool  AdditiveSelBox = FALSE;	/* additive selection box or select in box only? */
+BCINT SplitFactor = 8;		/* factor used by the Nodes builder */
+char  *DefaultWallTexture  = "GRAY4";	/* default normal wall texture */
+char  *DefaultUpperTexture = "ICKWALL2";/* default upper wall texture */
+char  *DefaultLowerTexture = "GRAY1";	/* default lower wall texture */
+char  *DefaultFloorTexture = "FLOOR0_3";/* default floor texture */
+char  *DefaultCeilingTexture = "FLAT18";/* default ceiling texture */
+BCINT DefaultFloorHeight   = 0;		/* default floor height */
+BCINT DefaultCeilingHeight = 128;	/* default ceiling height */
+Bool  Select0 = TRUE;		/* select object 0 by default when switching modes */
+Bool  Reminder = TRUE;		/* display a funny message when DEU starts */
+char  *MainWad = "DOOM.WAD";	/* name of the main wad file */
+char  **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
 {
 /*   short & long names   type            message if true/changed       message if false              where to store the value */
@@ -58,28 +59,29 @@ OptDesc options[] =		/* description of the command line options */
    { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",		"Expert mode OFF",            &Expert         },
    { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",	"Mouse buttons restored",     &SwapButtons    },
    { "w",  "main",        OPT_STRING,     "Main WAD file",		NULL,                         &MainWad        },
-   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",		NULL,                         &PatchWads      },
+   { "",   "file",        OPT_STRINGLIST, "Patch WAD file",		NULL,                         &PatchWads      },
    { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",		NULL,                         &PatchWads      },
-   { NULL, "config",      OPT_STRING,     "Config file",		NULL,                         &CfgFile        },
+   { "",   "config",      OPT_STRING,     "Config file",		NULL,                         &CfgFile        },
    { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",	NULL,                         &InitialScale   },
    { "v",  "video",       OPT_INTEGER,    "Default video mode",		NULL,                         &VideoMode      },
-   { NULL, "bgi",         OPT_STRING,     "Default video driver",	NULL,                         &BGIDriver      },
+   { "",   "bgi",         OPT_STRING,     "Default video driver",	NULL,                         &BGIDriver      },
    { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",		"Fake cursor OFF",            &FakeCursor     },
-   { "cc", "cirruscursor",OPT_BOOLEAN,    "Cirrus hardware cursor ON",	"Cirrus hardware cursor OFF", &CirrusCursor,  },
+   { "cc", "cirruscursor",OPT_BOOLEAN,    "Cirrus hardware cursor ON",  "Cirrus hardware cursor ON",  &CirrusCursor   },
    { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",	"Normal Things color set",    &Colour2        },
    { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",		"Info bar hidden",            &InfoShown      },
    { "a",  "addselbox",   OPT_BOOLEAN,    "Additive selection box",	"Select objects in box only", &AdditiveSelBox },
    { "sf", "splitfactor", OPT_INTEGER,    "Split factor",		NULL,			      &SplitFactor    },
-   { NULL, "walltexture", OPT_STRING,     "Default wall texture",	NULL,                         &DefaultWallTexture    },
-   { NULL, "lowertexture",OPT_STRING,     "Default lower wall texture",	NULL,                         &DefaultLowerTexture   },
-   { NULL, "uppertexture",OPT_STRING,     "Default upper wall texture",	NULL,                         &DefaultUpperTexture   },
-   { NULL, "floortexture",OPT_STRING,     "Default floor texture",	NULL,                         &DefaultFloorTexture   },
-   { NULL, "ceiltexture", OPT_STRING,     "Default ceiling texture",	NULL,                         &DefaultCeilingTexture },
-   { NULL, "floorheight", OPT_INTEGER,    "Default floor height",	NULL,			      &DefaultFloorHeight    },
-   { NULL, "ceilheight",  OPT_INTEGER,    "Default ceiling height",	NULL,			      &DefaultCeilingHeight  },
+   { "",   "walltexture", OPT_STRING,     "Default wall texture",	NULL,                         &DefaultWallTexture    },
+   { "",   "lowertexture",OPT_STRING,     "Default lower wall texture",	NULL,                         &DefaultLowerTexture   },
+   { "",   "uppertexture",OPT_STRING,     "Default upper wall texture",	NULL,                         &DefaultUpperTexture   },
+   { "",   "floortexture",OPT_STRING,     "Default floor texture",	NULL,                         &DefaultFloorTexture   },
+   { "",   "ceiltexture", OPT_STRING,     "Default ceiling texture",	NULL,                         &DefaultCeilingTexture },
+   { "",   "floorheight", OPT_INTEGER,    "Default floor height",	NULL,			      &DefaultFloorHeight    },
+   { "",   "ceilheight",  OPT_INTEGER,    "Default ceiling height",	NULL,			      &DefaultCeilingHeight  },
    { "s0", "select0",     OPT_BOOLEAN,    "Select 0 by default",	"No default selection",	      &Select0,	      },
-   { NULL, "reminder1",   OPT_BOOLEAN,	  NULL,				NULL,			      &Reminder,      },
+   { "",   "reminder1",   OPT_BOOLEAN,	  "",				"",			      &Reminder,      },
    { NULL, NULL,          OPT_END,        NULL,				NULL,                         NULL            }
+
 };
 
 
@@ -90,7 +92,7 @@ OptDesc options[] =		/* description of the command line options */
 
 int main( int argc, char *argv[])
 {
-   int i;
+   BCINT i;
 
    Credits( stdout);
    argv++;
@@ -116,9 +118,9 @@ int main( int argc, char *argv[])
    }
    if (Quieter == TRUE)
       Quiet = TRUE;
+   /* load the wad files */     
    if (Reminder == TRUE)
       FunnyMessage( stdout);
-   /* load the wad files */
    OpenMainWad( MainWad);
    if (PatchWads)
       while (PatchWads[ 0])
@@ -146,7 +148,7 @@ int main( int argc, char *argv[])
 
 void AppendItemToList( char ***list, char *item)
 {
-   int i;
+   BCINT i;
 
    i = 0;
    if (*list != NULL)
@@ -155,12 +157,12 @@ void AppendItemToList( char ***list, char *item)
       while ((*list)[ i] != NULL)
 	 i++;
       /* expand the list */
-      *list = ResizeMemory( *list, (i + 2) * sizeof( char **));
+      *list = (char**)ResizeMemory( *list, (i + 2) * sizeof( char **));
    }
    else
    {
       /* create a new list */
-      *list = GetMemory( 2 * sizeof( char **));
+      *list = (char**)GetMemory( 2 * sizeof( char **));
    }
    /* append the new element */
    (*list)[ i] = item;
@@ -175,7 +177,7 @@ void AppendItemToList( char ***list, char *item)
 
 void ParseCommandLineOptions( int argc, char *argv[])
 {
-   int optnum;
+   BCINT optnum;
 
    while (argc > 0)
    {
@@ -211,7 +213,7 @@ void ParseCommandLineOptions( int argc, char *argv[])
 		  ProgError( "missing argument after \"%s\"", argv[ 0]);
 	       argv++;
 	       argc--;
-	       *((int *) (options[ optnum].data_ptr)) = atoi( argv[ 0]);
+	       *((BCINT *) (options[ optnum].data_ptr)) = atoi( argv[ 0]);
 	       if (options[ optnum].msg_if_true)
 		  printf("%s: %d.\n", options[ optnum].msg_if_true, atoi( argv[ 0]));
 	       break;
@@ -224,7 +226,7 @@ void ParseCommandLineOptions( int argc, char *argv[])
 	       if (options[ optnum].msg_if_true)
 		  printf("%s: %s.\n", options[ optnum].msg_if_true, argv[ 0]);
 	       break;
-	    case OPT_STRINGACC:
+ 	    case OPT_STRINGACC:
 	       if (argc <= 1)
 		  ProgError( "missing argument after \"%s\"", argv[ 0]);
 	       argv++;
@@ -271,7 +273,7 @@ void ParseConfigFileOptions( char *filename)
    char *value;
    char *option;
    char *p;
-   int   optnum;
+   BCINT   optnum;
 
    if ((cfgfile = fopen (filename, "r")) == NULL)
    {
@@ -316,7 +318,7 @@ void ParseConfigFileOptions( char *filename)
 	 value++;
       for (optnum = 0; options[ optnum].opt_type != OPT_END; optnum++)
       {
-	 if (!stricmp( option, options[ optnum].long_name))
+ 	 if (!stricmp( option, options[ optnum].long_name))
 	 {
 	    switch (options[ optnum].opt_type)
 	    {
@@ -337,19 +339,19 @@ void ParseConfigFileOptions( char *filename)
 		  ProgError( "invalid value for option %s: \"%s\"", option, value);
 	       break;
 	    case OPT_INTEGER:
-	       *((int *) (options[ optnum].data_ptr)) = atoi( value);
+	       *((BCINT *) (options[ optnum].data_ptr)) = atoi( value);
 	       if (options[ optnum].msg_if_true)
 		  printf("%s: %d.\n", options[ optnum].msg_if_true, atoi( value));
 	       break;
 	    case OPT_STRING:
-	       p = GetMemory( (strlen( value) + 1) * sizeof( char));
+	       p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 	       strcpy( p, value);
 	       *((char **) (options[ optnum].data_ptr)) = p;
 	       if (options[ optnum].msg_if_true)
 		  printf("%s: %s.\n", options[ optnum].msg_if_true, value);
 	       break;
 	    case OPT_STRINGACC:
-	       p = GetMemory( (strlen( value) + 1) * sizeof( char));
+	       p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 	       strcpy( p, value);
 	       AppendItemToList( (char ***) options[ optnum].data_ptr, p);
 	       if (options[ optnum].msg_if_true)
@@ -362,10 +364,10 @@ void ParseConfigFileOptions( char *filename)
 		  while (option[ 0] && !isspace( option[ 0]))
 		     option++;
 		  option[ 0] = '\0';
-		  option++;
+ 		  option++;
 		  while (isspace( option[ 0]))
 		     option++;
-		  p = GetMemory( (strlen( value) + 1) * sizeof( char));
+		  p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 		  strcpy( p, value);
 		  AppendItemToList( (char ***) options[ optnum].data_ptr, p);
 		  if (options[ optnum].msg_if_true)
@@ -412,8 +414,8 @@ void Usage( FILE *where)
    fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
    fprintf( where, "   -config Gives the name of the config file.\n");
    fprintf( where, "Put a '+' instead of a '-' before boolean options to reverse their effect.\n");
-}
 
+}
 
 
 /*
@@ -422,11 +424,12 @@ void Usage( FILE *where)
 
 void Credits( FILE *where)
 {
-   fprintf( where, "\nDEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
-   fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n");
-   fprintf( where, "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n\n");
+   fprintf( where, "DEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
+   fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n"
+                   "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n"
+                   " Ported do DJGPP/GO32 by Per Allansson (c91peral@und.ida.liu.se)\n"
+                   "and Per Kofod (per@ollie.dnk.hp.com)\n\n");                         
 }
-
 
 
 /*
@@ -437,7 +440,7 @@ void FunnyMessage( FILE *where)
 {
    fprintf( where, "\n");
    fprintf( where, "*----------------------------------------------------------------------------*\n");
-   fprintf( where, "| Welcome to DEU!  This is a poweful utility and, like all good tools, it    |\n");
+   fprintf( where, "| Welcome to DEU!  This is a powerful utility and, like all good tools, it   |\n");
    fprintf( where, "| comes with its user's manual.  Please print and read DEU.TXT if you want   |\n");
    fprintf( where, "| to discover all the features of this program.  If you are new to DEU, the  |\n");
    fprintf( where, "| tutorial will show you how to build your first level.                      |\n");
@@ -472,7 +475,7 @@ void Beep()
    play a sound
 */
 
-void PlaySound( int freq, int msec)
+void PlaySound( BCINT freq, BCINT msec)
 {
    if (Quiet == FALSE)
    {
@@ -558,7 +561,7 @@ void MainLoop()
    char *com, *out;
    FILE *file, *raw;
    WadPtr wad;
-   int episode, level;
+   BCINT episode, level;
 
    for (;;)
    {
@@ -591,7 +594,7 @@ void MainLoop()
 	 printf( "Q[uit]                            -- to quit\n");
 	 printf( "R[ead] <WadFile>                  -- to read a new wad patch file\n");
 	 printf( "S[ave] <DirEntry> <WadFile>       -- to save one object to a separate file\n");
-	 printf( "V[iew] [SpriteName]               -- to display the sprites\n");
+ 	 printf( "V[iew] [SpriteName]               -- to display the sprites\n");
 	 printf( "W[ads]                            -- to display the open wads\n");
 	 printf( "X[tract] <DirEntry> <RawFile>     -- to save (extract) one object to a raw file\n");
       }
@@ -603,7 +606,7 @@ void MainLoop()
 	 for (wad = WadFileList->next; wad; wad = wad->next)
 	 {
 	    if (wad->directory[ 0].name[ 0] == 'E' && wad->directory[ 0].name[ 2] == 'M')
-	       printf( "%-20s  PWAD  (Patch wad file for episode %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
+ 	       printf( "%-20s  PWAD  (Patch wad file for episode %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
 	    else
 	    {
 	       /* kluge */
@@ -637,10 +640,10 @@ void MainLoop()
 	       printf( "[Invalid game episode number (%s).]\n", com);
 	       continue;
 	    }
-	    com = strtok( NULL, " ");
+ 	    com = strtok( NULL, " ");
 	    if (com != NULL)
 	    {
-	       level = atoi( com);
+ 	       level = atoi( com);
 	       if (level < 1 || level> 9)
 	       {
 		  printf( "[Invalid game level number (%s).]\n", com);
@@ -649,7 +652,7 @@ void MainLoop()
 	    }
 	 }
 	 com = strtok( input, " ");
-	 EditLevel( episode, level, !strcmp( com, "CREATE") || !strcmp( com, "C"));
+ 	 EditLevel( episode, level, !strcmp( com, "CREATE") || !strcmp( com, "C"));
       }
 
       /* user asked to build a new main WAD file */
@@ -683,10 +686,10 @@ void MainLoop()
 	 com = strtok( NULL, " ");
 	 if (com == NULL)
 	 {
-	    printf( "[Wad file name argument missing.]\n");
+ 	    printf( "[Wad file name argument missing.]\n");
 	    continue;
 	 }
-	 for (wad = WadFileList; wad; wad = wad->next)
+ 	 for (wad = WadFileList; wad; wad = wad->next)
 	    if (!stricmp( com, wad->filename))
 	       break;
 	 if (wad)
@@ -732,7 +735,7 @@ void MainLoop()
       /* user asked for the list of the master directory */
       else if (!strcmp( com, "MASTER") || !strcmp( com, "M"))
       {
-	 out = strtok( NULL, " ");
+ 	 out = strtok( NULL, " ");
 	 if (out)
 	 {
 	    printf( "Outputting master directory to \"%s\".\n", out);
@@ -750,19 +753,19 @@ void MainLoop()
       /* user asked to read a new patch WAD file */
       else if (!strcmp( com, "READ") || !strcmp( com, "R"))
       {
-	 com = strtok( NULL, " ");
-	 if (com == NULL)
-	 {
-	    printf( "[Wad file name argument missing.]\n");
-	    continue;
-	 }
-	 out = strtok( NULL, " ");
-	 if (out)
-	   *out = '\0';
-	 out = GetMemory( (strlen( com) + 1) * sizeof( char));
-	 strcpy( out, com);
-	 OpenPatchWad( out);
-	 CloseUnusedWadFiles();
+  	 com = strtok( NULL, " ");
+  	 if (com == NULL)
+  	 {
+  	    printf( "[Wad file name argument missing.]\n");
+  	    continue;
+  	 }
+         out = strtok( NULL, " ");
+  	 if (out)
+  	   *out = '\0';
+  	 out = (char*)GetMemory( (strlen( com) + 1) * sizeof( char));
+  	 strcpy( out, com);
+   	 OpenPatchWad( out);
+  	 CloseUnusedWadFiles();
       }
 
       /* user asked to dump the contents of a WAD file */
@@ -775,10 +778,10 @@ void MainLoop()
 	    continue;
 	 }
 	 out = strtok( NULL, " ");
-	 if (out)
+ 	 if (out)
 	 {
 	    printf( "Outputting directory entry data to \"%s\".\n", out);
-	    if ((file = fopen( out, "wt")) == NULL)
+ 	    if ((file = fopen( out, "wt")) == NULL)
 	       ProgError( "error opening output file \"%s\"", com);
 	    Credits( file);
 	    DumpDirectoryEntry( file, com);
@@ -821,10 +824,10 @@ void MainLoop()
 	 for (wad = WadFileList; wad; wad = wad->next)
 	    if (!stricmp( out, wad->filename))
 	       break;
-	 if (wad)
+ 	 if (wad)
 	 {
 	    printf( "[This Wad file is already in use.  You may not overwrite it.]\n");
-	    continue;
+ 	    continue;
 	 }
 	 printf( "Saving directory entry data to \"%s\".\n", out);
 	 if ((file = fopen( out, "wb")) == NULL)
@@ -867,10 +870,10 @@ void MainLoop()
 	    continue;
 	 }
 	 printf( "Including new object %s in \"%s\".\n", out, input);
-	 if ((file = fopen( input, "wb")) == NULL)
+ 	 if ((file = fopen( input, "wb")) == NULL)
 	    ProgError( "error opening output file \"%s\"", input);
 	 SaveEntryFromRawFile( file, raw, out);
-	 fclose( raw);
+ 	 fclose( raw);
 	 fclose( file);
       }
 
@@ -916,3 +919,4 @@ void MainLoop()
 }
 
 /* end of file */
+

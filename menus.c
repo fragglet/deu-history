@@ -14,12 +14,11 @@
 /* the includes */
 #include "deu.h"
 
-
 /*
    draws a line of text in a menu
 */
 
-void DisplayMenuText( int x0, int y0, int line, char *text, int highlightnum, Bool shownumbers)
+void DisplayMenuText( BCINT x0, BCINT y0, BCINT line, char *text, BCINT highlightnum, Bool shownumbers)
 {
    char h[ 2];
 
@@ -60,11 +59,11 @@ void DisplayMenuText( int x0, int y0, int line, char *text, int highlightnum, Bo
    display and execute a menu
 */
 
-int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys, char *menustr[ 30], int highlight[ 30])
+BCINT DisplayMenuArray( BCINT x0, BCINT y0, char *menutitle, BCINT numitems, BCINT *okkeys, char *menustr[ 30], BCINT highlight[ 30])
 {
-   int     maxlen, line, oldline;
-   Bool    ok;
-   int     key, buttons, oldbuttons;
+   BCINT     maxlen, line, oldline;
+   Bool    	 ok;
+   BCINT     key, buttons, oldbuttons;
 
    /* compute maxlen */
    if (menutitle)
@@ -190,7 +189,7 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
 	 else if (okkeys)
 	 {
 	    for (line = 0; line < numitems; line++)
-	       if (toupper( key) == okkeys[ line])
+	       if (toupper( key & 0x00FF ) == okkeys[ line])
 		  break;
 	    if (line < numitems)
 	       ok = TRUE;
@@ -231,12 +230,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
    display and execute a menu defined with variable arguments
 */
 
-int DisplayMenu( int x0, int y0, char *menutitle, ...)
+BCINT DisplayMenu( BCINT x0, BCINT y0, char *menutitle, ...)
 {
    va_list args;
-   int     num;
+   BCINT     num;
    char   *menustr[ 30];
-   int     dummy[ 30];
+   BCINT     dummy[ 30];
 
    /* put the va_args in the menustr table */
    num = 0;
@@ -255,25 +254,25 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
    display and execute a dropdown menu (returns a key code)
 */
 
-int PullDownMenu( int x0, int y0, ...)
+BCINT PullDownMenu( BCINT x0, BCINT y0, ...)
 {
    va_list args;
-   int     num;
+   BCINT     num;
    char   *menustr[ 30];
-   int     retnkeys[ 30];
-   int     permkeys[ 30];
-   int     highlight[ 30];
+   BCINT     retnkeys[ 30];
+   BCINT     permkeys[ 30];
+   BCINT     highlight[ 30];
 
    /* put the va_args in the menustr table and the two strings */
    num = 0;
    va_start( args, y0);
    while ((num < 30) && ((menustr[ num] = va_arg( args, char *)) != NULL))
    {
-      if ((retnkeys[ num] = va_arg( args, int)) == NULL)
+      if (!(retnkeys[ num] = va_arg( args, BCINT)))
 	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
-      if ((permkeys[ num] = va_arg( args, int)) == NULL)
+      if (!(permkeys[ num] = va_arg( args, BCINT)))
 	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
-      if ((highlight[ num] = va_arg( args, int)) == NULL)
+      if (!(highlight[ num] = va_arg( args, BCINT)))
 	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
       num++;
    }
@@ -293,9 +292,9 @@ int PullDownMenu( int x0, int y0, ...)
    display the integer input box
 */
 
-int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
+BCINT InputInteger( BCINT x0, BCINT y0, BCINT *valp, BCINT minv, BCINT maxv)
 {
-   int  key, val;
+   BCINT  key, val;
    Bool neg, ok, firstkey;
 
    DrawScreenBoxHollow( x0, y0, x0 + 61, y0 + 13);
@@ -309,7 +308,7 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
       DrawScreenBox( x0 + 1, y0 + 1, x0 + 60, y0 + 12);
       if (ok)
 	 SetColor( WHITE);
-      else
+      else                                          
 	 SetColor( LIGHTGRAY);
       if (neg)
 	 DrawScreenText( x0 + 3, y0 + 3, "-%d", val);
@@ -358,9 +357,9 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
    ask for an integer value and check for minimum and maximum
 */
 
-int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
+BCINT InputIntegerValue( BCINT x0, BCINT y0, BCINT minv, BCINT maxv, BCINT defv)
 {
-   int  val, key;
+   BCINT  val, key;
    char prompt[ 80];
 
    if (UseMouse)
@@ -396,22 +395,22 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
       width   : \ width and height of an optional window where a picture
       height  : / can be displayed (used to display textures, sprites, etc.).
       hookfunc: function that should be called to display a picture.
-		(x1, y1, x2, y2 = coordinates of the window in which the
-		 picture must be drawn, name = name of the picture).
+      		(x1, y1, x2, y2 = coordinates of the window in which the
+      		 picture must be drawn, name = name of the picture).
 */
 
-void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, int listdisp, char *name, int width, int height, void (*hookfunc)(int px1, int py1, int px2, int py2, char *name))
+void InputNameFromListWithFunc( BCINT x0, BCINT y0, char *prompt, BCINT listsize, char **list, BCINT listdisp, char *name, BCINT width, BCINT height, void (*hookfunc)(BCINT px1, BCINT py1, BCINT px2, BCINT py2, char *name))
 {
-   int  key, n, l;
-   int  x1, y1, x2, y2;
-   int  maxlen;
+   BCINT  key, n, l;
+   BCINT  x1, y1, x2, y2;
+   BCINT  maxlen;
    Bool ok, firstkey;
 
    /* compute maxlen */
    maxlen = 1;
    for (n = 0; n < listsize; n++)
       if (strlen( list[ n]) > maxlen)
-	 maxlen = strlen( list[ n]);
+      	 maxlen = strlen( list[ n]);
    for (n = strlen(name) + 1; n <= maxlen; n++)
       name[ n] = '\0';
    /* compute the minimum width of the dialog box */
@@ -494,7 +493,7 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
       firstkey = FALSE;
       if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
       {
-	 name[ l] = key & 0x00FF + 'A' - 'a';
+	 name[ l] = (key & 0x00FF) + 'A' - 'a';
 	 name[ l + 1] = '\0';
       }
       else if (l < maxlen && (key & 0x00FF) > ' ')
@@ -541,7 +540,7 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
    ask for a name in a given list
 */
 
-void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list, char *name)
+void InputNameFromList( BCINT x0, BCINT y0, char *prompt, BCINT listsize, char **list, char *name)
 {
    if (UseMouse)
       HideMousePointer();
@@ -556,9 +555,9 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
    ask for a filename
 */
 
-void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
+void InputFileName( BCINT x0, BCINT y0, char *prompt, BCINT maxlen, char *filename)
 {
-   int   key, l, boxlen;
+   BCINT   key, l, boxlen;
    Bool  ok, firstkey;
    char *p;
 
@@ -632,7 +631,7 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
       firstkey = FALSE;
       if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
       {
-	 filename[ l] = key & 0x00FF + 'A' - 'a';
+	 filename[ l] = (key & 0x00FF) + 'A' - 'a';
 	 filename[ l + 1] = '\0';
       }
       else if (l < maxlen && (key & 0x00FF) > ' ')
@@ -662,10 +661,10 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
    ask for confirmation (prompt2 may be NULL)
 */
 
-Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
+Bool Confirm( BCINT x0, BCINT y0, char *prompt1, char *prompt2)
 {
-   int key;
-   int maxlen = 46;
+   BCINT key;
+   BCINT maxlen = 46;
 
    if (UseMouse)
       HideMousePointer();
@@ -696,9 +695,9 @@ Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
    display a notification and wait for a key (prompt2 may be NULL)
 */
 
-void Notify( int x0, int y0, char *prompt1, char *prompt2)
+void Notify( BCINT x0, BCINT y0, char *prompt1, char *prompt2)
 {
-   int maxlen = 30;
+   BCINT maxlen = 30;
 
    if (UseMouse)
       HideMousePointer();
@@ -728,7 +727,7 @@ void Notify( int x0, int y0, char *prompt1, char *prompt2)
    clear the screen and display a message
 */
 
-void DisplayMessage( int x0, int y0, char *msg, ...)
+void DisplayMessage( BCINT x0, BCINT y0, char *msg, ...)
 {
    char prompt[ 120];
    va_list args;
@@ -773,3 +772,4 @@ void NotImplemented()
 
 
 /* end of file */
+

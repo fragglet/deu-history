@@ -25,34 +25,16 @@ Bool UseMouse;			/* is there a mouse driver? */
    initialize the mouse driver
 */
 
+#if defined(__TURBOC__)
+
 void CheckMouseDriver()
 {
-   union  REGS  regs;
-   struct SREGS sregs;
+   union REGS regs;
 
    regs.x.ax = 0x0000;
    int86(MOUSE, &regs, &regs);
    if (regs.x.ax == 0xffff)
-   {
       UseMouse = TRUE; /* mouse */
-#ifdef CIRRUS_PATCH
-      /*
-         note from RQ:
-            This test is temporary and should be removed in DEU 5.3
-            We should create a better "fake cursor" by using the
-            mouse callback function.  Remember to remove the callback
-            when DEU exits...
-      */
-      if (CirrusCursor == TRUE)
-      {
-         regs.x.ax = 0x000C;
-         regs.x.cx = 0x0001;
-         regs.x.dx = FP_OFF( MouseCallBackFunction);
-         sregs.es  = FP_SEG( MouseCallBackFunction);
-         int86x( MOUSE, &regs, &regs, &sregs);
-      }
-#endif /* CIRRUS_PATCH */
-   }
    else
       UseMouse = FALSE; /* no mouse */
 }
@@ -86,12 +68,11 @@ void HideMousePointer()
 }
 
 
-
 /*
    read pointer coordinates
 */
 
-void GetMouseCoords(int *x, int *y, int *buttons)
+void GetMouseCoords(BCINT *x, BCINT *y, BCINT *buttons)
 {
    union REGS regs;
 
@@ -106,18 +87,17 @@ void GetMouseCoords(int *x, int *y, int *buttons)
 }
 
 
-
 /*
    change pointer coordinates
 */
 
-void SetMouseCoords( int x, int y)
+void SetMouseCoords( BCINT x, BCINT y)
 {
    union REGS regs;
 
    regs.x.ax = 0x0004;
-   regs.x.cx = (unsigned) x;
-   regs.x.dx = (unsigned) y;
+   regs.x.cx = (UBCINT) x;
+   regs.x.dx = (UBCINT) y;
    int86(MOUSE, &regs, &regs);
 }
 
@@ -127,21 +107,21 @@ void SetMouseCoords( int x, int y)
    set horizontal and vertical limits (constrain pointer in a box)
 */
 
-void SetMouseLimits( int x0, int y0, int x1, int y1)
+void SetMouseLimits( BCINT x0, BCINT y0, BCINT x1, BCINT y1)
 {
    union REGS regs;
 
    regs.x.ax = 0x0007;
-   regs.x.cx = (unsigned) x0;
-   regs.x.dx = (unsigned) x1;
+   regs.x.cx = (UBCINT) x0;
+   regs.x.dx = (UBCINT) x1;
    int86(MOUSE, &regs, &regs);
    regs.x.ax = 0x0008;
-   regs.x.cx = (unsigned) y0;
-   regs.x.dx = (unsigned) y1;
+   regs.x.cx = (UBCINT) y0;
+   regs.x.dx = (UBCINT) y1;
    int86(MOUSE, &regs, &regs);
 }
 
-
+                      
 
 /*
    reset horizontal and vertical limits
@@ -152,26 +132,81 @@ void ResetMouseLimits()
    union REGS regs;
 
    regs.x.ax = 0x0007;
-   regs.x.cx = (unsigned) 0;
-   regs.x.dx = (unsigned) ScrMaxX;
+   regs.x.cx = (UBCINT) 0;
+   regs.x.dx = (UBCINT) ScrMaxX;
    int86(MOUSE, &regs, &regs);
    regs.x.ax = 0x0008;
-   regs.x.cx = (unsigned) 0;
-   regs.x.dx = (unsigned) ScrMaxY;
+   regs.x.cx = (UBCINT) 0;
+   regs.x.dx = (UBCINT) ScrMaxY;
    int86(MOUSE, &regs, &regs);
 }
 
+#elif defined(__GNUC__)
 
-/*
-   mouse callback function
-*/
+#include <mousex.h>
 
-void MouseCallBackFunction()
+void CheckMouseDriver()
 {
-#ifdef CIRRUS_PATCH
-   if (CirrusCursor == TRUE)
-      SetHWCursorPos(_CX, _DX);
-#endif /* CIRRUS_PATCH */
+   if (MouseDetect())
+   {
+      UseMouse = TRUE;
+      MouseEventMode(0);
+      MouseInit();
+      MouseSetColors(TranslateToDoomColor(WHITE),GrNOCOLOR);
+   }
+   else
+   {
+      UseMouse = FALSE;
+   }
 }
+
+
+void ShowMousePointer()
+{
+   MouseDisplayCursor();
+   MouseEventEnable(0,1);
+
+}
+
+
+
+void HideMousePointer()
+{
+   MouseEraseCursor();
+   MouseEventEnable(0,0);
+}
+
+
+void GetMouseCoords(BCINT *x, BCINT *y, BCINT *buttons)
+{
+   MouseEvent mevent;
+   MouseGetEvent(M_POLL|M_BUTTON_DOWN|M_BUTTON_UP,&mevent);
+   *x = mevent.x;
+   *y = mevent.y;
+   *buttons = mevent.buttons;
+}
+
+
+
+void SetMouseCoords( BCINT x, BCINT y)
+{
+   MouseWarp(x,y);
+}
+
+
+
+void SetMouseLimits( BCINT x0, BCINT y0, BCINT x1, BCINT y1)
+{
+   MouseSetLimits(x0,y0,x1,y1);
+}
+
+
+
+void ResetMouseLimits()
+{
+   MouseSetLimits(0,0,ScrMaxX,ScrMaxY);
+}
+
+#endif
 
 /* end of file */

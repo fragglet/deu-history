@@ -25,10 +25,10 @@
    display a floor or ceiling texture at coords x0, y0 and not beyond x1, y1
 */
 
-void DisplayFloorTexture( int x0, int y0, int x1, int y1, char *texname)
+void DisplayFloorTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname)
 {
-   MDirPtr             dir;	/* main directory pointer to the texture entry */
-   unsigned char huge *pixels;	/* array of pixels that hold the image */
+   MDirPtr             dir;
+   unsigned char huge *pixels;
 
    dir = FindMasterDir( MasterDir, texname);
    if (dir == NULL)
@@ -39,20 +39,35 @@ void DisplayFloorTexture( int x0, int y0, int x1, int y1, char *texname)
       return;
    }
    BasicWadSeek( dir->wadfile, dir->dir.start);
-   pixels = GetFarMemory( 4100 * sizeof( char));
+
+#if defined(__TURBOC__)
+
+   pixels = (unsigned char huge*) GetFarMemory( 4100 * sizeof( char));
    BasicWadRead( dir->wadfile, &(pixels[ 4]), 4096L);
    if (GfxMode < -1)
    {
       /* Probably a bug in the VESA driver...    */
       /* It requires "size-1" instead of "size"! */
-      ((unsigned int huge *)pixels)[ 0] = 63;
-      ((unsigned int huge *)pixels)[ 1] = 63;
+      ((UBCINT huge *)pixels)[ 0] = 63;
+      ((UBCINT huge *)pixels)[ 1] = 63;
    }
    else
    {
-      ((unsigned int huge *)pixels)[ 0] = 64;
-      ((unsigned int huge *)pixels)[ 1] = 64;
+      ((UBCINT huge *)pixels)[ 0] = 64;
+      ((UBCINT huge *)pixels)[ 1] = 64;
    }
+
+#elif defined(__GNUC__)
+
+   /* bcc2grx's getimage-bitmap has a lot more info in it's header
+      than borland's */
+
+   pixels = (unsigned char*) GetFarMemory( 4096+sizeof(GrContext));
+   getimage( x0, y0, x0+63, y0+63, pixels);   /* Hack! */
+   BasicWadRead( dir->wadfile, pixels+sizeof(GrContext), 4096L);
+
+#endif
+
    putimage( x0, y0, pixels, COPY_PUT);
    FreeFarMemory( pixels);
 }
@@ -63,21 +78,20 @@ void DisplayFloorTexture( int x0, int y0, int x1, int y1, char *texname)
    display a picture "picname" at coords x0, y0 and not beyond x1, y1
 */
 
-void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
+void DisplayPic( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *picname)
 {
-   MDirPtr             dir;
-   int                 xsize, ysize, xofs, yofs;
-   int                 x, y;
+   MDirPtr            dir;
+   BCINT              xsize, ysize, xofs, yofs;
+   BCINT              x, y;
 
    unsigned char huge *lpColumnData;
    unsigned char huge *lpColumn;
-   long	   	 huge *lpNeededOffsets;
-   int		       nColumns, nCurrentColumn;
-   long                lCurrentOffset;
-   int		       fColumnInMemory;
-   int		       i, n;
-   unsigned char       bRowStart, bColored;
-
+   long	   	 huge  *lpNeededOffsets;
+   BCINT		          nColumns, nCurrentColumn;
+   long               lCurrentOffset;
+   BCINT		          fColumnInMemory;
+   BCINT		          i, n;
+   unsigned char      bRowStart, bColored;
 
    if (bioskey( 1) != 0)
       return; /* speedup */
@@ -99,19 +113,12 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
    yofs = 0;
 
 #define TEX_COLUMNBUFFERSIZE	(60L * 1024L)
-#define TEX_COLUMNSIZE		512L
+#define TEX_COLUMNSIZE	  	512L
 
    nColumns = xsize;
 
-   /* Note from CJS:
-      I tried to use far memory originally, but kept getting out-of-mem errors
-      that is really strange - I assume that the wad dir et al uses all
-      the far mem, and there is only near memory available. NEVER seen
-      this situation before..... I'll keep them huge pointers anyway,
-      in case something changes later
-   */
-   lpColumnData    = GetMemory( TEX_COLUMNBUFFERSIZE);
-   lpNeededOffsets = GetMemory( nColumns * 4L);
+   lpColumnData    = (unsigned char huge*) GetMemory( TEX_COLUMNBUFFERSIZE);
+   lpNeededOffsets = (long huge*) GetMemory( nColumns * 4L);
 
    BasicWadRead( dir->wadfile, lpNeededOffsets, nColumns * 4L);
 
@@ -121,41 +128,41 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
 
    for (nCurrentColumn = 0; nCurrentColumn < nColumns; nCurrentColumn++)
    {
-      lCurrentOffset  = lpNeededOffsets[ nCurrentColumn];
-      fColumnInMemory = lCurrentOffset >= lpNeededOffsets[ 0] && lCurrentOffset < (long)(lpNeededOffsets[ 0] + TEX_COLUMNBUFFERSIZE - TEX_COLUMNSIZE);
-      if (fColumnInMemory)
-      {
-	 lpColumn = &lpColumnData[ lCurrentOffset - lpNeededOffsets[ 0]];
-      }
-      else
-      {
-	 lpColumn = GetFarMemory( TEX_COLUMNSIZE);
-	 BasicWadSeek( dir->wadfile, dir->dir.start + lCurrentOffset);
-	 BasicWadRead( dir->wadfile, lpColumn, TEX_COLUMNSIZE);
-      }
+     lCurrentOffset = lpNeededOffsets[ nCurrentColumn];
+     fColumnInMemory = lCurrentOffset >= lpNeededOffsets[ 0] && lCurrentOffset < (long)(lpNeededOffsets[ 0] + TEX_COLUMNBUFFERSIZE - TEX_COLUMNSIZE);
+     if (fColumnInMemory)
+     {
+   	lpColumn = &lpColumnData[ lCurrentOffset - lpNeededOffsets[ 0]];
+     }
+     else
+     {
+   	lpColumn = (unsigned char huge*) GetFarMemory( TEX_COLUMNSIZE);
+   	BasicWadSeek( dir->wadfile, dir->dir.start + lCurrentOffset);
+   	BasicWadRead( dir->wadfile, lpColumn, TEX_COLUMNSIZE);
+     }
 
-      /* we now have the needed column data, one way or another, so write it */
-      n = 1;
-      bRowStart = lpColumn[ 0];
-      while (bRowStart != 255 && n < TEX_COLUMNSIZE)
-      {
-	 bColored = lpColumn[ n];
-	 n += 2;				/* skip over 'null' pixel in data */
-	 for (i = 0; i < bColored; i++)
-	 {
-	    x = x0 + xofs + nCurrentColumn;
-	    y = y0 + yofs + bRowStart + i;
-	    if (x >= x0 && y >= y0 && x <= x1 && y <= y1)
-	       putpixel( x, y, lpColumn[ i + n]);
-	 }
-	 n += bColored + 1;	/* skip over written pixels, and the 'null' one */
-	 bRowStart = lpColumn[ n++];
-      }
-      if (bRowStart != 255)
-	 ProgError( "BUG: bRowStart != 255.");
+     /* we now have the needed column data, one way or another, so write it */
+     n = 1;
+     bRowStart = lpColumn[ 0];
+     while (bRowStart != 255 && n < TEX_COLUMNSIZE)
+     {
+   	bColored = lpColumn[ n];
+   	n += 2;	      	     		/* skip over 'null' pixel in data */
+   	for (i = 0; i < bColored; i++)
+   	{
+   	   x = x0 + xofs + nCurrentColumn;
+   	   y = y0 + yofs + bRowStart + i;
+   	   if (x >= x0 && y >= y0 && x <= x1 && y <= y1)
+   	      putpixel(x, y, lpColumn[ i + n]);
+   	}
+   	n += bColored + 1;	/* skip over written pixels, and the 'null' one */
+   	bRowStart = lpColumn[ n++];
+     }
+     if (bRowStart != 255)
+   	ProgError( "BUG: bRowStart != 255.");
 
-      if (!fColumnInMemory)
-	 FreeFarMemory( lpColumn);
+     if (!fColumnInMemory)
+   	FreeFarMemory( lpColumn);
    }
    FreeMemory( lpColumnData);
    FreeMemory( lpNeededOffsets);
@@ -167,21 +174,13 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
    display a wall texture ("texture1" or "texture2" object) at coords x0, y0
 */
 
-void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
+void DisplayWallTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname)
 {
-   MDirPtr  dir;	/* main directory pointer to the TEXTURE* entries */
-   MDirPtr  pdir;	/* main directory pointer to the PNAMES entry */
-   long    *offsets;	/* array of offsets to texture names */
-   int      n;		/* general counter */
-   int      xsize, ysize; /* size of the texture */
-   int      xofs, yofs;	/* offset in texture space for the wall patch */
-   int      fields;	/* number of wall patches used to build this texture */
-   int      pnameind;	/* patch name index in PNAMES table */
-   int      junk;       /* holds useless data */
-   long     numtex;	/* number of texture names in TEXTURE* list */
-   long     texofs;	/* offset in the wad file to the texture data */
-   char     tname[9]; 	/* texture name */
-   char     picname[9]; /* wall patch name */
+   MDirPtr  dir, pdir;
+   long    *offsets;
+   BCINT    n, xsize, ysize, xofs, yofs, fields, pnameind, junk;
+   long     numtex, texofs;
+   char     tname[9], picname[9];
 
    if (bioskey( 1) != 0)
       return; /* speedup */
@@ -193,14 +192,14 @@ void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
    BasicWadSeek( dir->wadfile, dir->dir.start);
    BasicWadRead( dir->wadfile, &numtex, 4);
    /* read in the offsets for texture1 names and info. */
-   offsets = GetMemory( numtex * sizeof( long));
+   offsets = (long*) GetMemory( numtex * sizeof( long));
    for (n = 0; n < numtex; n++)
       BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
    for (n = 0; n < numtex && !texofs; n++)
    {
       BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
       BasicWadRead( dir->wadfile, &tname, 8);
-      if (!strnicmp(tname, texname, 8))
+      if (!strnicmp( tname, texname, 8))
 	 texofs = dir->dir.start + offsets[ n];
    }
    FreeMemory( offsets);
@@ -211,7 +210,7 @@ void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
       BasicWadSeek( dir->wadfile, dir->dir.start);
       BasicWadRead( dir->wadfile, &numtex, 4);
       /* read in the offsets for texture2 names */
-      offsets = GetMemory( numtex * sizeof( long));
+      offsets = (long*) GetMemory( numtex * sizeof( long));
       for (n = 0; n < numtex; n++)
 	 BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
       for (n = 0; n < numtex && !texofs; n++)
@@ -276,69 +275,69 @@ void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
 
 
 /*
-   Function to get the size of a wall texture
+    Function to get the size of a wall texture
 */
 
-void GetWallTextureSize( int *xsize_r, int *ysize_r, char *texname)
+void GetWallTextureSize( BCINT *xsize_r, BCINT *ysize_r, char *texname)
 {
-   MDirPtr  dir;	/* pointer in main directory to texname */
-   long    *offsets;	/* array of offsets to texture names */
-   int      n;		/* general counter */
-   long     numtex;	/* number of texture names in TEXTURE* list */
-   long     texofs;	/* offset in doom.wad for the texture data */
-   char     tname[9];	/* texture name */
+    MDirPtr  dir;      /* pointer in main directory to texname */
+    long    *offsets;  /* array of offsets to texture names */
+    BCINT    n;        /* general counter */
+    long     numtex;   /* number of texture names in TEXTURE* list */
+    long     texofs;   /* offset in doom.wad for the texture data */
+    char     tname[9]; /* texture name */
 
-   /* offset for texture we want. */
-   texofs = 0;
-   /* search for texname in texture1 names */
-   dir = FindMasterDir( MasterDir, "TEXTURE1");
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   BasicWadRead( dir->wadfile, &numtex, 4);
-   /* read in the offsets for texture1 names and info. */
-   offsets = GetMemory( numtex * sizeof( long));
-   for (n = 0; n < numtex; n++)
-      BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
-   for (n = 0; n < numtex && !texofs; n++)
-   {
-      BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
-      BasicWadRead( dir->wadfile, &tname, 8);
-      if (!strnicmp(tname, texname, 8))
-	 texofs = dir->dir.start + offsets[ n];
-   }
-   FreeMemory( offsets);
-   if (Registered && texofs == 0)
-   {
-      /* search for texname in texture2 names */
-      dir = FindMasterDir( MasterDir, "TEXTURE2");
-      BasicWadSeek( dir->wadfile, dir->dir.start);
-      BasicWadRead( dir->wadfile, &numtex, 4);
-      /* read in the offsets for texture2 names */
-      offsets = GetMemory( numtex * sizeof( long));
-      for (n = 0; n < numtex; n++)
-	 BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
-      for (n = 0; n < numtex && !texofs; n++)
-      {
-	 BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
-	 BasicWadRead( dir->wadfile, &tname, 8);
-	 if (!strnicmp( tname, texname, 8))
-	    texofs = dir->dir.start + offsets[ n];
-      }
-      FreeMemory( offsets);
-   }
+    /* offset for texture we want. */
+    texofs = 0;
+    /* search for texname in texture1 names */
+    dir = FindMasterDir( MasterDir, "TEXTURE1");
+    BasicWadSeek( dir->wadfile, dir->dir.start);
+    BasicWadRead( dir->wadfile, &numtex, 4);
+    /* read in the offsets for texture1 names and info. */
+    offsets = GetMemory( numtex * sizeof( long));
+    for (n = 0; n < numtex; n++)
+       BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
+    for (n = 0; n < numtex && !texofs; n++)
+    {
+       BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
+       BasicWadRead( dir->wadfile, &tname, 8);
+       if (!strnicmp(tname, texname, 8))
+        texofs = dir->dir.start + offsets[ n];
+    }
+    FreeMemory( offsets);
+    if (Registered && texofs == 0)
+    {
+       /* search for texname in texture2 names */
+       dir = FindMasterDir( MasterDir, "TEXTURE2");
+       BasicWadSeek( dir->wadfile, dir->dir.start);
+       BasicWadRead( dir->wadfile, &numtex, 4);
+       /* read in the offsets for texture2 names */
+       offsets = GetMemory( numtex * sizeof( long));
+       for (n = 0; n < numtex; n++)
+         BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
+       for (n = 0; n < numtex && !texofs; n++)
+       {
+         BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
+         BasicWadRead( dir->wadfile, &tname, 8);
+         if (!strnicmp( tname, texname, 8))
+           texofs = dir->dir.start + offsets[ n];
+       }
+       FreeMemory( offsets);
+    }
 
-   if (texofs != 0)
-   {
-      /* read the info for this texture */
-      BasicWadSeek( dir->wadfile, texofs + 12L);
-      BasicWadRead( dir->wadfile, xsize_r, 2L);
-      BasicWadRead( dir->wadfile, ysize_r, 2L);
-   }
-   else
-   {
-      /* texture data not found */
-      *xsize_r = -1;
-      *ysize_r = -1;
-   }
+    if (texofs != 0)
+    {
+       /* read the info for this texture */
+       BasicWadSeek( dir->wadfile, texofs + 12L);
+       BasicWadRead( dir->wadfile, xsize_r, 2L);
+       BasicWadRead( dir->wadfile, ysize_r, 2L);
+    }
+    else
+    {
+       /* texture data not found */
+       *xsize_r = -1;
+       *ysize_r = -1;
+    }
 }
 
 
@@ -348,10 +347,10 @@ void GetWallTextureSize( int *xsize_r, int *ysize_r, char *texname)
    choose a floor or ceiling texture
 */
 
-void ChooseFloorTexture( int x0, int y0, char *prompt, int listsize, char **list, char *name)
+void ChooseFloorTexture( BCINT x0, BCINT y0, char *prompt, BCINT listsize, char **list, char *name)
 {
    if (UseMouse)
-      HideMousePointer();
+      HideMousePointer(); 
    SwitchToVGA256();
    /* if we only have a 320x200x256 VGA driver, we must change x0 and y0.  Yuck! */
    if (GfxMode > -2)
@@ -371,7 +370,7 @@ void ChooseFloorTexture( int x0, int y0, char *prompt, int listsize, char **list
    choose a wall texture
 */
 
-void ChooseWallTexture( int x0, int y0, char *prompt, int listsize, char **list, char *name)
+void ChooseWallTexture( BCINT x0, BCINT y0, char *prompt, BCINT listsize, char **list, char *name)
 {
    if (UseMouse)
       HideMousePointer();
@@ -404,10 +403,10 @@ int SortSprites( const void *a, const void *b)
    choose a "sprite"
 */
 
-void ChooseSprite( int x0, int y0, char *prompt, char *sname)
+void ChooseSprite( BCINT x0, BCINT y0, char *prompt, char *sname)
 {
    MDirPtr dir;
-   int n, listsize;
+   BCINT n, listsize;
    char **list;
    char name[ 9];
 
@@ -420,10 +419,10 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
    /* get the actual names from master dir. */
    dir = FindMasterDir( MasterDir, "S_START");
    dir = dir->next;
-   list = GetMemory( listsize * sizeof( char *));
+   list = (char**) GetMemory( listsize * sizeof( char *));
    for (n = 0; n < listsize; n++)
    {
-      list[ n] = GetMemory( 9 * sizeof( char));
+      list[ n] = (char*) GetMemory( 9 * sizeof( char));
       strncpy( list[ n], dir->dir.name, 8);
       list[ n][ 8] = '\0';
       dir = dir->next;
@@ -433,8 +432,8 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
       strncpy( name, sname, 8);
    else
       strcpy( name, list[ 0]);
-   if (UseMouse)
-      HideMousePointer();
+/*   if (UseMouse)
+      HideMousePointer(); */
    SwitchToVGA256();
    /* if we only have a 320x200x256 VGA driver, we must change x0 and y0.  Yuck! */
    if (GfxMode > -2)
@@ -443,12 +442,14 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
       y0 = -1;
    }
    InputNameFromListWithFunc( x0, y0, prompt, listsize, list, 11, name, 256, 128, DisplayPic);
-   SwitchToVGA16();
+/*   SwitchToVGA16();
    if (UseMouse)
-      ShowMousePointer();
+      ShowMousePointer(); */
    for (n = 0; n < listsize; n++)
       FreeMemory( list[ n]);
    FreeMemory( list);
 }
 
 
+      
+
