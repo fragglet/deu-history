@@ -4,7 +4,7 @@
    DEU.C - Main program execution routines.
 
    compile with command
-      tcc -Z -mc -r -G -O -edeu *.c \tc\lib\graphics.lig
+      tcc -Z -mc -r -G -O -edeu *.c \tc\lib\graphics.lib
 */
 
 /* the includes */
@@ -166,7 +166,7 @@ void MainLoop()
             continue;
          }
          level = atoi( com);
-         if (level < 1 || level> 3)
+         if (level < 1 || level> 9)
          {
             printf( "[Invalid game level number (%s).]\n", com);
             continue;

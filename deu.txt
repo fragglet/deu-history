@@ -1,7 +1,7 @@
                            =====================
                                  MANUAL FOR
                             DOOM EDITOR UTILITY
-                                Version 3.00
+                                Version 3.01
                            =====================
 
 
@@ -55,6 +55,8 @@ Version__  Released___  Notes______________________________________________
 3.00       29 Jan 93    Second Release. Merged DDIR and DEDT into one 
                         program. Replaced THING DATA files with PWAD files.
                         Released with source code.
+
+3.01       29 Jan 93    Bug fix, can now edit levels higher than 3.
 
 
 
