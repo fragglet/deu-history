@@ -1,0 +1,21 @@
+editobj.c, void CheckLevel()
+ 
+NumVertex is being deducted when F10 and registered and TEXTURE2 = NULL
+
+if (Registered) {
+	if (FindMasterDir( MasterDir, "TEXTURE2") == NULL)
+	    NumVertexes--;
+	else
+    }
+
+
+--------------------------
+
+
+case OBJ_LINEDEFS:, case 2
+
+val should be set to value of current selected LineDef, not -1
+
+also cannot get into last real sub menu.
+
+

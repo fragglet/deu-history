@@ -1,5 +1,6 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Changes/additions made by Antony Burden and Simon Oke.
 
    If you use any part of this code in one of your programs,
    please make it clear that you borrowed it from here...
@@ -63,6 +64,14 @@
 #define THING_LOSTSOUL        3006
 #define THING_SPIDERBOSS      7
 #define THING_CYBERDEMON      16
+#define THING_HEAVYDUDE       65
+#define THING_HELLKNIGHT      69
+#define THING_ARACNOTRON     68
+#define THING_PAINELEMEN     71
+#define THING_REVENANT        66
+#define THING_MANCUBUS        67
+#define THING_ARCHVILE        64
+#define THING_SSSOLDIER       84
 
 /* decorations */
 #define THING_BARREL          2035
@@ -119,7 +128,31 @@
 #define THING_HANGINGTORSO2   60
 #define THING_HANGINGLEG2     62
 
-/* teleport arrival */
+/* specials */
 #define THING_TELEPORT        14
+#define THING_KEEN    	      72
+#define THING_BOSS            88
+#define THING_BOSSSHOOT       89
+#define THING_BOSSTARGET      87
+
+/* new to DOOM 2 */
+#define	THING_SUPERSHOT       82
+#define	THING_MEGASPHERE      83
+#define	THING_HANGINGBODYSPN  77
+#define	THING_HANGINGUPPER    78
+#define	THING_HANGINGUPPER2   75
+#define	THING_HANGINGBODYDMG  74
+#define	THING_HANGINGNOGUTS   73
+#define	THING_POOLOFBLOOD2    79
+#define	THING_POOLOFBLOOD3    80
+#define	THING_POOLOFBRAINS    81
+#define	THING_SBLUELAMP       86
+#define	THING_TBLUELAMP       85
+#define	THING_BURNBARREL      70
 
 /* end of file */
+
+
+
+
+

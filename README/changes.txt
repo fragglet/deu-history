@@ -1,0 +1,184 @@
+Changes from DEU 5.2 (GO32 version) --> DETH 1.0
+------------------------------------------------
+
+Bugs Fixed
+----------
+None
+
+Additions
+---------
+Edits and saves Doom 2 files
+All new Linedefs, Things and Textures from Doom2 now included
+Grid scale now 4 -> 256, was 8 -> 256
+Thing number shown
+LineDefs flag screen stays until esc pressed
+Things colors now make sense
+Thing angle can be changed with . and , keys
+Longer Thing descriptions now displayed
+Rulers can be shown as squares instead of circles with -sq
+Vertices now shown as small squares, instead of a large cross
+Mouse not so sensistive near edge of screen
+Arrow heads smaller
+Scrolling of map now faster and smoother as info boxes and objects not shown
+Sector Height shown
+Texture selection faster
+More sector types included
+
+
+Changes from DETH 1.0 --> DETH 1.1
+----------------------------------
+
+Bugs Fixed
+----------
+None
+
+Additions
+---------
+Grid scale now 4 -> 512, was 4 -> 256
+Grid and Menus Darker
+Blocks sounds lines shown in dark red
+Monsters can't pass lines shown in dark green
+Distribute Sector Light levels
+User definable large scroll factor
+Default Door Texture and Door Track definable in the .ini file
+
+
+
+Changes from DETH 1.1 --> DETH 1.1a
+-----------------------------------
+
+Bugs Fixed
+----------
+Fixed Bug which stopped DETH editing DOOM 1
+Bug fixed in the preferences menu
+
+Additions
+---------
+Map map comes up quicker i.e when you type: e 1 or e 1 1
+
+
+
+Changes from DETH 1.1a --> DETH 1.1b
+------------------------------------
+
+Bugs Fixed
+----------
+Texture Selection box would stretch across the screen and mess up text
+Grid would not go from 256 -> 512 upon Shift G
+Sector types Menu fixed
+
+Additions
+---------
+The Q key is now definable as either Quit or SaveAs
+The K key Kills the grid, i.e it sets it to 0
+Highlight lines thiner and arrow drawing more stable
+X Texture Alignment now much improved, no need to select 1st or 2nd SideDef
+	See texture.txt for more info
+Scrolling now even smoother and less flickery
+Re-written the texture routines for faster processing.
+
+
+
+Changes from DETH 1.1b --> DETH 1.1c
+------------------------------------
+
+Bugs Fixed
+----------
+Sector type menu was incorrect
+Texture selection was unstable
+
+Additions
+---------
+Arrow heads smaller
+Help screen (F1) now upto date
+
+
+
+Changes from DETH 1.1c --> DETH 1.2
+-----------------------------------
+
+Bugs Fixed
+----------
+Texture selection now shows additional SKY patches
+Some more Texture errors !
+
+Additions
+---------
+Optional showing of Thing angle, see deth.ini
+Textures and sprite routines sped up - again !
+Y Alignment now as X alignment, see texture.txt
+
+
+
+Changes from DETH 1.2 --> DETH 1.2a
+-----------------------------------
+
+Bugs Fixed
+----------
+The Info bar wouldn't disappear properly when you pressed I
+X alignment on the 2nd SideDef would get the very first value wrong
+X alignment would cause a violation if you selected only 1 SideDef
+
+Additions
+---------
+Secret lines now shown in magenta
+Invisible lines now shown in lightish brown, best used in Thing mode
+Info on number of patches or transparent textures shown in texture screen
+
+
+
+Changes from DETH 1.2a --> DETH 1.2b
+------------------------------------
+
+Bugs Fixed
+----------
+none
+
+Additions
+---------
+You can now Zoom in another 2 factors
+Vertices now don't merge until they are very close, useful for fiddly bits
+	this will be a definable factor in a later release.
+
+
+
+Changes from DETH 1.2b --> DETH 2.0 (only released for 24 hours as a beta)
+--------------------------------------------------------------------------
+
+Bugs Fixed
+----------
+none
+
+Additions
+---------
+Edits Heretic, read readme.1st
+All data is now in user editable files (things, linedefs, sectors and more....)
+
+
+
+Changes from DETH 2.0 --> DETH 2.1
+----------------------------------
+
+Bugs Fixed
+----------
+Upon loading or checking a WAD, DETH would delete the last vertex.
+Last menu in LineDefs wouldn't work.
+Could escape properly from LineDef sub-menus.
+
+Additions
+---------
+LineDef descriptions now resemble descriptions in lndfs2.zip (Lib 18, ACTION, cserve)
+
+
+
+
+
+Future DETH versions may/will include the following:-
+-----------------------------------------------------
+
+User definable Node rebuilder i.e you tell DETH what program to use.
+Optional showing of sprite when selecting Thing from menu.
+More Short Cut Keys.
+Mass re-numbering of LineDefs to the highest in the wad - useful for triggers.
+Re-numbering of sectors - so you dont have to renumber the individual SideDefs.
+I.T.A - Interactive Texture Alignment (no thanks to Dr. Sleep!!!)

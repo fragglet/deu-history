@@ -1,0 +1,30 @@
+This is how DETH deals with X Texture Alignment:
+
+   1      2      3      4        Selection Order
+x----->x----->x----->x----->
+  1st    1st    1st    1st       SideDef DETH is going to align to
+
+   4      3      2      1    
+x----->x----->x----->x----->
+  2nd    2nd    2nd    2nd  
+
+   1      2       3     4  
+x----->x----->x<-----x----->
+  1st    1st     2nd   1st
+
+   4      3      2      1  
+x<-----x----->x<-----x----->
+  1st    2nd    1st    2nd
+
+
+So as you can see, DETH works out which SideDef it has to work on, no need 
+for separate menu options.
+
+The general rule to remember is that DETH will always align the SideDef to the
+right of the selection order.
+
+Alignment is texture based and will check for different textures, you can also
+input an initial offset.
+
+It also works if the sidedef doesn't have any textures, and will also align on 
+the Upper and Lower textures. - so no more barfing!

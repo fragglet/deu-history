@@ -1,24 +1,47 @@
 # gnuish Makefile
-
-#OPTIONS = -g -Wall
-OPTIONS = -O2 -Wall
+ 
+OPTIONS = -O2 -g -pedantic -Wall
+CC = gcc $(OPTIONS)
 
 SRCS =  deu.c gfx.c menus.c nodes.c textures.c edit.c levels.c mouse.c \
-	objects.c things.c editobj.c names.c wads.c
+	objects.c things2.c editobj.c names.c wads.c readcfg.c
 	
 OBJS = $(SRCS:.c=.o)
 
-
-# Add dependencies of .h-files if you like ...
-
-%.o : %.c
-	gcc -c $(OPTIONS) $<
-
-
-deu: $(OBJS)
-	gcc $(OPTIONS) -o deu $(OBJS) -lm -lpc -lbcc -lgrx
-
-deu.exe: deu
-	strip deu
-	coff2exe deu
+deth.exe: deth
+	strip deth
+	coff2exe deth
         	
+deth: $(OBJS)
+	gcc $(OPTIONS) -o deth $(OBJS) -lm -lpc -lbcc -lgrx
+
+debug: $(OBJS)
+	gcc -g $(OPTIONS) -o deth $(OBJS) -lm -lpc -lbcc -lgrx
+
+clean:
+	del *.o
+	del deth
+	del deth.exe
+
+zip:
+	zip -u source.zip *.c *.h makefile *.cfg *.dm? *.her *.dm
+
+tags:
+	ctags -r *.c *.h
+
+# dependencies produced by 'gcc -MM' 
+
+deu.o : deu.c deu.h deu-go32.h 
+edit.o : edit.c deu.h deu-go32.h levels.h wstructs.h
+editobj.o : editobj.c deu.h deu-go32.h levels.h wstructs.h
+gfx.o : gfx.c deu.h deu-go32.h 
+levels.o : levels.c deu.h deu-go32.h wstructs.h
+menus.o : menus.c deu.h deu-go32.h 
+mouse.o : mouse.c deu.h deu-go32.h 
+names.o : names.c deu.h deu-go32.h 
+nodes.o : nodes.c deu.h deu-go32.h levels.h wstructs.h
+objects.o : objects.c deu.h deu-go32.h levels.h wstructs.h
+textures.o : textures.c deu.h deu-go32.h 
+things2.o : things2.c deu.h deu-go32.h 
+wads.o : wads.c deu.h deu-go32.h 
+readcfg.o: readcfg.c deu.h deu-go32.h wstructs.h

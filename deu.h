@@ -1,14 +1,14 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
-
+   Doom Editor for Total Headcases, by Simon Oke and Antony Burden.
+   
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
    the program itself.  Read the file README.1ST for more information.
-
+   
    This program comes with absolutely no warranty.
-
-   DEU.H - Main doom defines.
-*/
+   
+   DEU.H - Main game defines.
+   */
 
 /* the includes */
 #include <stdio.h>
@@ -24,31 +24,47 @@
 #include <alloc.h>
 #include <dos.h>
 #include <bios.h>
-#define DEU_VERSION	"5.21"	/* the version number */
+#define DEU_VERSION	"5.2"	/* the version number */
 typedef int            BCINT;
 typedef unsigned int   UBCINT;
 
 #elif defined(__GNUC__)
 
 #include "deu-go32.h"
-#define DEU_VERSION     "5.21 - DJGPP/GO32 version"
+#define DEU_VERSION     "5.2 - DJGPP/GO32 version"
 typedef short int            BCINT;
 typedef unsigned short int   UBCINT;
 
+#define DETH_VERSION	"2.1 - The Configurable Release"
+
 #endif
+
+/* define some new colors */
+#define DARKBLUE	16
+#define DARKGREEN	17
+#define DARKRED		18
+#define DARKMAGENTA	19
+#define GRAY		20
+#define DARKERGRAY	21
+#define	ORANGE		22
+
+typedef unsigned char BYTE;
+
+/* now safe to include this, as it uses BCINTs */
+#include "wstructs.h"
 
 
 /*
    the directory structure is the structure used by DOOM to order the
    data in it's WAD files
-*/
+   */
 
 typedef struct Directory huge *DirPtr;
 struct Directory
 {
-   long start;			/* offset to start of data */
-   long size;			/* byte size of data */
-   char name[ 8];		/* name of data block */
+    long start;			/* offset to start of data */
+    long size;			/* byte size of data */
+    char name[ 8];		/* name of data block */
 };
 
 
@@ -56,20 +72,20 @@ struct Directory
 /*
    The wad file pointer structure is used for holding the information
    on the wad files in a linked list.
-
+   
    The first wad file is the main wad file. The rest are patches.
-*/
+   */
 
 typedef struct WadFileInfo huge *WadPtr;
 struct WadFileInfo
 {
-   WadPtr next;			/* next file in linked list */
-   char *filename;		/* name of the wad file */
-   FILE *fileinfo;		/* C file stream information */
-   char type[ 4];		/* type of wad file (IWAD or PWAD) */
-   long dirsize;		/* directory size of WAD */
-   long dirstart;		/* offset to start of directory */
-   DirPtr directory;		/* array of directory information */
+    WadPtr next;		/* next file in linked list */
+    char *filename;		/* name of the wad file */
+    FILE *fileinfo;		/* C file stream information */
+    char type[ 4];		/* type of wad file (IWAD or PWAD) */
+    long dirsize;		/* directory size of WAD */
+    long dirstart;		/* offset to start of directory */
+    DirPtr directory;		/* array of directory information */
 };
 
 
@@ -77,68 +93,117 @@ struct WadFileInfo
 /*
    the master directory structure is used to build a complete directory
    of all the data blocks from all the various wad files
-*/
+   */
 
 typedef struct MasterDirectory huge *MDirPtr;
 struct MasterDirectory
 {
-   MDirPtr next;		/* next in list */
-   WadPtr wadfile;		/* file of origin */
-   struct Directory dir;	/* directory data */
+    MDirPtr next;		/* next in list */
+    WadPtr wadfile;		/* file of origin */
+    struct Directory dir;	/* directory data */
 };
 
 
 
 /*
    the selection list is used when more than one object is selected
-*/
+   */
 
 typedef struct SelectionList *SelPtr;
 struct SelectionList
 {
-   SelPtr next;			/* next in list */
-   BCINT objnum;			/* object number */
+    SelPtr next;		/* next in list */
+    BCINT objnum;		/* object number */
 };
 
 
 /*
    syntactic sugar
-*/
-typedef BCINT Bool;               /* Boolean data: true or false */
+   */
+typedef BCINT Bool;             /* Boolean data: true or false */
 
 
 /*
    description of the command line arguments and config file keywords
-*/
+   */
 
 typedef struct
 {
-   char *short_name;		/* abbreviated command line argument */
-   char *long_name;		/* command line arg. or keyword */
-   enum                         /* type of this option */
-   {
-      OPT_BOOLEAN,                      /* boolean (toggle) */
-      OPT_INTEGER,                      /* integer number */
-      OPT_STRING,                       /* character string */
-      OPT_STRINGACC,                    /* character string, but store in a list */
-      OPT_STRINGLIST,                   /* list of character strings */
-      OPT_END                          /* end of the options description */
-   } opt_type;                    
-   char *msg_if_true;		/* message printed if option is true */
-   char *msg_if_false;		/* message printed if option is false */
-   void *data_ptr;              /* pointer to the data */
+    char *short_name;		/* abbreviated command line argument */
+    char *long_name;		/* command line arg. or keyword */
+    enum                        /* type of this option */
+	    {
+		OPT_BOOLEAN,                     /* boolean (toggle) */
+		OPT_INTEGER,                     /* integer number */
+		OPT_STRING,                      /* character string */
+		OPT_STRINGACC,                   /* character string, but store in a list */
+		OPT_STRINGLIST,                  /* list of character strings */
+		OPT_END                          /* end of the options description */
+	    } opt_type;                    
+    char *msg_if_true;		/* message printed if option is true */
+    char *msg_if_false;		/* message printed if option is false */
+    void *data_ptr;             /* pointer to the data */
 } OptDesc;
+
+
+/* generic string list type  -- used for holding level names,
+   ftexture sections, texture sections */
+typedef struct _SList {
+	char *string;
+	struct _SList *next;
+} *SList;
+
+/* sector type type (!) (actually a list type) */
+typedef struct _sector_type {
+	char *shortname, *longname;
+	BCINT type;
+	struct _sector_type *next;
+} sector_type;
+
+typedef struct _sector_class {
+	char *name;
+	sector_type *types;
+	struct _sector_class *next;
+} sector_class;
+
+/* type for a list of linedef types */
+typedef struct _ld_type {
+	char *shortname, *longname;
+	BCINT type;
+	struct _ld_type *next;
+} ld_type;
+
+/* type for the list of linedef type classes (phew!) */
+typedef struct _ld_class {
+	char *name;
+	ld_type *types;
+	struct _ld_class *next;
+} ld_class;
+
+/* as above, but for a thing */
+typedef struct _thing_type {
+    BCINT	type, col2, col1, radius;
+    char 	*name;
+    struct _thing_type *next;
+} thing_type;
+
+/* and a list of thing classes */
+typedef struct _thing_class {
+	char *name;
+	thing_type *types;
+	struct _thing_class *next;
+} thing_class;
 
 
 /*
    the macros and constants
-*/
+   */
 
 /* name of the configuration file */
-#define DEU_CONFIG_FILE		"DEU.INI"
+#define DEU_CONFIG_FILE		"DETH.INI"
 
 /* name of the log file (debug mode) */
-#define DEU_LOG_FILE		"DEU.LOG"
+#define DEU_LOG_FILE		"DETH.LOG"
 
 /* convert screen coordinates to map coordinates */
 #define MAPX(x)			(OrigX + (BCINT) (((x) - ScrCenterX) / Scale))
@@ -161,7 +226,6 @@ typedef struct
 #define OBJ_BLOCKMAP		10
 
 /* boolean constants */
-
 #ifndef TRUE
 #define TRUE			1
 #define FALSE			0
@@ -171,32 +235,36 @@ typedef struct
 #define OBJSIZE			7
 
 
-/*
-   the interfile global variables
-*/
+/* the interfile global variables */
 
 /* from deu.c */
-extern Bool  CirrusCursor;      /* use hardware cursor on Cirrus Logic VGA cards */
-extern Bool  Select0;           /* select object 0 by default when switching modes */
-extern Bool  Registered;	/* registered or shareware WAD file? */
-extern Bool  Debug;		/* are we debugging? */
-extern Bool  SwapButtons;	/* swap right and middle mouse buttons */
-extern Bool  Quiet;		/* don't play a sound when an object is selected */
-extern Bool  Quieter;		/* don't play any sound, even when an error occurs */
-extern Bool  Expert;		/* don't ask for confirmation for some operations */
+extern Bool CirrusCursor;      	/* use hardware cursor on Cirrus Logic VGA cards */
+extern Bool Select0;           	/* select object 0 by default when switching modes */
+extern Bool Debug;		/* are we debugging? */
+extern Bool SwapButtons;	/* swap right and middle mouse buttons */
+extern Bool Quiet;		/* don't play a sound when an object is selected */
+extern Bool Quieter;		/* don't play any sound, even when an error occurs */
+extern Bool Expert;		/* don't ask for confirmation for some operations */
+extern Bool QisQuit;		
 extern BCINT InitialScale;	/* initial zoom factor for map */
 extern BCINT VideoMode;	  	/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
-extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
-extern Bool  Colour2;		/* use the alternate set for things colors */
-extern Bool  AdditiveSelBox;	/* additive selection box or select in box only? */
+extern Bool FakeCursor;	/* use a "fake" mouse cursor */
+extern Bool Colour2;		/* use the alternate set for things colors */
+extern Bool AdditiveSelBox;	/* additive selection box or select in box only? */
 extern BCINT SplitFactor;       /* factor used by the nodes builder */
 extern char *MainWad;		/* name of the main wad file */
 extern FILE *logfile;		/* filepointer to the error log */
+extern Bool square_circles;
+extern Bool ThingAngle;		/* draw things with arrow */
+extern Bool Doom2;		/* Is this Doom 2 ?? */
+extern char *RegTest;
+extern Bool Registered;		/* registered or shareware WAD file? */
 
 /* from wads.c */
 extern WadPtr  WadFileList;	/* list of wad files */
 extern MDirPtr MasterDir;	/* the master directory */
+extern SList LevelNames;
 
 /* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
@@ -216,11 +284,20 @@ extern BCINT ScrCenterY;	/* Y coord of screen center */
 /* from mouse.c */
 extern Bool UseMouse;		/* is there a mouse driver? */
 
+/* from things2.c */
+extern thing_class *Thing_classes;
 
+/* from names.c */
+extern ld_class *Linedef_classes;
+extern sector_class *Sector_classes;
+
+/* from levels.c */
+extern SList Ftexture_sections;
+extern SList Texture_sections;
 
 /*
    the function prototypes
-*/
+   */
 
 /* from deu.c */
 int main( int, char *[]);
@@ -270,6 +347,7 @@ void SaveLevelData( char *); /* SWAP! */
 void ReadWTextureNames( void);
 void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
+void ReadFTextureNamesIn( char *);
 void ForgetWTextureNames( void);
 
 /* from edit.c */
@@ -286,6 +364,7 @@ Bool SwitchToVGA256( void);
 Bool SwitchToVGA16( void);
 void TermGfx( void);
 void ClearScreen( void);
+void ClearMapScreen(BCINT);
 void SetColor( BCINT );
 void DrawMapLine( BCINT , BCINT , BCINT , BCINT );
 void DrawMapCircle( BCINT , BCINT , BCINT );
@@ -299,13 +378,13 @@ void DrawScreenMeter( BCINT , BCINT , BCINT , BCINT , float);
 void DrawScreenText( BCINT , BCINT , char *, ...);
 void DrawPointer( Bool);
 void SetDoomPalette( BCINT );
-BCINT  TranslateToDoomColor( BCINT );
+BCINT TranslateToGameColor( BCINT );
 UBCINT ComputeAngle( BCINT , BCINT );
 UBCINT ComputeDist( BCINT , BCINT );
 void InsertPolygonVertices( BCINT , BCINT , BCINT , BCINT );
 void RotateAndScaleCoords( BCINT  *, BCINT  *, double, double);
 
-/* from things.c */
+/* from things2.c */
 BCINT  GetThingColour( BCINT );
 char *GetThingName( BCINT );
 BCINT  GetThingRadius( BCINT );
@@ -321,6 +400,8 @@ char *GetLineDefFlagsName( BCINT );
 char *GetLineDefFlagsLongName( BCINT );
 char *GetSectorTypeName( BCINT );
 char *GetSectorTypeLongName( BCINT );
+Bool LinedefIsDoom2Only(BCINT);
+void index_ld_types();
 
 /* from mouse.c */
 void CheckMouseDriver( void);
@@ -332,12 +413,13 @@ void SetMouseLimits( BCINT , BCINT , BCINT , BCINT );
 void ResetMouseLimits( void);
 
 /* from menus.c */
-BCINT  DisplayMenuArray( BCINT , BCINT , char *, BCINT , BCINT  *, char *[ 30], BCINT  [30]);
-BCINT  DisplayMenu( BCINT , BCINT , char *, ...);
-BCINT  PullDownMenu( BCINT , BCINT , ...);
-BCINT  InputInteger( BCINT , BCINT , BCINT  *, BCINT , BCINT );
-BCINT  InputIntegerValue( BCINT , BCINT , BCINT , BCINT , BCINT );
+BCINT DisplayMenuArray( BCINT , BCINT , char *, BCINT , BCINT  *, char *[ 30], BCINT  [30]);
+BCINT DisplayMenu( BCINT , BCINT , char *, ...);
+BCINT PullDownMenu( BCINT , BCINT , ...);
+BCINT InputInteger( BCINT , BCINT , BCINT  *, BCINT , BCINT );
+BCINT InputIntegerValue( BCINT , BCINT , BCINT , BCINT , BCINT );
 void InputNameFromListWithFunc( BCINT , BCINT , char *, BCINT , char **, BCINT , char *, BCINT , BCINT , void (*hookfunc)(BCINT , BCINT , BCINT , BCINT , char *));
+
 void InputNameFromList( BCINT , BCINT , char *, BCINT , char **, char *);
 void InputFileName( BCINT , BCINT , char *, BCINT , char *);
 Bool Confirm( BCINT , BCINT , char *, char *);
@@ -346,14 +428,14 @@ void DisplayMessage( BCINT , BCINT , char *, ...);
 void NotImplemented( void);
 
 /* from objects.c */
-BCINT  GetMaxObjectNum(BCINT );
+BCINT GetMaxObjectNum(BCINT );
 void HighlightSelection( BCINT , SelPtr); /* SWAP! */
 Bool IsSelected( SelPtr, BCINT );
 void SelectObject( SelPtr *, BCINT );
 void UnSelectObject( SelPtr *, BCINT );
 void ForgetSelection( SelPtr *);
 BCINT GetMaxObjectNum( BCINT);
-BCINT  GetCurObject( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
+BCINT GetCurObject( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
 SelPtr SelectObjectsInBox( BCINT , BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
 void HighlightObject( BCINT , BCINT , BCINT ); /* SWAP! */
 void DeleteObject( BCINT , BCINT ); /* SWAP! */
@@ -365,7 +447,7 @@ void CopyObjects( BCINT , SelPtr); /* SWAP! */
 Bool MoveObjectsToCoords( BCINT , SelPtr, BCINT , BCINT , BCINT ); /* SWAP! */
 void GetObjectCoords( BCINT , BCINT , BCINT  *, BCINT  *); /* SWAP! */
 void RotateAndScaleObjects( BCINT , SelPtr, double, double); /* SWAP! */
-BCINT  FindFreeTag(void); /* SWAP! */
+BCINT FindFreeTag(void); /* SWAP! */
 void FlipLineDefs( SelPtr, Bool); /* SWAP! */
 void DeleteVerticesJoinLineDefs( SelPtr ); /* SWAP! */
 void MergeVertices( SelPtr *); /* SWAP! */
@@ -377,18 +459,21 @@ void MergeSectors( SelPtr *); /* SWAP! */
 void DeleteLineDefsJoinSectors( SelPtr *); /* SWAP! */
 void MakeDoorFromSector( BCINT ); /* SWAP! */
 void MakeLiftFromSector( BCINT ); /* SWAP! */
-void AlignTexturesY( SelPtr *); /* SWAP! */
-void AlignTexturesX( SelPtr *); /* SWAP! */
+void AlignTexturesY( SelPtr *, Bool, Bool); /* SWAP! */
+void AlignTexturesX( SelPtr *, Bool, Bool); /* SWAP! */
 void DistributeSectorFloors( SelPtr); /* SWAP! */
+BCINT CommonVertex(BCINT, BCINT);
+SelPtr rev_list(SelPtr);	/* return a new list, which is the reverse
+							   of the original */
+void delete_list(SelPtr);	/* use this to delete it afterwards */
 void DistributeSectorCeilings( SelPtr); /* SWAP! */
+void DistributeLightLevels( SelPtr); /* SWAP! */
 
 
 /* from editobj.c */
 void DisplayObjectInfo( BCINT , BCINT ); /* SWAP! */
-BCINT  DisplayThingsMenu( BCINT , BCINT , char *, ...);
-BCINT  DisplayLineDefTypeMenu( BCINT , BCINT , char *, ...);
-BCINT  InputObjectNumber( BCINT , BCINT , BCINT , BCINT );
-BCINT  InputObjectXRef( BCINT , BCINT , BCINT , Bool, BCINT );
+BCINT InputObjectNumber( BCINT , BCINT , BCINT , BCINT );
+BCINT InputObjectXRef( BCINT , BCINT , BCINT , Bool, BCINT );
 Bool Input2VertexNumbers( BCINT, BCINT, char *, BCINT *, BCINT *);
 void EditObjectsInfo( BCINT , BCINT , BCINT , SelPtr);
 void CheckLevel( BCINT , BCINT ); /* SWAP! */
@@ -405,6 +490,14 @@ void ChooseFloorTexture( BCINT , BCINT , char *, BCINT , char **, char *);
 void ChooseWallTexture( BCINT , BCINT , char *, BCINT , char **, char *);
 void ChooseSprite( BCINT , BCINT , char *, char *);
 void GetWallTextureSize( BCINT *, BCINT *, char *);
+void *GetResource(char *);
+void ForgetResource(char *);
+Texture *FindTexture(char *);
+Texture *FindTextureIn(char *, void *);
+void ForgetAllResources(void);
+
+/* from readcfg.c */
+void readcfg(char *);
 
 /* from swapmem.c */
 
@@ -415,4 +508,3 @@ void ObjectsNeeded( BCINT , ...);
 #endif
 
 /* end of file */
-

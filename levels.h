@@ -1,18 +1,17 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
-
+   
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
    the program itself.  Read the file README.1ST for more information.
-
+   
    This program comes with absolutely no warranty.
-
+   
    LEVELS.H - Level data definitions.
-*/
+   */
 
 /* the includes */
 #include "wstructs.h"
-#include "things.h"
 
 /* the external variables from levels.c */
 extern MDirPtr Level;		/* master dictionary entry for the level */
@@ -53,6 +52,12 @@ extern char *DefaultLowerTexture;	/* default lower wall texture */
 extern char *DefaultUpperTexture;	/* default upper wall texture */
 extern char *DefaultFloorTexture;	/* default floor texture */
 extern char *DefaultCeilingTexture;	/* default ceiling texture */
+extern char *DefaultDoorTrack;		/* default door track texture */
+extern char *DefaultDoorTexture;	/* default door texture */
 extern int  DefaultFloorHeight;		/* default floor height */
 extern int  DefaultCeilingHeight;	/* default ceiling height */
-
+extern int  DefaultLargeScroll;		/* default large scroll factor */
+
+
+extern Bool UseOffset;
+extern BCINT NoChecking;
