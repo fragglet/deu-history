@@ -25,7 +25,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.1 BETA3"	/* the version number */
+#define DEU_VERSION	"5.1"	/* the version number */
 
 
 
@@ -171,6 +171,7 @@ extern int   VideoMode;		/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
 extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
 extern Bool  Colour2;		/* use the alternate set for things colors */
+extern Bool AdditiveSelBox;	/* additive selection box or select in box only? */
 extern char *MainWad;		/* name of the main wad file */
 extern FILE *logfile;		/* filepointer to the error log */
 
@@ -209,6 +210,7 @@ void ParseConfigFileOptions( char *);
 void Usage( FILE *);
 void Credits( FILE *);
 void Beep( void);
+void PlaySound( int, int);
 void ProgError( char *, ...);
 void LogMessage( char *, ...);
 void MainLoop( void);
@@ -234,9 +236,11 @@ void ListMasterDirectory( FILE *);
 void ListFileDirectory( FILE *, WadPtr);
 void BuildNewMainWad( char *, Bool);
 void WriteBytes( FILE *, void huge *, long);
+void CopyBytes( FILE *, FILE *, long);
 int Exists( char *);
 void DumpDirectoryEntry( FILE *, char *);
 void SaveDirectoryEntry( FILE *, char *);
+void SaveEntryToRawFile( FILE *, char *);
 void SaveEntryFromRawFile( FILE *, FILE *, char *);
 
 /* from levels.c */
@@ -313,7 +317,7 @@ int DisplayMenu( int, int, char *, ...);
 int PullDownMenu( int, int, ...);
 int InputInteger( int, int, int *, int, int);
 int InputIntegerValue( int, int, int, int, int);
-void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, char *));
+void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, int, int, char *));
 void InputNameFromList( int, int, char *, int, char **, char *);
 void InputFileName( int, int, char *, int, char *);
 Bool Confirm( int, int, char *, char *);
@@ -345,6 +349,10 @@ void MergeVertices( SelPtr *); /* SWAP! */
 Bool CheckMergedVertices( SelPtr *); /* SWAP! */
 void SplitLineDefs( SelPtr); /* SWAP! */
 void SplitSector( int, int); /* SWAP! */
+void SplitLineDefsAndSector( int, int); /* SWAP! */
+void MakeDoorFromSector( int); /* SWAP! */
+void MakeLiftFromSector( int); /* SWAP! */
+void AlignTextures( SelPtr *); /* SWAP! */
 
 /* from editobj.c */
 void DisplayObjectInfo( int, int); /* SWAP! */
@@ -357,6 +365,7 @@ void EditObjectsInfo( int, int, int, SelPtr);
 void CheckLevel( int, int); /* SWAP! */
 void InsertStandardObject( int, int, int, int); /* SWAP! */
 void MiscOperations( int, int, int, SelPtr *); /* SWAP! */
+void Preferences( int, int);
 
 /* from nodes.c */
 void ShowProgress( int);

@@ -325,7 +325,7 @@ void ListMasterDirectory( FILE *file)
       {
 	 lines = 0;
          printf( "[Q to abort, any other key to continue]");
-         key = getch();
+	 key = getch();
 	 printf( "\r                                       \r");
 	 if (key == 'Q' || key == 'q')
 	    break;
@@ -378,7 +378,6 @@ void BuildNewMainWad( char *filename, Bool patchonly)
    FILE *file;
    long counter = 12;
    MDirPtr cur;
-   void huge *data;
    long size;
    long dirstart;
    long dirnum;
@@ -400,7 +399,6 @@ void BuildNewMainWad( char *filename, Bool patchonly)
    WriteBytes( file, &counter, 4L);      /* put true value in later */
 
    /* output the directory data chuncks */
-   data = GetFarMemory( 0x8000 + 2);
    for (cur = MasterDir; cur; cur = cur->next)
    {
       if (patchonly && cur->wadfile == WadFileList)
@@ -408,20 +406,9 @@ void BuildNewMainWad( char *filename, Bool patchonly)
       size = cur->dir.size;
       counter += size;
       BasicWadSeek( cur->wadfile, cur->dir.start);
-      while (size > 0x8000)
-      {
-	 BasicWadRead( cur->wadfile, data, 0x8000);
-	 WriteBytes( file, data, 0x8000);
-	 size -= 0x8000;
-      }
-      if (size)
-      {
-	 BasicWadRead( cur->wadfile, data, size);
-	 WriteBytes( file, data, size);
-      }
+      CopyBytes( file, cur->wadfile->fileinfo, size);
       printf( "Size: %dK\r", counter / 1024);
    }
-   FreeFarMemory( data);
 
    /* output the directory */
    dirstart = counter;
@@ -473,6 +460,34 @@ void WriteBytes( FILE *file, void huge *addr, long size)
    }
    if (fwrite( addr, 1, size, file) != size)
       ProgError( "error writing to file");
+}
+
+
+
+/*
+   copy bytes from a binary file to another with error checking
+*/
+
+void CopyBytes( FILE *dest, FILE *source, long size)
+{
+   void huge *data;
+
+   if (! Registered)
+      return;
+   data = GetFarMemory( 0x8000 + 2);
+   while (size > 0x8000)
+   {
+      if (fread( data, 1, 0x8000, source) != 0x8000)
+	 ProgError( "error reading from file");
+      if (fwrite( data, 1, 0x8000, dest) != 0x8000)
+	 ProgError( "error writing to file");
+      size -= 0x8000;
+   }
+   if (fread( data, 1, size, source) != size)
+      ProgError( "error reading from file");
+   if (fwrite( data, 1, size, dest) != size)
+      ProgError( "error writing to file");
+   FreeFarMemory( data);
 }
 
 
@@ -569,7 +584,6 @@ void SaveDirectoryEntry( FILE *file, char *entryname)
    MDirPtr entry;
    long    counter;
    long    size;
-   void   *data;
 
    for (entry = MasterDir; entry; entry = entry->next)
       if (!strnicmp( entry->dir.name, entryname, 8))
@@ -586,17 +600,33 @@ void SaveDirectoryEntry( FILE *file, char *entryname)
       size = entry->dir.size;
       WriteBytes( file, &size, 4L);
       WriteBytes( file, &(entry->dir.name), 8L);
-      data = GetMemory( 0x8000 + 2);
       BasicWadSeek( entry->wadfile, entry->dir.start);
-      while (size > 0x8000)
-      {
-	 BasicWadRead( entry->wadfile, data, 0x8000);
-	 WriteBytes( file, data, 0x8000);
-	 size -= 0x8000;
-      }
-      BasicWadRead( entry->wadfile, data, size);
-      WriteBytes( file, data, size);
-      FreeMemory( data);
+      CopyBytes( file, entry->wadfile->fileinfo, size);
+   }
+   else
+   {
+      printf( "[Entry not in master directory]\n");
+      return;
+   }
+}
+
+
+
+/*
+   save a directory entry to disk, without a PWAD header
+*/
+
+void SaveEntryToRawFile( FILE *file, char *entryname)
+{
+   MDirPtr entry;
+
+   for (entry = MasterDir; entry; entry = entry->next)
+      if (!strnicmp( entry->dir.name, entryname, 8))
+	 break;
+   if (entry)
+   {
+      BasicWadSeek( entry->wadfile, entry->dir.start);
+      CopyBytes( file, entry->wadfile->fileinfo, entry->dir.size);
    }
    else
    {
@@ -616,7 +646,6 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
    MDirPtr entry;
    long    counter;
    long    size;
-   void   *data;
    char    name8[ 8];
 
    for (counter = 0L; counter < 8L; counter++)
@@ -638,18 +667,7 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
       ProgError( "error reading from raw file");
    WriteBytes( file, &size, 4L);
    WriteBytes( file, name8, 8L);
-   data = GetMemory( 0x8000 + 2);
-   while (size > 0x8000)
-   {
-      if (fread( data, 1, 0x8000, raw) != 0x8000)
-	 ProgError( "error reading from raw file");
-      WriteBytes( file, data, 0x8000);
-      size -= 0x8000;
-   }
-   if (fread( data, 1, size, raw) != size)
-      ProgError( "error reading from raw file");
-   WriteBytes( file, data, size);
-   FreeMemory( data);
+   CopyBytes( file, raw, size);
 }
 
 

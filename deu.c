@@ -35,27 +35,29 @@ char *BGIDriver = "VESA";	/* default extended BGI driver */
 Bool FakeCursor = FALSE;	/* use a "fake" mouse cursor */
 Bool Colour2 = FALSE;		/* use the alternate set for things colors */
 Bool InfoShown = TRUE;		/* should we display the info bar? */
+Bool AdditiveSelBox = FALSE;	/* additive selection box or select in box only? */
 char *MainWad = "DOOM.WAD";	/* name of the main wad file */
 char **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
 {
-/*   short & long names   type            message if true/changed       message if false           where to store the value */
-   { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON",		"Debug mode OFF",          &Debug        },
-   { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",		"Quiet mode OFF",          &Quiet        },
-   { "qq", "quieter",     OPT_BOOLEAN,    "Quieter mode ON",		"Quieter mode OFF",        &Quieter      },
-   { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",		"Expert mode OFF",         &Expert       },
-   { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",	"Mouse buttons restored",  &SwapButtons  },
-   { "w",  "main",        OPT_STRING,     "Main WAD file",		NULL,                      &MainWad      },
-   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",		NULL,                      &PatchWads    },
-   { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",		NULL,                      &PatchWads    },
-   { NULL, "config",      OPT_STRING,     "Config file",		NULL,                      &CfgFile      },
-   { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",	NULL,                      &InitialScale },
-   { "v",  "video",       OPT_INTEGER,    "Default video mode",		NULL,                      &VideoMode    },
-   { NULL, "bgi",         OPT_STRING,     "Default video driver",	NULL,                      &BGIDriver    },
-   { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",		"Fake cursor OFF",         &FakeCursor   },
-   { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",	"Normal Things color set", &Colour2      },
-   { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",		"Info bar hidden",         &InfoShown 	 },
-   { NULL, NULL,          OPT_NONE,       NULL,				NULL,                      NULL          }
+/*   short & long names   type            message if true/changed       message if false              where to store the value */
+   { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON",		"Debug mode OFF",             &Debug          },
+   { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",		"Quiet mode OFF",             &Quiet          },
+   { "qq", "quieter",     OPT_BOOLEAN,    "Quieter mode ON",		"Quieter mode OFF",           &Quieter        },
+   { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",		"Expert mode OFF",            &Expert         },
+   { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",	"Mouse buttons restored",     &SwapButtons    },
+   { "w",  "main",        OPT_STRING,     "Main WAD file",		NULL,                         &MainWad        },
+   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",		NULL,                         &PatchWads      },
+   { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",		NULL,                         &PatchWads      },
+   { NULL, "config",      OPT_STRING,     "Config file",		NULL,                         &CfgFile        },
+   { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",	NULL,                         &InitialScale   },
+   { "v",  "video",       OPT_INTEGER,    "Default video mode",		NULL,                         &VideoMode      },
+   { NULL, "bgi",         OPT_STRING,     "Default video driver",	NULL,                         &BGIDriver      },
+   { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",		"Fake cursor OFF",            &FakeCursor     },
+   { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",	"Normal Things color set",    &Colour2        },
+   { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",		"Info bar hidden",            &InfoShown      },
+   { "a",  "addselbox",   OPT_BOOLEAN,    "Additive selection box",	"Select objects in box only", &AdditiveSelBox },
+   { NULL, NULL,          OPT_NONE,       NULL,				NULL,                         NULL            }
 };
 
 
@@ -367,12 +369,15 @@ void ParseConfigFileOptions( char *filename)
 void Usage( FILE *where)
 {
    fprintf( where, "Usage:\n");
-   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-e] [-config <ini_file>] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-pw <pwad_file>] [-file <pwad_files>...]\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-qq] [-e] [-a] [-i] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-config <ini_file>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
    fprintf( where, "   -w    Gives the name of the main wad file. (also -main)  Default is DOOM.WAD\n");
    fprintf( where, "   -d    Enter debug mode. (also -debug)\n");
    fprintf( where, "   -c    Use the alternate Things color set (also -color2)\n");
-   fprintf( where, "   -q    Suppresses sounds. (also -quiet)\n");
+   fprintf( where, "   -q    Suppresses some sounds. (also -quiet)\n");
+   fprintf( where, "   -qq   Suppresses all sounds. (also -quieter)\n");
    fprintf( where, "   -e    Stops prompts for confirmation. (also -expert)\n");
+   fprintf( where, "   -a    To have an additive selection box (also -addselbox)\n");
+   fprintf( where, "   -i    Show the info bar in the editors (also -infobar)\n");
    fprintf( where, "   -z    Set the initial zoom factor for the editors. (also -zoom)\n");
    fprintf( where, "   -v    Set the default video mode number (also -video)\n");
    fprintf( where, "   -bgi  Set the default video driver (*.BGI file)\n");
@@ -381,6 +386,7 @@ void Usage( FILE *where)
    fprintf( where, "   -pw   To add one patch wad file to be loaded (may be repeated). (also -pwad)\n");
    fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
    fprintf( where, "   -config Gives the name of the config file.\n");
+   fprintf( where, "Put a '+' instead of a '-' before boolean options to reverse their effect.\n");
 }
 
 
@@ -401,12 +407,29 @@ void Credits( FILE *where)
 /*
    play a fascinating tune
 */
+
 void Beep()
 {
    if (Quieter == FALSE)
    {
       sound( 640);
       delay( 100);
+      nosound();
+   }
+}
+
+
+
+/*
+   play a sound
+*/
+
+void PlaySound( int freq, int msec)
+{
+   if (Quiet == FALSE)
+   {
+      sound( freq);
+      delay( msec);
       nosound();
    }
 }
@@ -522,6 +545,7 @@ void MainLoop()
 	 printf( "S[ave] <DirEntry> <WadFile>       -- to save one object to a separate file\n");
 	 printf( "V[iew] [SpriteName]               -- to display the sprites\n");
 	 printf( "W[ads]                            -- to display the open wads\n");
+	 printf( "X[tract] <DirEntry> <RawFile>     -- to save (extract) one object to a raw file\n");
       }
 
       /* user asked for list of open WAD files */
@@ -799,6 +823,41 @@ void MainLoop()
 	    ProgError( "error opening output file \"%s\"", input);
 	 SaveEntryFromRawFile( file, raw, out);
 	 fclose( raw);
+	 fclose( file);
+      }
+
+      /* user asked to extract an object to a raw binary file */
+      else if (!strcmp( com, "XTRACT") || !strcmp( com, "EXTRACT") || !strcmp( com, "X"))
+      {
+	 com = strtok( NULL, " ");
+	 if (com == NULL)
+	 {
+	    printf( "[Object name argument missing.]\n");
+	    continue;
+	 }
+	 if (strlen( com) > 8 || strchr( com, '.') != NULL)
+	 {
+	    printf( "[Invalid object name.]\n");
+	    continue;
+	 }
+	 out = strtok( NULL, " ");
+	 if (out == NULL)
+	 {
+	    printf( "[Raw file name argument missing.]\n");
+	    continue;
+	 }
+	 for (wad = WadFileList; wad; wad = wad->next)
+	    if (!stricmp( out, wad->filename))
+	       break;
+	 if (wad)
+	 {
+	    printf( "[You may not overwrite an opened Wad file with raw data.]\n");
+	    continue;
+	 }
+	 printf( "Saving directory entry data to \"%s\".\n", out);
+	 if ((file = fopen( out, "wb")) == NULL)
+	    ProgError( "error opening output file \"%s\"", out);
+	 SaveEntryToRawFile( file, com);
 	 fclose( file);
       }
 

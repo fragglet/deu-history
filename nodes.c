@@ -57,7 +57,6 @@ void ShowProgress( int objtype)
       SetColor( RED);
       DrawScreenText( 10, 108, "Number of warnings: %d", NumErrors);
       Beep();
-      sleep( 1);
       break;
    }
    if (UseMouse)
@@ -419,12 +418,16 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
       nodeline = seglist;
       curseg = seglist;
       LogMessage( "\t\t%6d\n", curseg->linedef);
+      if (! IsSelected( errld, curseg->linedef))
+	 SelectObject( &errld, curseg->linedef);
       seglist = seglist->next;
       StoreInSegList( curseg, &segs2, &lastseg2, node, 2, TRUE);
       while (seglist)
       {
 	 curseg = seglist;
 	 LogMessage( "\t\t%6d\n", curseg->linedef);
+	 if (! IsSelected( errld, curseg->linedef))
+	    SelectObject( &errld, curseg->linedef);
 	 seglist = seglist->next;
 	 StoreInSegList( curseg, &segs1, &lastseg1, node, 1, TRUE);
       }

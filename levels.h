@@ -45,3 +45,13 @@ extern int   MapMinY;		/* minimum Y value of map */
 
 extern Bool  MadeChanges;	/* made changes? */
 extern Bool  MadeMapChanges;	/* made changes that need rebuilding? */
+
+extern SelPtr errld;		/* LineDefs in error (Nodes builder) */
+
+
+/* from objects.c */
+extern char DefaultWallTexture[ 9];
+extern char DefaultFloorTexture[ 9];
+extern char DefaultCeilingTexture[ 9];
+extern int DefaultFloorHeight;
+extern int DefaultCeilingHeight;

@@ -385,9 +385,22 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 
 /*
    ask for a name in a given list and call a function (for displaying objects, etc.)
+
+   Arguments:
+      x0, y0  : where to draw the box.
+      prompt  : text to be displayed.
+      listsize: number of elements in the list.
+      list    : list of names (picture names, level names, etc.).
+      listdisp: number of lines that should be displayed.
+      name    : what we are editing...
+      width   : \ width and height of an optional window where a picture
+      height  : / can be displayed (used to display textures, sprites, etc.).
+      hookfunc: function that should be called to display a picture.
+		(x1, y1, x2, y2 = coordinates of the window in which the
+		 picture must be drawn, name = name of the picture).
 */
 
-void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, int listdisp, char *name, int width, int height, void (*hookfunc)(int x1, int y1, char *name))
+void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, int listdisp, char *name, int width, int height, void (*hookfunc)(int px1, int py1, int px2, int py2, char *name))
 {
    int  key, n, l;
    int  x1, y1, x2, y2;
@@ -461,13 +474,16 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
       else
 	 SetColor( LIGHTGRAY);
       DrawScreenText( x0 + 13, y0 + 31, name);
+      /* call the function to display the picture, if any */
       if (hookfunc)
       {
-	 setviewport( x1, y1, x2, y2, TRUE);
-	 clearviewport();
-	 hookfunc( 0, 0, name);
-	 setviewport( 0, 0, ScrMaxX, ScrMaxY, TRUE);
+	 /* clear the window */
+	 SetColor( BLACK);
+	 DrawScreenBox( x1, y1, x2, y2);
+	 /* display the picture "name" */
+	 hookfunc( x1, y1, x2, y2, name);
       }
+      /* process user input */
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {

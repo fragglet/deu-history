@@ -48,6 +48,7 @@ int MapMinX = 32767;		/* minimum X value of map */
 int MapMinY = 32767;		/* minimum Y value of map */
 Bool MadeChanges = FALSE;	/* made changes? */
 Bool MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
+SelPtr errld = NULL;		/* LineDefs in error (Nodes builder) */
 
 
 /*
@@ -340,6 +341,7 @@ void SaveLevelData( char *outfile) /* SWAP! */
    Bool    newnodes;
    long    rejectsize;
    int     oldNumVertexes;
+   SelPtr  cur;
 
    DisplayMessage( -1, -1, "Saving data to \"%s\"...", outfile);
    LogMessage( ": Saving data to \"%s\"...\n", outfile);
@@ -450,10 +452,22 @@ void SaveLevelData( char *outfile) /* SWAP! */
       ShowProgress( OBJ_VERTEXES);
       ShowProgress( OBJ_SIDEDEFS);
       ObjectsNeeded( OBJ_VERTEXES, 0);
+      errld = NULL;
       Nodes = CreateNodes( seglist);
       if (UseMouse)
 	 HideMousePointer();
       DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, 1.0);
+      if (errld != NULL)
+      {
+	 DrawScreenBox3D( 0, 130, 203, ScrMaxY);
+	 DrawScreenText( 10, 138, "Suspicious LineDefs:");
+	 n = 153;
+	 for (cur = errld; cur && n < ScrMaxY - 12; cur = cur->next)
+	 {
+	    DrawScreenText( 40, n, "#%d", cur->objnum);
+	    n += 10;
+	 }
+      }
       if (UseMouse)
 	 ShowMousePointer();
       newnodes = TRUE;
@@ -505,19 +519,10 @@ void SaveLevelData( char *outfile) /* SWAP! */
    {
       /* copy the Vertices */
       ObjectsNeeded( 0);
-      data = GetMemory( 0x8000 + 2);
       size = dir->dir.size;
       counter += size;
       BasicWadSeek( dir->wadfile, dir->dir.start);
-      while (size > 0x8000)
-      {
-	 BasicWadRead( dir->wadfile, data, 0x8000);
-	 WriteBytes( file, data, 0x8000);
-	 size -= 0x8000;
-      }
-      BasicWadRead( dir->wadfile, data, size);
-      WriteBytes( file, data, size);
-      FreeMemory( data);
+      CopyBytes( file, dir->wadfile->fileinfo, size);
    }
    dir = dir->next;
 
@@ -572,23 +577,14 @@ void SaveLevelData( char *outfile) /* SWAP! */
    else
    {
       /* copy the Segs, SSectors and Nodes */
-      data = GetMemory( 0x8000 + 2);
       for (n = 0; n < 3; n++)
       {
 	 size = dir->dir.size;
 	 counter += size;
 	 BasicWadSeek( dir->wadfile, dir->dir.start);
-	 while (size > 0x8000)
-	 {
-	    BasicWadRead( dir->wadfile, data, 0x8000);
-	    WriteBytes( file, data, 0x8000);
-	    size -= 0x8000;
-	 }
-	 BasicWadRead( dir->wadfile, data, size);
-	 WriteBytes( file, data, size);
+	 CopyBytes( file, dir->wadfile->fileinfo, size);
 	 dir = dir->next;
       }
-      FreeMemory( data);
    }
 
    /* output the Sectors */
@@ -653,20 +649,11 @@ void SaveLevelData( char *outfile) /* SWAP! */
       /* copy the Reject data */
       ObjectsNeeded( 0);
       rejectsize = dir->dir.size;
-      data = GetMemory( 0x8000 + 2);
       size = rejectsize;
       counter += size;
       BasicWadSeek( dir->wadfile, dir->dir.start);
-      while (size > 0x8000)
-      {
-	 BasicWadRead( dir->wadfile, data, 0x8000);
-	 WriteBytes( file, data, 0x8000);
-	 size -= 0x8000;
-      }
-      BasicWadRead( dir->wadfile, data, size);
-      WriteBytes( file, data, size);
+      CopyBytes( file, dir->wadfile->fileinfo, size);
       dir = dir->next;
-      FreeMemory( data);
    }
 
    if (newnodes)
@@ -746,20 +733,11 @@ void SaveLevelData( char *outfile) /* SWAP! */
       /* copy the blockmap data */
       ObjectsNeeded( 0);
       blocksize = dir->dir.size;
-      data = GetMemory( 0x8000 + 2);
       size = blocksize;
       counter += size;
       BasicWadSeek( dir->wadfile, dir->dir.start);
-      while (size > 0x8000)
-      {
-	 BasicWadRead( dir->wadfile, data, 0x8000);
-	 WriteBytes( file, data, 0x8000);
-	 size -= 0x8000;
-      }
-      BasicWadRead( dir->wadfile, data, size);
-      WriteBytes( file, data, size);
+      CopyBytes( file, dir->wadfile->fileinfo, size);
       dir = dir->next;
-      FreeMemory( data);
    }
 
 
@@ -875,17 +853,28 @@ void SaveLevelData( char *outfile) /* SWAP! */
       ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
    }
 
+   /* the file is now up to date */
+   MadeChanges = FALSE;
+   if (newnodes)
+   {
+      MadeMapChanges = FALSE;
+      if (errld != NULL)
+      {
+	 DrawScreenBox3D( 218, ScrMaxY - 30, ScrMaxX, ScrMaxY);
+	 SetColor( YELLOW);
+	 DrawScreenText( 225, ScrMaxY - 18, "Errors found.  Press any key to continue...");
+	 bioskey( 0);
+	 ForgetSelection( &errld);
+      }
+   }
+   ObjectsNeeded( 0);
+
    /* update pointers in Master Directory */
    OpenPatchWad( outfile);
 
    /* this should free the old "*.BAK" file */
    CloseUnusedWadFiles();
 
-   /* the file is now up to date */
-   MadeChanges = FALSE;
-   if (newnodes)
-      MadeMapChanges = FALSE;
-   ObjectsNeeded( 0);
 }
 
 

@@ -45,8 +45,8 @@
 typedef XMSHandle SwapHandle;	/* XMS handle */
 #define INVALID_HANDLE		-1
 #else
-typedef char * SwapHandle;	/* name of the temporary disk file */
-#define INVALID_HANDLE		NULL
+typedef char SwapHandle[ 128];	/* name of the temporary disk file */
+#define INVALID_HANDLE		"..."
 #endif /* SWAP_TO_XMS */
 
 /* global variables */
@@ -71,12 +71,13 @@ void InitSwap()
 #ifdef SWAP_TO_XMS
    /* Init XMS */
    ...
+#else
+   strcpy(ThingsH, INVALID_HANDLE);
+   strcpy(LineDefsH, INVALID_HANDLE);
+   strcpy(SideDefsH, INVALID_HANDLE);
+   strcpy(VertexesH, INVALID_HANDLE);
+   strcpy(SectorsH, INVALID_HANDLE);
 #endif /* SWAP_TO_XMS */
-   ThingsH = INVALID_HANDLE;
-   LineDefsH = INVALID_HANDLE;
-   SideDefsH = INVALID_HANDLE;
-   VertexesH = INVALID_HANDLE;
-   SectorsH = INVALID_HANDLE;
 }
 
 
@@ -100,17 +101,26 @@ void huge *SwapIn( SwapHandle handle, unsigned long size)
 #else
    FILE      *file;
    char huge *data;
+   SwapHandle oldhandle;
 
-   if (handle == INVALID_HANDLE)
-      ProgError( "BUG: SwapIn called with an invalid handle");
+   /* Note from RQ:
+	 the following test is there to prevent an infinite loop when
+	 SwapIn calls GetFarMemory, which calls FreeSomeMemory, which
+	 in turn calls SwapOut, then SwapIn...
+    */
+   if (! strcmp( handle, INVALID_HANDLE))
+      return NULL;
 #ifdef DEBUG
    LogMessage( "swapping in %lu bytes from %s\n", size, handle);
 #endif /* DEBUG */
+   strcpy( oldhandle, handle);
+   /* invalidate the handle (must be before "GetFarMemory") */
+   strcpy( handle, INVALID_HANDLE);
    /* allocate a new memory block (in lower RAM) */
    ptr = GetFarMemory( size);
    /* read the data from the temporary file */
+   file = fopen( oldhandle, "rb");
    data = ptr;
-   file = fopen( handle, "rb");
    if (file == NULL)
       ProgError( "error opening temporary file \"%s\"", handle);
    while (size > 0x8000)
@@ -124,9 +134,7 @@ void huge *SwapIn( SwapHandle handle, unsigned long size)
       ProgError( "error reading from temporary file \"%s\"", handle);
    fclose( file);
    /* delete the file */
-   unlink( handle);
-   /* free the handle (file name) */
-   FreeMemory( handle);
+   unlink( oldhandle);
 #endif /* !SWAP_TO_XMS */
    return ptr;
 }
@@ -137,9 +145,8 @@ void huge *SwapIn( SwapHandle handle, unsigned long size)
    moves an object from lower RAM to secondary storage
 */
 
-SwapHandle SwapOut( void huge *ptr, unsigned long size)
+void SwapOut( void huge *ptr, SwapHandle handle, unsigned long size)
 {
-   SwapHandle handle;
 #ifdef SWAP_TO_XMS
    /* get a new XMS handle */
    ...
@@ -148,11 +155,14 @@ SwapHandle SwapOut( void huge *ptr, unsigned long size)
 #else
    FILE      *file;
    char huge *data;
+   char      *tmp;
 
    /* get a new (unique) file name */
-   handle = tempnam( NULL, "{DEU}");
-   if (handle == NULL)
+   tmp = tempnam( NULL, "{DEU}");
+   if (tmp == NULL)
       ProgError( "cannot create a temporary file name (out of memory)");
+   strcpy( handle, tmp);
+   free( tmp);
 #ifdef DEBUG
    LogMessage( "swapping out %lu bytes to %s\n", size, handle);
 #endif /* DEBUG */
@@ -174,7 +184,6 @@ SwapHandle SwapOut( void huge *ptr, unsigned long size)
 #endif /* !SWAP_TO_XMS */
    /* free the data block (in lower RAM) */
    FreeFarMemory( ptr);
-   return handle;
 }
 
 
@@ -243,67 +252,39 @@ void ObjectsNeeded( int objtype, ...)
 
 
 /*
-   free some memory by moving some objects out of lower RAM
+   free as much memory as possible by moving some objects out of lower RAM
 */
 
 void FreeSomeMemory()
 {
-#ifdef OLD_FREEMEM
-   if (!NeedThings && NumThings > 0 && Things != NULL)
-   {
-      ThingsH = SwapOut( Things, (unsigned long) NumThings * sizeof (struct Thing));
-      Things = NULL;
-   }
-   if (!NeedLineDefs && NumLineDefs > 0 && LineDefs != NULL)
-   {
-      LineDefsH = SwapOut( LineDefs, (unsigned long) NumLineDefs * sizeof (struct LineDef));
-      LineDefs = NULL;
-   }
-   if (!NeedSideDefs && NumSideDefs > 0 && SideDefs != NULL)
-   {
-      SideDefsH = SwapOut( SideDefs, (unsigned long) NumSideDefs * sizeof (struct SideDef));
-      SideDefs = NULL;
-   }
-   if (!NeedVertexes && NumVertexes > 0 && Vertexes != NULL)
-   {
-      VertexesH = SwapOut( Vertexes, (unsigned long) NumVertexes * sizeof (struct Vertex));
-      Vertexes = NULL;
-   }
-   if (!NeedSectors && NumSectors > 0 && Sectors != NULL)
-   {
-      SectorsH = SwapOut( Sectors, (unsigned long) NumSectors * sizeof (struct Sector));
-      Sectors = NULL;
-   }
-#else
    /* move everything to secondary storage */
-   if (NumThings > 0 && Things != NULL)
+   if (NumSectors > 0 && Sectors != NULL)
    {
-      ThingsH = SwapOut( Things, (unsigned long) NumThings * sizeof (struct Thing));
-      Things = NULL;
-   }
-   if (NumLineDefs > 0 && LineDefs != NULL)
-   {
-      LineDefsH = SwapOut( LineDefs, (unsigned long) NumLineDefs * sizeof (struct LineDef));
-      LineDefs = NULL;
-   }
-   if (NumSideDefs > 0 && SideDefs != NULL)
-   {
-      SideDefsH = SwapOut( SideDefs, (unsigned long) NumSideDefs * sizeof (struct SideDef));
-      SideDefs = NULL;
+      SwapOut( Sectors, SectorsH, (unsigned long) NumSectors * sizeof (struct Sector));
+      Sectors = NULL;
    }
    if (NumVertexes > 0 && Vertexes != NULL)
    {
-      VertexesH = SwapOut( Vertexes, (unsigned long) NumVertexes * sizeof (struct Vertex));
+      SwapOut( Vertexes, VertexesH, (unsigned long) NumVertexes * sizeof (struct Vertex));
       Vertexes = NULL;
    }
-   if (NumSectors > 0 && Sectors != NULL)
+   if (NumSideDefs > 0 && SideDefs != NULL)
    {
-      SectorsH = SwapOut( Sectors, (unsigned long) NumSectors * sizeof (struct Sector));
-      Sectors = NULL;
+      SwapOut( SideDefs, SideDefsH, (unsigned long) NumSideDefs * sizeof (struct SideDef));
+      SideDefs = NULL;
+   }
+   if (NumLineDefs > 0 && LineDefs != NULL)
+   {
+      SwapOut( LineDefs, LineDefsH, (unsigned long) NumLineDefs * sizeof (struct LineDef));
+      LineDefs = NULL;
+   }
+   if (NumThings > 0 && Things != NULL)
+   {
+      SwapOut( Things, ThingsH, (unsigned long) NumThings * sizeof (struct Thing));
+      Things = NULL;
    }
    /* re-load the objects that are needed */
    SwapInObjects();
-#endif /* OLD_FREEMEM */
 }
 
 

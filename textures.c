@@ -22,10 +22,10 @@
 
 
 /*
-   display a floor or ceiling texture at coords x0, y0
+   display a floor or ceiling texture at coords x0, y0 and not beyond x1, y1
 */
 
-void DisplayFloorTexture( int x0, int y0, char *texname)
+void DisplayFloorTexture( int x0, int y0, int x1, int y1, char *texname)
 {
    MDirPtr             dir;
    int                 n;
@@ -35,8 +35,12 @@ void DisplayFloorTexture( int x0, int y0, char *texname)
    if (dir == NULL)
    {
       SetColor( DARKGRAY);
+/*
       DrawScreenLine( x0, y0, x0 + 63, y0 + 63);
       DrawScreenLine( x0, y0 + 63, x0 + 63, y0);
+*/
+      DrawScreenLine( x0, y0, x1, y1);
+      DrawScreenLine( x0, y1, x1, y0);
       return;
    }
    BasicWadSeek( dir->wadfile, dir->dir.start);
@@ -61,10 +65,10 @@ void DisplayFloorTexture( int x0, int y0, char *texname)
 
 
 /*
-   display a picture "picname" at coords x0, y0
+   display a picture "picname" at coords x0, y0 and not beyond x1, y1
 */
 
-void DisplayPic( int x0, int y0, char *picname)
+void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
 {
    MDirPtr             dir;
    int                 xsize, ysize, xofs, yofs;
@@ -87,12 +91,18 @@ void DisplayPic( int x0, int y0, char *picname)
    long huge          *offsets;
 
 
+   if (bioskey( 1) != 0)
+      return; /* speedup */
    dir = FindMasterDir( MasterDir, picname);
    if (dir == NULL)
    {
       SetColor( DARKGRAY);
+/*
       DrawScreenLine( x0, y0, x0 + 63, y0 + 63);
       DrawScreenLine( x0, y0 + 63, x0 + 63, y0);
+*/
+      DrawScreenLine( x0, y0, x1, y1);
+      DrawScreenLine( x0, y1, x1, y0);
       return;
    }
    BasicWadSeek( dir->wadfile, dir->dir.start);
@@ -149,7 +159,10 @@ void DisplayPic( int x0, int y0, char *picname)
 	n += 2;				/* skip over 'null' pixel in data */
 	for (i = 0; i < bColored; i++)
 	{
-	   putpixel(x0 + xofs + nCurrentColumn, y0 + yofs + bRowStart + i, lpColumn[i + n]);
+	   x = x0 + xofs + nCurrentColumn;
+	   y = y0 + yofs + bRowStart + i;
+	   if (x >= x0 && y >= y0 && x <= x1 && y <= y1)
+	      putpixel(x, y, lpColumn[i + n]);
 	}
 	n += bColored + 1;	/* skip over written pixels, and the 'null' one */
 	bRowStart = lpColumn[n++];
@@ -172,13 +185,16 @@ void DisplayPic( int x0, int y0, char *picname)
    display a wall texture ("texture1" or "texture2" object) at coords x0, y0
 */
 
-void DisplayWallTexture( int x0, int y0, char *texname)
+void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
 {
    MDirPtr  dir, pdir;
    long    *offsets;
    int      n, xsize, ysize, xofs, yofs, fields, pnameind, junk;
    long     numtex, texofs;
    char     tname[9], picname[9];
+
+   if (bioskey( 1) != 0)
+      return; /* speedup */
 
    /* offset for texture we want. */
    texofs = 0;
@@ -218,6 +234,10 @@ void DisplayWallTexture( int x0, int y0, char *texname)
       FreeMemory( offsets);
    }
 
+   /* clear the box where the texture size will be drawn - see below */
+   SetColor( LIGHTGRAY);
+   DrawScreenBox( x0 - 171, y0 + 40, x0 - 110, y0 + 50);
+
    /* texture name not found */
    if (!texofs)
       return;
@@ -229,6 +249,20 @@ void DisplayWallTexture( int x0, int y0, char *texname)
    BasicWadSeek(dir->wadfile, texofs + 20L);
    BasicWadRead(dir->wadfile, &fields, 2L);
 
+   /* display the texture size - yes, you can laugh at the way I did it... */
+   SetColor( BLACK);
+   DrawScreenText( x0 - 171, y0 + 40, "%dx%d", xsize, ysize);
+
+   if (bioskey( 1) != 0)
+      return; /* speedup */
+
+   if (x1 - x0 > xsize)
+      x1 = x0 + xsize;
+   if (y1 - y0 > ysize)
+      y1 = y0 + ysize;
+   /* not really necessary, except when xofs or yofs < 0 */
+   setviewport( x0, y0, x1, y1, TRUE);
+   /* display the texture */
    for (n = 0; n < fields; n++)
    {
       BasicWadSeek(dir->wadfile, texofs + 22L + n * 10L);
@@ -242,8 +276,11 @@ void DisplayWallTexture( int x0, int y0, char *texname)
       BasicWadSeek(pdir->wadfile, pdir->dir.start + 4L + pnameind * 8L);
       BasicWadRead(pdir->wadfile, &picname, 8L);
       picname[ 8] = '\0';
-      DisplayPic(x0 + xofs, y0 + yofs, picname);
+      /* coords changed because of the "setviewport" */
+      DisplayPic( xofs, yofs, x1 - x0, y1 - y0, picname);
    }
+   /* restore the normal viewport */
+   setviewport( 0, 0, ScrMaxX, ScrMaxY, TRUE);
 }
 
 
@@ -313,7 +350,7 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
    MDirPtr dir;
    int n, listsize;
    char **list;
-   char *name;
+   char name[ 9];
 
    /* count the names */
    dir = FindMasterDir( MasterDir, "S_START");
@@ -333,7 +370,6 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
       dir = dir->next;
    }
    qsort( list, listsize, sizeof( char *), SortSprites);
-   name = GetMemory( 9 * sizeof( char));
    if (sname != NULL)
       strncpy( name, sname, 8);
    else
@@ -351,7 +387,6 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
    SwitchToVGA16();
    if (UseMouse)
       ShowMousePointer();
-   FreeMemory( name);
    for (n = 0; n < listsize; n++)
       FreeMemory( list[ n]);
    FreeMemory( list);

@@ -14,6 +14,13 @@
 #include "deu.h"
 #include "levels.h"
 
+/* the global variables */
+char DefaultWallTexture[ 9] = "STARTAN3";
+char DefaultFloorTexture[ 9] = "FLOOR4_8";
+char DefaultCeilingTexture[ 9] = "CEIL3_5";
+int DefaultFloorHeight = 0;
+int DefaultCeilingHeight = 400;
+
 
 /*
    highlight the selected objects
@@ -693,7 +700,7 @@ void InsertObject(int objtype, int copyfrom, int xpos, int ypos) /* SWAP! */
 	 SideDefs[ last].yoff = 0;
 	 strcpy( SideDefs[ last].tex1, "-");
 	 strcpy( SideDefs[ last].tex2, "-");
-	 strcpy( SideDefs[ last].tex3, "STARTAN3");
+	 strcpy( SideDefs[ last].tex3, DefaultWallTexture);
 	 SideDefs[ last].sector = NumSectors - 1;
       }
       MadeMapChanges = TRUE;
@@ -716,10 +723,10 @@ void InsertObject(int objtype, int copyfrom, int xpos, int ypos) /* SWAP! */
       }
       else
       {
-	 Sectors[ last].floorh = 0;
-	 Sectors[ last].ceilh = 400;
-	 strcpy( Sectors[ last].floort,"FLOOR4_8");
-	 strcpy( Sectors[ last].ceilt, "CEIL3_5");
+	 Sectors[ last].floorh = DefaultFloorHeight;
+	 Sectors[ last].ceilh = DefaultCeilingHeight;
+	 strncpy( Sectors[ last].floort, DefaultFloorTexture, 8);
+	 strncpy( Sectors[ last].ceilt, DefaultCeilingTexture, 8);
 	 Sectors[ last].light = 255;
 	 Sectors[ last].special = 0;
 	 Sectors[ last].tag = 0;
@@ -803,6 +810,7 @@ void CopyObjects( int objtype, SelPtr obj) /* SWAP! */
 	 }
 	 MadeChanges = TRUE;
 	 break;
+
       case OBJ_VERTEXES:
 	 for (cur = obj; cur; cur = cur->next)
 	 {
@@ -812,6 +820,7 @@ void CopyObjects( int objtype, SelPtr obj) /* SWAP! */
 	 MadeChanges = TRUE;
 	 MadeMapChanges = TRUE;
 	 break;
+
       case OBJ_LINEDEFS:
 	 list1 = NULL;
 	 list2 = NULL;
@@ -848,6 +857,7 @@ void CopyObjects( int objtype, SelPtr obj) /* SWAP! */
 	 ForgetSelection( &list1);
 	 ForgetSelection( &list2);
 	 break;
+
       case OBJ_SECTORS:
 	 ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
 	 list1 = NULL;
@@ -856,8 +866,9 @@ void CopyObjects( int objtype, SelPtr obj) /* SWAP! */
 	 for (cur = obj; cur; cur = cur->next)
 	 {
 	    for (n = 0; n < NumLineDefs; n++)
-	       if (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
-		|| ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
+	       if ( (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
+		  || ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
+		 && ! IsSelected( list1, n))
 	       {
 		  SelectObject( &list1, n);
 		  SelectObject( &list2, n);
@@ -1439,7 +1450,7 @@ void SplitLineDefs( SelPtr obj) /* SWAP! */
 
 
 /*
-   split a Sector in two, adding a new LineDef in the middle
+   split a Sector in two, adding a new LineDef between the two Vertices
 */
 
 void SplitSector( int vertex1, int vertex2) /* SWAP! */
@@ -1448,6 +1459,7 @@ void SplitSector( int vertex1, int vertex2) /* SWAP! */
    int    curv, s, l, sd;
    char   msg1[ 80], msg2[ 80];
 
+   /* check if there is a Sector between the two Vertices (in the middle) */
    s = GetCurObject( OBJ_SECTORS, Vertexes[ vertex1].x, Vertexes[ vertex1].y, Vertexes[ vertex2].x, Vertexes[ vertex2].y);
    if (s < 0)
    {
@@ -1456,6 +1468,7 @@ void SplitSector( int vertex1, int vertex2) /* SWAP! */
       Notify( -1, -1, msg1, NULL);
       return;
    }
+   /* check if there is a closed path from vertex1 to vertex2, along the edge of the Sector s */
    ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
    llist = NULL;
    curv = vertex1;
@@ -1526,6 +1539,399 @@ void SplitSector( int vertex1, int vertex2) /* SWAP! */
    }
    MadeChanges = TRUE;
    MadeMapChanges = TRUE;
+}
+
+
+
+/*
+   split two LineDefs, then split the Sector and add a new LineDef between the new Vertices
+*/
+
+void SplitLineDefsAndSector( int linedef1, int linedef2) /* SWAP! */
+{
+   SelPtr llist;
+   int    s1, s2, s3, s4;
+   char   msg[ 80];
+
+   /* check if the two LineDefs are adjacent to the same Sector */
+   ObjectsNeeded( OBJ_LINEDEFS, 0);
+   s1 = LineDefs[ linedef1].sidedef1;
+   s2 = LineDefs[ linedef1].sidedef2;
+   s3 = LineDefs[ linedef2].sidedef1;
+   s4 = LineDefs[ linedef2].sidedef2;
+   ObjectsNeeded( OBJ_SIDEDEFS, 0);
+   if (s1 >= 0)
+      s1 = SideDefs[ s1].sector;
+   if (s2 >= 0)
+      s2 = SideDefs[ s2].sector;
+   if (s3 >= 0)
+      s3 = SideDefs[ s3].sector;
+   if (s4 >= 0)
+      s4 = SideDefs[ s4].sector;
+   if ((s1 < 0 || (s1 != s3 && s1 != s4)) && (s2 < 0 || (s2 != s3 && s2 != s4)))
+   {
+      Beep();
+      sprintf( msg, "LineDefs #%d and #%d are not adjacent to the same Sector", linedef1, linedef2);
+      Notify( -1, -1, msg, NULL);
+      return;
+   }
+   /* split the two LineDefs and create two new Vertices */
+   llist = NULL;
+   SelectObject( &llist, linedef1);
+   SelectObject( &llist, linedef2);
+   SplitLineDefs( llist);
+   ForgetSelection( &llist);
+   /* split the Sector and create a LineDef between the two Vertices */
+   SplitSector( NumVertexes - 1, NumVertexes - 2);
+}
+
+
+
+/*
+   turn a Sector into a door: change the LineDefs and SideDefs
+*/
+
+void MakeDoorFromSector( int sector) /* SWAP! */
+{
+   int    sd1, sd2;
+   int    n, s;
+   SelPtr ldok, ldflip, ld1s;
+
+   ldok = NULL;
+   ldflip = NULL;
+   ld1s = NULL;
+   s = 0;
+   /* build lists of LineDefs that border the Sector */
+   for (n = 0; n < NumLineDefs; n++)
+   {
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      sd1 = LineDefs[ n].sidedef1;
+      sd2 = LineDefs[ n].sidedef2;
+      if (sd1 >= 0 && sd2 >= 0)
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 if (SideDefs[ sd2].sector == sector)
+	 {
+	    SelectObject( &ldok, n); /* already ok */
+	    s++;
+	 }
+	 if (SideDefs[ sd1].sector == sector)
+	 {
+	    SelectObject( &ldflip, n); /* must be flipped */
+	    s++;
+	 }
+      }
+      else if (sd1 >= 0 && sd2 < 0)
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 if (SideDefs[ sd1].sector == sector)
+	    SelectObject( &ld1s, n); /* wall (one-sided) */
+      }
+   }
+   /* a normal door has two sides... */
+   if (s < 2)
+   {
+      Beep();
+      Notify( -1, -1, "The door must be connected to two other Sectors.", NULL);
+      ForgetSelection( &ldok);
+      ForgetSelection( &ldflip);
+      ForgetSelection( &ld1s);
+      return;
+   }
+   if ((s > 2) && !(Expert || Confirm( -1, -1, "The door will have more than two sides.", "Do you still want to create it?")))
+   {
+      ForgetSelection( &ldok);
+      ForgetSelection( &ldflip);
+      ForgetSelection( &ld1s);
+      return;
+   }
+   /* flip the LineDefs that have the wrong orientation */
+   if (ldflip != NULL)
+      FlipLineDefs( ldflip, TRUE);
+   /* merge the two selection lists */
+   while (ldflip != NULL)
+   {
+      if (!IsSelected( ldok, ldflip->objnum))
+	 SelectObject( &ldok, ldflip->objnum);
+      UnSelectObject( &ldflip, ldflip->objnum);
+   }
+   /* change the LineDefs and SideDefs */
+   while (ldok != NULL)
+   {
+      /* give the "normal door" type and flags to the LineDef */
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      n = ldok->objnum;
+      LineDefs[ n].type = 1;
+      LineDefs[ n].flags = 0x04;
+      sd1 = LineDefs[ n].sidedef1;
+      sd2 = LineDefs[ n].sidedef2;
+      /* adjust the textures for the SideDefs */
+      ObjectsNeeded( OBJ_SIDEDEFS, 0);
+      if (strncmp( SideDefs[ sd1].tex3, "-", 8))
+      {
+	 if (!strncmp( SideDefs[ sd1].tex1, "-", 8))
+	    strncpy( SideDefs[ sd1].tex1, SideDefs[ sd1].tex3, 8);
+	 strncpy( SideDefs[ sd1].tex3, "-", 8);
+      }
+      if (!strncmp( SideDefs[ sd1].tex1, "-", 8))
+	 strncpy( SideDefs[ sd1].tex1, "BIGDOOR2", 8);
+      strncpy( SideDefs[ sd2].tex3, "-", 8);
+      UnSelectObject( &ldok, n);
+   }
+   while (ld1s != NULL)
+   {
+      /* give the "door side" flags to the LineDef */
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      n = ld1s->objnum;
+      LineDefs[ n].flags = 0x11;
+      sd1 = LineDefs[ n].sidedef1;
+      /* adjust the textures for the SideDef */
+      ObjectsNeeded( OBJ_SIDEDEFS, 0);
+      if (!strncmp( SideDefs[ sd1].tex3, "-", 8))
+	 strncpy( SideDefs[ sd1].tex3, "DOORTRAK", 8);
+      strncpy( SideDefs[ sd1].tex1, "-", 8);
+      strncpy( SideDefs[ sd1].tex2, "-", 8);
+      UnSelectObject( &ld1s, n);
+   }
+   /* adjust the ceiling height */
+   ObjectsNeeded( OBJ_SECTORS, 0);
+   Sectors[ sector].ceilh = Sectors[ sector].floorh;
+}
+
+
+
+/*
+   turn a Sector into a lift: change the LineDefs and SideDefs
+*/
+
+void MakeLiftFromSector( int sector) /* SWAP! */
+{
+   int    sd1, sd2;
+   int    n, s, tag;
+   SelPtr ldok, ldflip, ld1s;
+   SelPtr sect, curs;
+   int    minh, maxh;
+
+   ldok = NULL;
+   ldflip = NULL;
+   ld1s = NULL;
+   sect = NULL;
+   /* build lists of LineDefs that border the Sector */
+   for (n = 0; n < NumLineDefs; n++)
+   {
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      sd1 = LineDefs[ n].sidedef1;
+      sd2 = LineDefs[ n].sidedef2;
+      if (sd1 >= 0 && sd2 >= 0)
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 if (SideDefs[ sd2].sector == sector)
+	 {
+	    SelectObject( &ldok, n); /* already ok */
+	    s = SideDefs[ sd1].sector;
+	    if (s != sector && !IsSelected( sect, s))
+	       SelectObject( &sect, s);
+	 }
+	 if (SideDefs[ sd1].sector == sector)
+	 {
+	    SelectObject( &ldflip, n); /* will be flipped */
+	    s = SideDefs[ sd2].sector;
+	    if (s != sector && !IsSelected( sect, s))
+	       SelectObject( &sect, s);
+	 }
+      }
+      else if (sd1 >= 0 && sd2 < 0)
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 if (SideDefs[ sd1].sector == sector)
+	    SelectObject( &ld1s, n); /* wall (one-sided) */
+      }
+   }
+   /* there must be a way to go on the lift... */
+   if (sect == NULL)
+   {
+      Beep();
+      Notify( -1, -1, "The lift must be connected to at least one other Sector.", NULL);
+      ForgetSelection( &ldok);
+      ForgetSelection( &ldflip);
+      ForgetSelection( &ld1s);
+      return;
+   }
+   /* flip the LineDefs that have the wrong orientation */
+   if (ldflip != NULL)
+      FlipLineDefs( ldflip, TRUE);
+   /* merge the two selection lists */
+   while (ldflip != NULL)
+   {
+      if (!IsSelected( ldok, ldflip->objnum))
+	 SelectObject( &ldok, ldflip->objnum);
+      UnSelectObject( &ldflip, ldflip->objnum);
+   }
+   /* find a free tag number */
+   tag = FindFreeTag();
+   /* find the minimum altitude */
+   ObjectsNeeded( OBJ_SECTORS, 0);
+   minh = 32767;
+   maxh = -32768;
+   for (curs = sect; curs; curs = curs->next)
+   {
+      if (Sectors[ curs->objnum].floorh < minh)
+	 minh = Sectors[ curs->objnum].floorh;
+      if (Sectors[ curs->objnum].floorh > maxh)
+	 maxh = Sectors[ curs->objnum].floorh;
+   }
+   ForgetSelection( &sect);
+   /* change the Sector altitude if necessary */
+   if (Sectors[ sector].floorh < maxh)
+      Sectors[ sector].floorh = maxh;
+   Sectors[ sector].tag = tag;
+   /* change the LineDefs and SideDefs */
+   while (ldok != NULL)
+   {
+      /* give the "lower lift" or "raise lift" type and flags to the LineDef */
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      n = ldok->objnum;
+      LineDefs[ n].type = 62; /* raise lift & switch for lower */
+      LineDefs[ n].flags = 0x04;
+      LineDefs[ n].tag = tag;
+      sd1 = LineDefs[ n].sidedef1;
+      sd2 = LineDefs[ n].sidedef2;
+      /* adjust the textures for the SideDefs */
+      ObjectsNeeded( OBJ_SIDEDEFS, 0);
+      if (strncmp( SideDefs[ sd1].tex3, "-", 8))
+      {
+	 if (!strncmp( SideDefs[ sd1].tex2, "-", 8))
+	    strncpy( SideDefs[ sd1].tex2, SideDefs[ sd1].tex3, 8);
+	 strncpy( SideDefs[ sd1].tex3, "-", 8);
+      }
+      if (!strncmp( SideDefs[ sd1].tex2, "-", 8))
+	 strncpy( SideDefs[ sd1].tex2, "SHAWN2", 8);
+      strncpy( SideDefs[ sd2].tex3, "-", 8);
+      s = SideDefs[ sd1].sector;
+      ObjectsNeeded( OBJ_SECTORS, 0);
+      if (Sectors[ s].floorh > minh)
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 if (strncmp( SideDefs[ sd2].tex3, "-", 8))
+	 {
+	    if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
+	       strncpy( SideDefs[ sd2].tex2, SideDefs[ sd1].tex3, 8);
+	    strncpy( SideDefs[ sd2].tex3, "-", 8);
+	 }
+	 if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
+	    strncpy( SideDefs[ sd2].tex2, "SHAWN2", 8);
+      }
+      else
+      {
+	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
+	 strncpy( SideDefs[ sd2].tex2, "-", 8);
+      }
+      strncpy( SideDefs[ sd2].tex3, "-", 8);
+      ObjectsNeeded( OBJ_SECTORS, 0);
+      /* if the Sector is above the lift */
+      if (Sectors[ s].floorh >= Sectors[ sector].floorh)
+      {
+	 ObjectsNeeded( OBJ_LINEDEFS, 0);
+	 LineDefs[ n].type = 88; /* lower lift */
+	 /* flip it, just for fun */
+	 curs = NULL;
+	 SelectObject( &curs, n);
+	 FlipLineDefs( curs, TRUE);
+	 ForgetSelection( &curs);
+      }
+      UnSelectObject( &ldok, n);
+   }
+   while (ld1s != NULL)
+   {
+      /* these are the lift walls (one-sided) */
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
+      n = ld1s->objnum;
+      LineDefs[ n].flags = 0x01;
+      sd1 = LineDefs[ n].sidedef1;
+      /* adjust the textures for the SideDef */
+      ObjectsNeeded( OBJ_SIDEDEFS, 0);
+      if (!strncmp( SideDefs[ sd1].tex3, "-", 8))
+	 strncpy( SideDefs[ sd1].tex3, DefaultWallTexture, 8);
+      strncpy( SideDefs[ sd1].tex1, "-", 8);
+      strncpy( SideDefs[ sd1].tex2, "-", 8);
+      UnSelectObject( &ld1s, n);
+   }
+}
+
+
+
+/*
+   get the absolute height from which the textures are drawn
+*/
+
+int GetTextureRefHeight( int sidedef) /* SWAP! */
+{
+   int l, sector;
+   int otherside;
+
+   /* find the SideDef on the other side of the LineDef, if any */
+   ObjectsNeeded( OBJ_LINEDEFS, 0);
+   for (l = 0; l < NumLineDefs; l++)
+   {
+      if (LineDefs[ l].sidedef1 == sidedef)
+      {
+	 otherside = LineDefs[ l].sidedef2;
+	 break;
+      }
+      if (LineDefs[ l].sidedef2 == sidedef)
+      {
+	 otherside = LineDefs[ l].sidedef1;
+	 break;
+      }
+   }
+   /* get the Sector number */
+   ObjectsNeeded( OBJ_SIDEDEFS, 0);
+   sector = SideDefs[ sidedef].sector;
+   /* if the upper texture is displayed, then the reference is taken from the other Sector */
+   if (otherside >= 0)
+   {
+      l = SideDefs[ otherside].sector;
+      if (l > 0)
+      {
+	 ObjectsNeeded( OBJ_SECTORS, 0);
+	 if (Sectors[ l].ceilh < Sectors[ sector].ceilh && Sectors[ l].ceilh > Sectors[ sector].floorh)
+	    sector = l;
+      }
+   }
+   /* return the altitude of the ceiling */
+   ObjectsNeeded( OBJ_SECTORS, 0);
+   if (sector >= 0)
+      return Sectors[ sector].ceilh; /* textures are drawn from the ceiling down */
+   else
+      return 0; /* yuck! */
+}
+
+
+
+/*
+   Align all textures for the given SideDefs
+*/
+
+void AlignTextures( SelPtr *sdlist) /* SWAP! */
+{
+   int h, refh;
+
+   if (*sdlist == NULL)
+      return;
+   /* get the reference height */
+   refh = GetTextureRefHeight( (*sdlist)->objnum);
+   ObjectsNeeded( OBJ_SIDEDEFS, 0);
+   SideDefs[ (*sdlist)->objnum].yoff = 0;
+   UnSelectObject( sdlist, (*sdlist)->objnum);
+   /* adjust Y offset in all other SideDefs */
+   while (*sdlist != NULL)
+   {
+      h = GetTextureRefHeight( (*sdlist)->objnum);
+      ObjectsNeeded( OBJ_SIDEDEFS, 0);
+      SideDefs[ (*sdlist)->objnum].yoff = (refh - h) % 128;
+      UnSelectObject( sdlist, (*sdlist)->objnum);
+   }
+   MadeChanges = TRUE;
 }
 
 

@@ -728,7 +728,7 @@ void EditObjectsInfo( int x0, int y0, int objtype, SelPtr obj) /* SWAP! */
 	 case 6:
 	 case 7:
 	    for (cur = obj; cur; cur = cur->next)
-	       Things[ cur->objnum].when = val;
+	       Things[ cur->objnum].when = (Things[ cur->objnum].when & 0x18) | val;
 	    MadeChanges = TRUE;
 	    break;
 	 case 8:
@@ -1093,8 +1093,8 @@ void EditObjectsInfo( int x0, int y0, int objtype, SelPtr obj) /* SWAP! */
 	    }
 	    break;
 	 case 4:
-	    val = InputIntegerValue( x0 + 84, y0 + 118, -256, 256, SideDefs[ sdlist->objnum].xoff);
-	    if (val >= -256)
+	    val = InputIntegerValue( x0 + 84, y0 + 118, -255, 255, SideDefs[ sdlist->objnum].xoff);
+	    if (val >= -255)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
@@ -1103,8 +1103,8 @@ void EditObjectsInfo( int x0, int y0, int objtype, SelPtr obj) /* SWAP! */
 	    }
 	    break;
 	 case 5:
-	    val = InputIntegerValue( x0 + 84, y0 + 128, -256, 256, SideDefs[ sdlist->objnum].yoff);
-	    if (val >= -256)
+	    val = InputIntegerValue( x0 + 84, y0 + 128, -255, 255, SideDefs[ sdlist->objnum].yoff);
+	    if (val >= -255)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
@@ -1149,8 +1149,8 @@ void EditObjectsInfo( int x0, int y0, int objtype, SelPtr obj) /* SWAP! */
       switch (val)
       {
       case 1:
-	 val = InputIntegerValue( x0 + 42, y0 + 34, -511, 511, Sectors[ obj->objnum].floorh);
-	 if (val >= -511)
+	 val = InputIntegerValue( x0 + 42, y0 + 34, -512, 511, Sectors[ obj->objnum].floorh);
+	 if (val >= -512)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
 	       Sectors[ cur->objnum].floorh = val;
@@ -1158,8 +1158,8 @@ void EditObjectsInfo( int x0, int y0, int objtype, SelPtr obj) /* SWAP! */
 	 }
 	 break;
       case 2:
-	 val = InputIntegerValue( x0 + 42, y0 + 44, -511, 511, Sectors[ obj->objnum].ceilh);
-	 if (val >= -511)
+	 val = InputIntegerValue( x0 + 42, y0 + 44, -512, 511, Sectors[ obj->objnum].ceilh);
+	 if (val >= -512)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
 	       Sectors[ cur->objnum].ceilh = val;
@@ -1403,13 +1403,17 @@ void Statistics( int x0, int y0)
    display a message, then ask if the check should continue (prompt2 may be NULL)
 */
 
-Bool CheckFailed( int x0, int y0, char *prompt1, char *prompt2)
+Bool CheckFailed( int x0, int y0, char *prompt1, char *prompt2, Bool fatal)
 {
    int key;
-   int maxlen = 27;
+   int maxlen;
 
    if (UseMouse)
       HideMousePointer();
+   if (fatal == TRUE)
+      maxlen = 44;
+   else
+      maxlen = 27;
    if (strlen( prompt1) > maxlen)
       maxlen = strlen( prompt1);
    if (prompt2 != NULL && strlen( prompt2) > maxlen)
@@ -1417,23 +1421,35 @@ Bool CheckFailed( int x0, int y0, char *prompt1, char *prompt2)
    if (x0 < 0)
       x0 = (ScrMaxX - 22 - 8 * maxlen) / 2;
    if (y0 < 0)
-      y0 = (ScrMaxY - (prompt2 ? 63 : 53)) / 2;
-   DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 63 : 53));
+      y0 = (ScrMaxY - (prompt2 ? 63 : 53) - (fatal ? 10 : 0)) / 2;
+   DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 63 : 53) + (fatal ? 10 : 0));
    SetColor( RED);
    DrawScreenText( x0 + 10, y0 + 8, "Verification failed:");
    Beep();
    SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 18, prompt1);
+   LogMessage( "\t%s\n", prompt1);
    if (prompt2 != NULL)
+   {
       DrawScreenText( x0 + 10, y0 + 28, prompt2);
-   SetColor( YELLOW);
-   DrawScreenText( x0 + 10, y0 + (prompt2 ? 48 : 38), "Press Esc to see the object");
-   if (Debug == TRUE)
-      LogMessage( "\t%s\n\t%s\n", prompt1, prompt2);
+      LogMessage( "\t%s\n", prompt2);
+   }
+   if (fatal == TRUE)
+   {
+      DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "DOOM will crash if you play with this level.");
+      SetColor( YELLOW);
+      DrawScreenText( x0 + 10, y0 + (prompt2 ? 58 : 48), "Press any key to see the object");
+      LogMessage( "\n");
+   }
+   else
+   {
+      SetColor( YELLOW);
+      DrawScreenText( x0 + 10, y0 + (prompt2 ? 48 : 38), "Press Esc to see the object");
+   }
    key = bioskey( 0);
    if ((key & 0x00FF) != 0x001B)
    {
-      DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 63 : 53));
+      DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 63 : 53) + (fatal ? 10 : 0));
       DrawScreenText( x0 + 10, y0 + 28, "Verifying other objects...");
    }
    if (UseMouse)
@@ -1486,7 +1502,7 @@ void CheckSectors() /* SWAP! */
 	 {
 	    sprintf( msg1, "Sector #%d is not closed!", s);
 	    sprintf( msg2, "There is no SideDef ending at Vertex #%d", n);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_VERTEXES, n);
 	       return;
@@ -1496,7 +1512,7 @@ void CheckSectors() /* SWAP! */
 	 {
 	    sprintf( msg1, "Sector #%d is not closed!", s);
 	    sprintf( msg2, "There is no SideDef starting at Vertex #%d", n);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_VERTEXES, n);
 	       return;
@@ -1526,25 +1542,47 @@ void CheckCrossReferences() /* SWAP! */
       /* check for missing first SideDefs */
       if (LineDefs[ n].sidedef1 < 0)
       {
-	 Beep();
 	 sprintf( msg, "ERROR: LineDef #%d has no first SideDef!", n);
-	 LogMessage("\t%s\n", msg);
-	 Notify( -1, -1, msg, "Doom will crash if you play with this level.");
+	 CheckFailed( -1, -1, msg, NULL, TRUE);
+	 GoToObject( OBJ_LINEDEFS, n);
+	 return;
+      }
+      /* check for SideDefs used twice in the same LineDef */
+      if (LineDefs[ n].sidedef1 == LineDefs[ n].sidedef2)
+      {
+	 sprintf( msg, "ERROR: LineDef #%d uses the same SideDef twice (#%d)", n, LineDefs[ n].sidedef1);
+	 CheckFailed( -1, -1, msg, NULL, TRUE);
+	 GoToObject( OBJ_LINEDEFS, n);
 	 return;
       }
       /* check for Vertices used twice in the same LineDef */
       if (LineDefs[ n].start == LineDefs[ n].end)
       {
-	 Beep();
 	 sprintf( msg, "ERROR: LineDef #%d uses the same Vertex twice (#%d)", n, LineDefs[ n].start);
-	 LogMessage("\t%s\n", msg);
-	 Notify( -1, -1, msg, "Doom will crash if you play with this level.");
+	 CheckFailed( -1, -1, msg, NULL, TRUE);
+	 GoToObject( OBJ_LINEDEFS, n);
 	 return;
       }
    }
 
-   /* check for invalid flags in the LineDefs */
+   /* check if there aren't two LineDefs between the same Vertices */
    cur = NULL;
+   for (n = NumLineDefs - 1; n >= 1; n--)
+   {
+      for (m = n - 1; m >= 0; m--)
+	 if ((LineDefs[ n].start == LineDefs[ m].start && LineDefs[ n].end == LineDefs[ m].end)
+	  || (LineDefs[ n].start == LineDefs[ m].end && LineDefs[ n].end == LineDefs[ m].start))
+	 {
+	    SelectObject( &cur, n);
+	    break;
+	 }
+   }
+   if (cur && (Expert || Confirm(-1, -1, "There are multiple LineDefs between the same Vertices", "Do you want to delete the redundant LineDefs?")))
+      DeleteObjects( OBJ_LINEDEFS, &cur);
+   else
+      ForgetSelection( &cur);
+
+   /* check for invalid flags in the LineDefs */
    for (n = 0; n < NumLineDefs; n++)
       if ((LineDefs[ n].flags & 0x01) == 0 && LineDefs[ n].sidedef2 < 0)
 	 SelectObject( &cur, n);
@@ -1674,7 +1712,7 @@ void CheckTextures() /* SWAP! */
       {
 	 sprintf( msg1, "Error: Sector #%d has no ceiling texture", n);
 	 sprintf( msg2, "You probaly used a brain-damaged editor to do that...");
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SECTORS, n);
 	    return;
@@ -1684,7 +1722,7 @@ void CheckTextures() /* SWAP! */
       {
 	 sprintf( msg1, "Error: Sector #%d has no floor texture", n);
 	 sprintf( msg2, "You probaly used a brain-damaged editor to do that...");
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SECTORS, n);
 	    return;
@@ -1694,7 +1732,7 @@ void CheckTextures() /* SWAP! */
       {
 	 sprintf( msg1, "Error: Sector #%d has its ceiling lower than its floor", n);
 	 sprintf( msg2, "The textures will never be displayed if you cannot go there");
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SECTORS, n);
 	    return;
@@ -1721,7 +1759,7 @@ void CheckTextures() /* SWAP! */
 	 {
 	    sprintf( msg1, "Error in one-sided Linedef #%d:", n);
 	    sprintf( msg2, "SideDef #%d has no normal texture", sd1);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_LINEDEFS, n);
 	       return;
@@ -1730,11 +1768,12 @@ void CheckTextures() /* SWAP! */
       }
       if (s1 >= 0 && s2 >= 0 && Sectors[ s1].ceilh > Sectors[ s2].ceilh)
       {
-	 if (SideDefs[ sd1].tex1[ 0] == '-' && SideDefs[ sd1].tex1[ 1] == '\0')
+	 if (SideDefs[ sd1].tex1[ 0] == '-' && SideDefs[ sd1].tex1[ 1] == '\0'
+	     && strncmp( Sectors[ s1].ceilt, "F_SKY1", 8) && strncmp( Sectors[ s2].ceilt, "F_SKY1", 8))
 	 {
 	    sprintf( msg1, "Error in first SideDef of Linedef #%d:", n);
 	    sprintf( msg2, "SideDef #%d has no upper texture", sd1);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_LINEDEFS, n);
 	       return;
@@ -1747,7 +1786,7 @@ void CheckTextures() /* SWAP! */
 	 {
 	    sprintf( msg1, "Error in first SideDef of Linedef #%d:", n);
 	    sprintf( msg2, "SideDef #%d has no lower texture", sd1);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_LINEDEFS, n);
 	       return;
@@ -1756,11 +1795,12 @@ void CheckTextures() /* SWAP! */
       }
       if (s1 >= 0 && s2 >= 0 && Sectors[ s2].ceilh > Sectors[ s1].ceilh)
       {
-	 if (SideDefs[ sd2].tex1[ 0] == '-' && SideDefs[ sd2].tex1[ 1] == '\0')
+	 if (SideDefs[ sd2].tex1[ 0] == '-' && SideDefs[ sd2].tex1[ 1] == '\0'
+	     && strncmp( Sectors[ s1].ceilt, "F_SKY1", 8) && strncmp( Sectors[ s2].ceilt, "F_SKY1", 8))
 	 {
 	    sprintf( msg1, "Error in second SideDef of Linedef #%d:", n);
 	    sprintf( msg2, "SideDef #%d has no upper texture", sd2);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_LINEDEFS, n);
 	       return;
@@ -1773,7 +1813,7 @@ void CheckTextures() /* SWAP! */
 	 {
 	    sprintf( msg1, "Error in second SideDef of Linedef #%d:", n);
 	    sprintf( msg2, "SideDef #%d has no lower texture", sd2);
-	    if (CheckFailed( -1, -1, msg1, msg2))
+	    if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	    {
 	       GoToObject( OBJ_LINEDEFS, n);
 	       return;
@@ -1820,7 +1860,7 @@ void CheckTextureNames() /* SWAP! */
       {
 	 sprintf( msg1, "Invalid ceiling texture in Sector #%d", n);
 	 sprintf( msg2, "The name \"%s\" is not a floor/ceiling texture", Sectors[ n].ceilt);
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SECTORS, n);
 	    return;
@@ -1830,7 +1870,7 @@ void CheckTextureNames() /* SWAP! */
       {
 	 sprintf( msg1, "Invalid floor texture in Sector #%d", n);
 	 sprintf( msg2, "The name \"%s\" is not a floor/ceiling texture", Sectors[ n].floort);
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SECTORS, n);
 	    return;
@@ -1844,7 +1884,7 @@ void CheckTextureNames() /* SWAP! */
       {
 	 sprintf( msg1, "Invalid upper texture in SideDef #%d", n);
 	 sprintf( msg2, "The name \"%s\" is not a wall texture", SideDefs[ n].tex1);
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SIDEDEFS, n);
 	    return;
@@ -1854,7 +1894,7 @@ void CheckTextureNames() /* SWAP! */
       {
 	 sprintf( msg1, "Invalid lower texture in SideDef #%d", n);
 	 sprintf( msg2, "The name \"%s\" is not a wall texture", SideDefs[ n].tex2);
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SIDEDEFS, n);
 	    return;
@@ -1864,7 +1904,7 @@ void CheckTextureNames() /* SWAP! */
       {
 	 sprintf( msg1, "Invalid normal texture in SideDef #%d", n);
 	 sprintf( msg2, "The name \"%s\" is not a wall texture", SideDefs[ n].tex3);
-	 if (CheckFailed( -1, -1, msg1, msg2))
+	 if (CheckFailed( -1, -1, msg1, msg2, FALSE))
 	 {
 	    GoToObject( OBJ_SIDEDEFS, n);
 	    return;
@@ -1940,8 +1980,6 @@ void InsertStandardObject( int x0, int y0, int xpos, int ypos) /* SWAP! */
       choice = DisplayMenu( x0, y0, ((x0 == -1) ? "Insert a pre-defined object (inside a Sector)" : NULL),
 			    "Rectangle",
 			    "Polygon (N sides)",
-			    "Door |",
-			    "Door -",
 			    "Stairs",
 			    "Hidden stairs",
 			    NULL);
@@ -2107,34 +2145,6 @@ void InsertStandardObject( int x0, int y0, int xpos, int ypos) /* SWAP! */
 
 
 /*
-   ...
-*/
-
-void AlignTextures() /* SWAP! */
-{
-   NotImplemented();
-/*
-   int    v, l;
-   SelPtr list;
-
-   ObjectsNeeded( OBJ_LINEDEFS, 0);
-   list = NULL;
-   for (v = 0; v < NumVertexes; v++)
-   {
-      for (l = 0; l < NumLineDefs; l++)
-      {
-	 if (LineDefs[ l].start == v || LineDefs[ l].end == v)
-	 {
-	 }
-      }
-   }
-
-*/
-}
-
-
-
-/*
    menu of miscellaneous operations
 */
 
@@ -2161,9 +2171,19 @@ void MiscOperations( int x0, int y0, int objtype, SelPtr *list) /* SWAP! */
 			 "Find first free tag number",
 			 msg,
 			 "Split LineDef (add new Vertex)",
+			 "Split LineDefs and Sector",
 			 "Flip LineDef",
 			 "Swap SideDefs",
-			 "Align textures",
+			 "Align textures (Y offset)",
+			 NULL);
+   }
+   else if (objtype == OBJ_SECTORS)
+   {
+      val = DisplayMenu( x0, y0, ((x0 == -1) ? "Misc. Operations" : NULL),
+			 "Find first free tag number",
+			 msg,
+			 "Make door from Sector",
+			 "Make lift from Sector",
 			 NULL);
    }
    else
@@ -2209,6 +2229,18 @@ void MiscOperations( int x0, int y0, int objtype, SelPtr *list) /* SWAP! */
       {
 	 SplitLineDefs( *list);
       }
+      else if (objtype == OBJ_SECTORS)
+      {
+	 if ((*list)->next != NULL)
+	 {
+	    Beep();
+	    Notify(-1, -1, "You must select exactly one Sector", NULL);
+	 }
+	 else
+	 {
+	    MakeDoorFromSector( (*list)->objnum);
+	 }
+      }
       break;
    case 4:
       if (objtype == OBJ_VERTEXES)
@@ -2217,7 +2249,28 @@ void MiscOperations( int x0, int y0, int objtype, SelPtr *list) /* SWAP! */
       }
       else if (objtype == OBJ_LINEDEFS)
       {
-	 FlipLineDefs( *list, TRUE);
+	 if ((*list)->next == NULL || (*list)->next->next != NULL)
+	 {
+	    Beep();
+	    Notify(-1, -1, "You must select exactly two LineDefs", NULL);
+	 }
+	 else
+	 {
+	    SplitLineDefsAndSector( (*list)->objnum, (*list)->next->objnum);
+	    ForgetSelection( list);
+	 }
+      }
+      else if (objtype == OBJ_SECTORS)
+      {
+	 if ((*list)->next != NULL)
+	 {
+	    Beep();
+	    Notify(-1, -1, "You must select exactly one Sector", NULL);
+	 }
+	 else
+	 {
+	    MakeLiftFromSector( (*list)->objnum);
+	 }
       }
       break;
    case 5:
@@ -2236,12 +2289,98 @@ void MiscOperations( int x0, int y0, int objtype, SelPtr *list) /* SWAP! */
       }
       else if (objtype == OBJ_LINEDEFS)
       {
+	 FlipLineDefs( *list, TRUE);
+      }
+      break;
+   case 6:
+      if (objtype == OBJ_LINEDEFS)
+      {
 	 if (Expert || Confirm( -1, -1, "Warning: the Sector references are also swapped", "You may get strange results if you don't know what you are doing..."))
 	    FlipLineDefs( *list, FALSE);
       }
       break;
-   case 6:
-      AlignTextures();
+   case 7:
+      if (objtype == OBJ_LINEDEFS)
+      {
+	 SelPtr sdlist, cur;
+
+	 /* select all SideDefs */
+	 ObjectsNeeded( OBJ_LINEDEFS);
+	 sdlist = NULL;
+	 for (cur = (*list)->next; cur; cur = cur->next)
+	 {
+	    if (LineDefs[ cur->objnum].sidedef1 >= 0)
+	       SelectObject( &sdlist, LineDefs[ cur->objnum].sidedef1);
+	    if (LineDefs[ cur->objnum].sidedef2 >= 0)
+	       SelectObject( &sdlist, LineDefs[ cur->objnum].sidedef2);
+	 }
+	 if (LineDefs[ (*list)->objnum].sidedef1 >= 0)
+	    SelectObject( &sdlist, LineDefs[ (*list)->objnum].sidedef1);
+	 if (LineDefs[ (*list)->objnum].sidedef2 >= 0)
+	    SelectObject( &sdlist, LineDefs[ (*list)->objnum].sidedef2);
+	 /* align the textures */
+	 AlignTextures( &sdlist);
+      }
+   }
+}
+
+
+
+/*
+   display a "Preferences" menu (change defaul textures, etc.)
+*/
+
+void Preferences( int x0, int y0)
+{
+   char   *menustr[ 30];
+   int     dummy[ 30];
+   int     n, val;
+   char    texname[ 9];
+
+   if (x0 < 0)
+      x0 = (ScrMaxX - 50 * 8 - 19) / 2;
+   if (y0 < 0)
+      y0 = (ScrMaxY - 5 * 10 - 28) / 2;
+   for (n = 0; n < 6; n++)
+      menustr[ n] = GetMemory( 80);
+   sprintf( menustr[ 5], "Preferences");
+   sprintf( menustr[ 0], "Change default wall texture    (Current: %s)", DefaultWallTexture);
+   sprintf( menustr[ 1], "Change default floor texture   (Current: %s)", DefaultFloorTexture);
+   sprintf( menustr[ 2], "Change default ceiling texture (Current: %s)", DefaultCeilingTexture);
+   sprintf( menustr[ 3], "Change default floor height    (Current: %d)", DefaultFloorHeight);
+   sprintf( menustr[ 4], "Change default ceiling height  (Current: %d)", DefaultCeilingHeight);
+   val = DisplayMenuArray( x0, y0, menustr[ 5], 5, NULL, menustr, dummy);
+   for (n = 0; n < 6; n++)
+      FreeMemory( menustr[ n]);
+   switch (val)
+   {
+   case 1:
+      strcpy( texname, DefaultWallTexture);
+      ChooseWallTexture( x0 + 42, y0 + 34, "Choose a wall texture", NumWTexture, WTexture, texname);
+      if (strlen( texname) > 0)
+	 strcpy( DefaultWallTexture, texname);
+      break;
+   case 2:
+      strcpy( texname, DefaultFloorTexture);
+      ChooseFloorTexture( x0 + 42, y0 + 44, "Choose a floor texture", NumFTexture, FTexture, texname);
+      if (strlen( texname) > 0)
+	 strcpy( DefaultFloorTexture, texname);
+      break;
+   case 3:
+      strcpy( texname, DefaultCeilingTexture);
+      ChooseFloorTexture( x0 + 42, y0 + 54, "Choose a ceiling texture", NumFTexture, FTexture, texname);
+      if (strlen( texname) > 0)
+	 strcpy( DefaultCeilingTexture, texname);
+      break;
+   case 4:
+      val = InputIntegerValue( x0 + 42, y0 + 64, -512, 511, DefaultFloorHeight);
+      if (val >= -512)
+	 DefaultFloorHeight = val;
+      break;
+   case 5:
+      val = InputIntegerValue( x0 + 42, y0 + 74, -512, 511, DefaultCeilingHeight);
+      if (val >= -512)
+	 DefaultCeilingHeight = val;
       break;
    }
 }

@@ -114,7 +114,7 @@ char *GetWadFileName( int episode, int mission)
 
    /* get the file name */
    if (! strcmp(Level->wadfile->filename, MainWad))
-      sprintf( outfile, "E%dL%d.WAD", episode, mission);
+      sprintf( outfile, "E%dM%d.WAD", episode, mission);
    else
       strcpy( outfile, Level->wadfile->filename);
    do
@@ -311,6 +311,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 else
 	 {
 	    if (buttons != oldbuttons)
+	    {
 	       switch (buttons)
 	       {
 	       case 1:
@@ -337,6 +338,8 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		     key = 'D';
 		  break;
 	       }
+	       altkey = bioskey( 2);
+	    }
 	 }
 	 oldbuttons = buttons;
       }
@@ -430,12 +433,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    HighlightObject( EditMode, OldObject, YELLOW);
 	 if (CurObject != OldObject)
 	 {
-	    if (! Quiet)
-	    {
-	       sound( 50);
-	       delay( 10);
-	       nosound();
-	    }
+	    PlaySound( 50, 10);
 	    OldObject = CurObject;
 	 }
 	 if (CurObject >= 0)
@@ -486,7 +484,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 				   "Delete object(s)  Del", 0x5300,    (int) 'D', 1,
 				   ((EditMode == OBJ_VERTEXES) ?
 				   NULL :
-				   "Preferences          "), -1,       (int) 'P', -1,
+				   "Preferences        F5"), 0x3F00,   (int) 'P', 1,
 				   NULL);
 	    }
 	    else if ((key & 0xFF00) == 0x1F00)  /* Scan code for S */
@@ -513,6 +511,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 				   "  Sectors             S"), (int) 'S', (int) 'S', 3,
 				   "  Next mode         Tab",  0x0009,    (int) 'N', 3,
 				   "  Last mode   Shift+Tab",  0x0F00,    (int) 'L', 3,
+				   "  3D Preview          3",  (int) '3', (int) '3', -1,
 				   NULL);
 	    else if ((key & 0xFF00) == 0x1700)  /* Scan code for I */
 	    {
@@ -698,6 +697,12 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    RedrawMap = TRUE;
 	 }
 
+	 /* user wants to get the 'Preferences' menu */
+	 else if ((key & 0xFF00) == 0x3F00) /* 'F5' */
+	 {
+	    Preferences( -1, -1);
+	    RedrawMap = TRUE;
+	 }
 	 /* user wants to get the menu of misc. ops */
 	 else if ((key & 0xFF00) == 0x4200) /* 'F8' */
 	 {
@@ -1078,21 +1083,31 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 {
 	    if (StretchSelBox)
 	    {
+	       SelPtr oldsel;
+
 	       /* select all objects in the selection box */
 	       StretchSelBox = FALSE;
 	       RedrawMap = TRUE;
-	       ForgetSelection( &Selected);
+	       /* additive selection box or not? */
+	       if (AdditiveSelBox == FALSE)
+		  ForgetSelection( &Selected);
+	       else
+		  oldsel = Selected;
 	       Selected = SelectObjectsInBox( EditMode, SelBoxX, SelBoxY, MAPX( PointerX), MAPY( PointerY));
+	       if (AdditiveSelBox == TRUE)
+		  while (oldsel != NULL)
+		  {
+		     if (! IsSelected( Selected, oldsel->objnum))
+			SelectObject( &Selected, oldsel->objnum);
+		     UnSelectObject( &oldsel, oldsel->objnum);
+		  }
 	       if (Selected)
+	       {
 		  CurObject = Selected->objnum;
+		  PlaySound( 440, 10);
+	       }
 	       else
 		  CurObject = -1;
-	       if (Selected && !Quiet)
-	       {
-		  sound( 440);
-		  delay( 10);
-		  nosound();
-	       }
 	    }
 	    else if ((altkey & 0x03) == 0x00)  /* no shift keys */
 	    {
@@ -1108,12 +1123,8 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  HighlightObject( EditMode, CurObject, GREEN);
 		  if (UseMouse)
 		     ShowMousePointer();
-		  if (Selected && !Quiet)
-		  {
-		     sound( 440);
-		     delay( 10);
-		     nosound();
-		  }
+		  if (Selected)
+		     PlaySound( 440, 10);
 		  DragObject = FALSE;
 	       }
 	       else
@@ -1228,7 +1239,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  }
 	       }
 	       /* close the polygon if there are more than 2 Vertices */
-	       if (firstv >= 0 && (altkey & 0x03) == 0x00)  /* no shift keys */
+	       if (firstv >= 0 && (altkey & 0x03) != 0x00)  /* shift key pressed */
 	       {
 		  for (CurObject = 0; CurObject < NumLineDefs; CurObject++)
 		     if ((LineDefs[ CurObject].start == firstv && LineDefs[ CurObject].end == cur->objnum)
