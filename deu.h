@@ -38,7 +38,7 @@ typedef unsigned int   UBCINT;
 typedef short int            BCINT;
 typedef unsigned short int   UBCINT;
 
-#define DETH_VERSION	"2.2 - A Bugfix Release"
+#define DETH_VERSION	"2.3"
 
 #endif
 
@@ -248,6 +248,7 @@ extern Bool SwapButtons;	/* swap right and middle mouse buttons */
 extern Bool Quiet;		/* don't play a sound when an object is selected */
 extern Bool Quieter;		/* don't play any sound, even when an error occurs */
 extern Bool Expert;		/* don't ask for confirmation for some operations */
+extern Bool VertConf;		/* don't ask for confirmation on Vertices merging even if in expert mode */
 extern Bool QisQuit;		
 extern BCINT InitialScale;	/* initial zoom factor for map */
 extern BCINT VideoMode;	  	/* default video mode for VESA cards */

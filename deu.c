@@ -33,6 +33,7 @@ Bool  SwapButtons = 		FALSE;		/* swap right and middle mouse buttons */
 Bool  Quiet = 			FALSE;		/* don't play a sound when an object is selected */
 Bool  Quieter =			FALSE;		/* don't play any sound, even when an error occurs */
 Bool  Expert = 			FALSE;		/* don't ask for confirmation for some operations */
+Bool  VertConf = 		FALSE;		/* don't ask for confirmation for some operations */
 char  *CfgFile = 		DEU_CONFIG_FILE;	/* name of the configuration file */
 BCINT InitialScale = 		8;		/* initial zoom factor for map */
 BCINT VideoMode = 		2;		/* default video mode for VESA/SuperVGA */
@@ -73,6 +74,7 @@ OptDesc options[] =				/* description of the command line options */
     { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",               "Quiet mode OFF",             &Quiet },
     { "qq", "quieter",     OPT_BOOLEAN,    "Quieter mode ON",             "Quieter mode OFF",           &Quieter },
     { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",              "Expert mode OFF",            &Expert },
+    { "",   "vertconf",    OPT_BOOLEAN,    "Confirm Vertices Merge",      NULL,            		&VertConf },
     { "qi",  "qisquit",    OPT_BOOLEAN,    "Quit on Q",                   "Save on Q",                  &QisQuit },
     { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",       "Mouse buttons restored",     &SwapButtons },
     { "w",  "main",        OPT_STRING,     "Main WAD file",               NULL,                         &MainWad },
@@ -606,6 +608,7 @@ void MainLoop()
 		else if (!strcmp( com, "EDIT") || !strcmp( com, "E") ||
 				 !strcmp( com, "CREATE") || !strcmp( com, "C")) {
 			SList tokens, t;
+			Bool new = (strcmp( com, "EDIT") && strcmp( com, "E"));
 
 			tokens = NULL;
 			com = strtok( NULL, " ");
@@ -625,7 +628,7 @@ void MainLoop()
 				}
 			}
 				
-			EditLevel(!strcmp( com, "CREATE") || !strcmp( com, "C"));
+			EditLevel(new);
 		}
 		
 		/* user asked to build a new main WAD file */

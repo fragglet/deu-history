@@ -167,8 +167,8 @@ Could escape properly from LineDef sub-menus.
 
 Additions
 ---------
-LineDef descriptions now resemble descriptions in lndfs2.zip (CompuServe,
-ACTION, LIB 18).
+LineDef descriptions now resemble descriptions in lndfs2.zip (Lib 18, ACTION, cserve)
+
 
 
 Changes from DETH 2.1 --> DETH 2.2
@@ -186,6 +186,21 @@ Can now disable the internal node builder from the ini file.
 
 
 
+Changes from DETH 2.2 --> DETH 2.3
+----------------------------------
+
+Bugs Fixed
+----------
+You can now (C)reate levels again!
+
+Additions
+---------
+vertconf option added to deth.ini, this will ask for confirmation of merging
+	vertices when in expert mode.
+
+
+
+
 
 Future DETH versions may/will include the following:-
 -----------------------------------------------------
@@ -194,5 +209,5 @@ User definable Node rebuilder i.e you tell DETH what program to use.
 Optional showing of sprite when selecting Thing from menu.
 More Short Cut Keys.
 Mass re-numbering of LineDefs to the highest in the wad - useful for triggers.
-Re-numbering of sectors - so you don't have to renumber the individual SideDefs.
+Re-numbering of sectors - so you dont have to renumber the individual SideDefs.
 I.T.A - Interactive Texture Alignment (no thanks to Dr. Sleep!!!)

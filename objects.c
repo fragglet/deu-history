@@ -1415,7 +1415,7 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
 		for (v = 0; v < NumVertexes; v++)
 			if (v != refv && Vertexes[ refv].x == Vertexes[ v].x && Vertexes[ refv].y == Vertexes[ v].y) {
 				redraw = TRUE;
-				if (confirmed || Expert || Confirm( -1, -1, "Some Vertices occupy the same position", "Do you want to merge them into one?")) {
+				if (confirmed || (Expert && !VertConf) || Confirm( -1, -1, "Some Vertices occupy the same position", "Do you want to merge them into one?")) {
 					/* don't ask for confirmation twice */
 					confirmed = TRUE;
 					/* merge the two vertices */
