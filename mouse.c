@@ -8,14 +8,15 @@
    MOUSE.C - Mouse driver routines.
 */
 
-/* the include */
+/* the includes */
+#include "deu.h"
 #include <dos.h>
 
 /* mouse interrupt number */
 #define MOUSE 0x33
 
 /* the global data */
-int UseMouse;                 /* is there a mouse driver? */
+Bool UseMouse;			/* is there a mouse driver? */
 
 
 /*
@@ -29,9 +30,9 @@ void CheckMouseDriver()
    regs.x.ax = 0x0000;
    int86(MOUSE, &regs, &regs);
    if (regs.x.ax == 0xffff)
-      UseMouse = 1; /* mouse */
+      UseMouse = TRUE; /* mouse */
    else
-      UseMouse = 0; /* no mouse */
+      UseMouse = FALSE; /* no mouse */
 }
 
 

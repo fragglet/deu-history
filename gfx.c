@@ -12,7 +12,7 @@
 #include <math.h>
 
 /* the global variables */
-int GfxMode = 0;        /* in graphics mode */
+int GfxMode = 0;        /* graphics mode number, or 0 for text */
 int OrigX;              /* the X origin */
 int OrigY;              /* the Y origin */
 int Scale;              /* the scale value */
@@ -35,7 +35,7 @@ void InitGfx()
    setlinestyle( 0, 0, 1);
    setbkcolor( BLACK);
    settextstyle( 0, 0, 1);
-   GfxMode = 1;
+   GfxMode = 2; /* 0=text, 1=320x200, 2=640x480, positive=16colors, negative=256colors */
 }
 
 
@@ -51,6 +51,75 @@ void TermGfx()
       closegraph();
       GfxMode = 0;
    }
+}
+
+
+
+/*
+   switch from VGA 16 colours to VGA 256 colours
+*/
+
+Bool SwitchToVGA256()
+{
+   static int gdriver = -1;
+   int gmode, errorcode;
+
+   if (GfxMode > 0) /* if 16 colors */
+   {
+      if (gdriver == -1)
+      {
+	 gdriver = installuserdriver( "VGA256", NULL);
+	 errorcode = graphresult();
+      }
+      else
+	 errorcode = grOk;
+      /* if we have the driver, switch to 256, else stay in 16 colours */
+      if (errorcode == grOk)
+      {
+	 if (UseMouse)
+	    HideMousePointer();
+	 closegraph();
+	 gmode = 0;
+	 initgraph( &gdriver, &gmode, NULL);
+	 errorcode = graphresult();
+	 if (errorcode != grOk) /* shouldn't happen */
+	    ProgError( "graphics error: %s", grapherrormsg( errorcode));
+	 if (UseMouse)
+	    ShowMousePointer();
+	 GfxMode = -1 /* 320x200x256 */;
+	 return TRUE;
+      }
+   }
+   return FALSE;
+}
+
+
+
+/*
+   switch from VGA 256 colours to VGA 16 colours
+*/
+
+Bool SwitchToVGA16()
+{
+   int gdriver, gmode, errorcode;
+
+   if (GfxMode < 0) /* if 256 colors */
+   {
+      if (UseMouse)
+	 HideMousePointer();
+      closegraph();
+      gdriver = VGA;
+      gmode = VGAHI;
+      initgraph( &gdriver, &gmode, NULL);
+      errorcode = graphresult();
+      if (errorcode != grOk) /* shouldn't happen */
+	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
+      if (UseMouse)
+	 ShowMousePointer();
+      GfxMode = 2; /* 640x480x16 */
+      return TRUE;
+   }
+   return FALSE;
 }
 
 
@@ -162,20 +231,32 @@ void DrawScreenBox( int Xstart, int Ystart, int Xend, int Yend)
 
 void DrawScreenBox3D( int Xstart, int Ystart, int Xend, int Yend)
 {
-   setfillstyle( 1, LIGHTGRAY);
+   if (GfxMode < 0)
+      setfillstyle( 1, LIGHTGRAY2);
+   else
+      setfillstyle( 1, LIGHTGRAY);
    bar( Xstart + 1, Ystart + 1, Xend - 1, Yend - 1);
-   setcolor( DARKGRAY);
+   if (GfxMode < 0)
+      setcolor( DARKGRAY2);
+   else
+      setcolor( DARKGRAY);
    line( Xstart, Yend, Xend, Yend);
    line( Xend, Ystart, Xend, Yend);
    if (Xend - Xstart > 20 && Yend - Ystart > 20)
    {
       line( Xstart + 1, Yend - 1, Xend - 1, Yend - 1);
       line( Xend - 1, Ystart + 1, Xend - 1, Yend - 1);
-      setcolor( WHITE);
+      if (GfxMode < 0)
+	 setcolor( WHITE2);
+      else
+	 setcolor( WHITE);
       line( Xstart + 1, Ystart + 1, Xstart + 1, Yend - 1);
       line( Xstart + 1, Ystart + 1, Xend - 1, Ystart + 1);
    }
-   setcolor( WHITE);
+   if (GfxMode < 0)
+      setcolor( WHITE2);
+   else
+      setcolor( WHITE);
    line( Xstart, Ystart, Xend, Ystart);
    line( Xstart, Ystart, Xstart, Yend);
    setcolor( BLACK);
@@ -229,9 +310,22 @@ void DrawPointer()
 /*
    translate (dx, dy) into an integer angle value (0-65535)
 */
-int ComputeAngle( int dx, int dy)
+
+unsigned int ComputeAngle( int dx, int dy)
 {
-   return (int) (atan2( (double) dy, (double) dx) * 10430.37835);
+   return (unsigned int) (atan2( (double) dy, (double) dx) * 10430.37835 + 0.5);
+   /* Yes, I know this function could be in another file, but */
+   /* this is the only source file that includes <math.h>...  */
+}
+
+
+/*
+   compute the distance from (0, 0) to (dx, dy)
+*/
+
+unsigned int ComputeDist( int dx, int dy)
+{
+   return (unsigned int) (hypot( (double) dy, (double) dx) + 0.5);
    /* Yes, I know this function could be in another file, but */
    /* this is the only source file that includes <math.h>...  */
 }

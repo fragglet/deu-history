@@ -90,7 +90,7 @@ char *GetLineDefTypeName( int type)
       return "W1 Close door";
    /* 4 */
    case 5:
-      return "W1 Raise floor C";
+      return "W1 Raise floor?C"; /* highest floor ? */
    /* 6 */
    case 7:
       return "S1 Raise stairs";
@@ -145,7 +145,7 @@ char *GetLineDefTypeName( int type)
    case 35:
       return "W1 Lights out!";
    case 36:
-      return "W? Lower floor >";
+      return "W1 Lower floor>N";
    case 37:
       return "W1 Lower floor T";
    case 38:
@@ -177,12 +177,12 @@ char *GetLineDefTypeName( int type)
       return "W1 Raise floor<C";
    /* 57 */
    case 58:
-      return "W1 Raise floor48";
+      return "W1 Raise floor32";
    case 59:
       return "W1 Raise floor>T";
    /* 60 */
    case 61:
-      return "SR Open door"; /* ? */
+      return "SR Open door";
    case 62:
       return "WR Raise lift/SL";
    case 63:
@@ -255,7 +255,7 @@ char *GetLineDefTypeLongName( int type)
    case 3:
       return "W1 Close door";
    case 5:
-      return "W1 Raise floor to match Ne. ceiling";
+      return "W1 Raise floor to match Ne. ceiling/highest floor ?";
    /* 6 */
    case 7:
       return "S1 Raise stairs (several sectors 0/999)";
@@ -310,7 +310,7 @@ char *GetLineDefTypeLongName( int type)
    case 35:
       return "W1 Light level goes to 0";
    case 36:
-      return "W? Lower floor to 8 above Ne. floor";
+      return "W1 Lower floor to 8 above Ne. floor";
    case 37:
       return "W1 Lower floor to match Ne. floor, texture and type";
    case 38:
@@ -342,7 +342,7 @@ char *GetLineDefTypeLongName( int type)
       return "W1 Raise floor to 8 below Ne. ceiling";
    /* 57 */
    case 58:
-      return "W1 Raise floor up 24-48 ?";
+      return "W1 Raise floor up 32";
    case 59:
       return "W1 Raise floor up 8 and match Ne. texture and type";
    /* 60 */

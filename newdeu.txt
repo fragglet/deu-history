@@ -1,47 +1,37 @@
+*******************************************************************************
+* EVERYTHING IN THIS FILE SHOULD GO IN "DEU.TXT" OR "MANUAL.DOC".  I DON'T    *
+* HAVE THE TIME TO DO THIS.  IF YOU ARE BETTER THAN ME AT WRITING ENGLISH     *
+* (I NORMALLY SPEAK FRENCH), PLEASE GET IN TOUCH WITH ME.  THANKS !           *
+* DEU 5.0 WON'T BE OFFICIALLY RELEASED UNTIL THIS HAS BEEN DONE.              *
+*******************************************************************************
+
 			 *-----------------------*
 			 |   INSTRUCTIONS FOR    |
-			 |     NEW DEU 4.31      |
+			 |  NEW DEU 4.4/DEU 5.0  |
 			 |  DOOM EDITOR UTILITY  |
 			 *-----------------------*
 
-IMPORTANT NOTICE:
-=================
-
- THE NEXT VERSION OF THIS PROGRAM WILL BE CALLED "DEU 5.0", NOT "NEWDEU"!
-
- The EXE file is already called "DEU.EXE".  In the next release, the ZIP
- file will also loose its "NEW" prefix.  Take note!
-
- I used the name "NEWDEU" because Brendon Wyber (the author of the original
- DEU editor) had requested that anyone who alters his DEU program calls it
- something else.  But I will give the program back to Brendon after the next
- major revision.  From then on, you will only see "DEU", not "NEWDEU".
-
- This file will be removed in the next version.  All documentation will be
- in DEU.TXT and MANUAL.DOC.
-
-
 COPYRIGHT
 =========
+
+>>> SHOULD MERGED WITH THE COPYRIGHT NOTICE IN "DEU.TXT"
 
 * DOOM is owned by ID software.  Thanks to ID for making such great games!
 
 * The original DEU was released into Public Domain by Brendon Wyber.
 
-* I (Rapha‰l Quinet) wrote the new user interface (mouse, menus, and so on)
-  and added the different editing modes (LineDefs, SideDefs, Sectors...).
-  Even if I rewrote nearly 80% of the code, this editor still has its strong
-  DEU roots... :-)
-
-Please read the original copyright notice in "DEU.TXT".  This is the text
-file that came with DEU 3.01 (the lastest DEU release before I started working
-on my version).
+* I (Rapha‰l Quinet) wrote the new user interface (mouse, menus, and so on),
+  added the different editing modes (LineDefs, SideDefs, Sectors...), a
+  BlockMap builder, a Nodes builder and a Reject builder.  Even if I rewrote
+  nearly 90% of the code, this editor still has its strong DEU roots... :-)
 
 
 WHAT'S NEW (4.0)?
 =================
 
-IF YOU HAVE NEVER USED DEU BEFORE, PLEASE READ "DEU.TXT" FIRST.
+>>> ALL THIS STUFF SHOULD BE CHANGED AND MERGED WITH THE INFO
+>>> IN "DEU.TXT".  PUT THE "CHANGES" IN THE "FEATURES" LIST.
+>>> PUT THE USEFUL USER INFO IN "MANUAL.TXT".
 
 Here are a few things that are new to this version:
 
@@ -154,38 +144,49 @@ WHAT'S NEW IN 4.31?
   the "-debug" (!) option has been fixed.
 
 * A manual file, "MANUAL.DOC".  Read this if you want to know how to use DEU.
+>>> SOME OF THE INFO FROM THIS FILE SHOULD GO IN "MANUAL.DOC".
+
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+LATEST NEWS FOR 5.0:
+====================
+
+* Automatic Nodes builder!  There are some bugs in it (try with the original
+  E1M1 and the program will crash).  There are also some errors in the
+  generated Nodes or Segs, because some walls won't display as expected.
+  Please help me in debugging that!
+
+* Removed the Nodes and Segs editors, because they are useless now.  If you
+  want to debug the Nodes builder in DEU 5.0, you have to keep an old version
+  of NewDEU 4.X.
+
+* Sprite viewer (256 colors) and textures viewer (256 colors).  If you have a
+  (public domain) Super VGA driver, please tell me because I had to use the
+  standard 320x200x256 mode.
+
+* Changed the command line arguments.  New argument "-help".  Added a config
+  file for DEU, where you can put all default options.
+
+* New keys: F2 to save a level whitout leaving the editor, Scroll Lock to turn
+  off the automatic scrolling, ...
 
 
 FUTURE PLANS
 ============
 
-* Create an automatic Nodes builder.  Thanks to chrisp@halcyon.com for the
-  hints about these obscure things.  I will hopefully soon be able to create
-  a full-featured editor (the first one?).
+* Fix the Nodes builder.  Please help me!
 
-* Display the walls/floors/ceilings textures in 256 colors.
-
-* Display the Things in 256 colors, when you select them.  Use the extended
-  VGA modes for all editors, instead of the standard 16 color mode.
+* Change the menu interface.  Stay in a menu until the user presses 'Esc'.
 
 * Add scrollbars to some dialog boxes.
 
-* Add XMS support.
-
-
-A WORD OF WARNING...
-====================
-
-If you move any Vertex or add new LineDefs, SideDefs or Sectors, you will
-certainly get the "hall of mirrors syndrome" at some place in the game, just
-like when you use the "no clipping" cheat mode and go through a wall.  This
-is because the editor doesn't update the Nodes objects that are needed for
-rendering.  The next version of this program will be called "DEU" and will
-include a Nodes builder.
+* Add XMS support.  (Is this really necessary?)
 
 
 CREDITS
 =======
+
+>>> THIS SHOULD BE UPDATED (credits for the texture display and config file,
+>>>                         info about the Nodes structure, etc.)
 
 * Guess what?  Thanks to ID for making such great games!
 
@@ -203,12 +204,15 @@ CREDITS
   (bdowning@ncsa.uiuc.edu) for their numerous suggestions and bug reports.
 
 * Thanks to Will Ellett (wellet@cs.uah.edu), Barry Bloom (barry@noc.unt.edu),
-  E. Boling (edb9140@tamsun.tamu.edu), X? (stu_gwgrimsb@vax1.acs.jmu.edu) and
-  many others for their suggestions, bug reports and comments about NewDEU.
+  E. Boling (edb9140@tamsun.tamu.edu), Jeremy Blackman (wraven@dhp.com), Greg
+  Grimsby (stu_gwgrimsb@vax1.acs.jmu.edu) and many others for their
+  suggestions, bug reports and comments about NewDEU.
 
 
 FREE ADVERTISEMENT
 ==================
+
+>>> WELL, I COULD DO WITHOUT THIS...
 
 If you are using UNIX (Linux is a good example), you should have the two
 following programs.  They were not written by me, but I really like them:

@@ -12,6 +12,10 @@
 #include "wstructs.h"
 #include "things.h"
 
+/* external functions from objects.c */
+extern NPtr CreateNodes( SEPtr);
+extern void ShowProgress( int);
+
 /* the global data */
 MDirPtr Level = NULL;		/* master dictionary entry for the level */
 int NumThings = 0;		/* number of things */
@@ -22,14 +26,16 @@ int NumSideDefs = 0;		/* number of side defs */
 SDPtr SideDefs;			/* side defs data */
 int NumVertexes = 0;		/* number of vertexes */
 VPtr Vertexes;			/* vertex data */
-int NumSegs = 0;		/* number of segments */
-SEPtr Segs;			/* segments data */
-int NumSSectors = 0;		/* number of subsectors */
-SSPtr SSectors;			/* subsectors data */
-int NumNodes = 0;		/* number of nodes */
-NPtr Nodes;			/* nodes data */
 int NumSectors = 0;		/* number of sectors */
 SPtr Sectors;			/* sectors data */
+int NumSegs = 0;		/* number of segments */
+SEPtr Segs = NULL;		/* list of segments */
+SEPtr LastSeg = NULL;		/* last segment in the list */
+int NumSSectors = 0;		/* number of subsectors */
+SSPtr SSectors = NULL;		/* list of subsectors */
+SSPtr LastSSector = NULL;	/* last subsector in the list */
+int NumNodes = 0;		/* number of Nodes */
+NPtr Nodes = NULL;		/* nodes tree */
 int NumWTexture = 0;		/* number of wall textures */
 char **WTexture;		/* array of wall texture names */
 int NumFTexture = 0;		/* number of floor/ceiling textures */
@@ -39,9 +45,8 @@ int MaxY = -32768;		/* maximum Y value of map */
 int MinX = 32767;		/* minimum X value of map */
 int MinY = 32767;		/* minimum Y value of map */
 int MoveSpeed = 20;		/* movement speed */
-int SaveChanges = FALSE;	/* save changes? */
-int MadeChanges = FALSE;	/* made changes? */
-int MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
+Bool MadeChanges = FALSE;	/* made changes? */
+Bool MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
 
 
 /*
@@ -50,77 +55,20 @@ int MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
 
 void EditLevel( int episode, int level)
 {
-   WadPtr wad;
-   char *outfile = NULL;
-   char *dotp;
-
    ReadWTextureNames();
    ReadFTextureNames();
    InitGfx();
    CheckMouseDriver();
    if (episode < 1 || level < 1)
       SelectLevel( &episode, &level);
-
-   /* TEMPORARY */
-   if (episode == 2 && level == 7)
-   {
-      ClearScreen();
-      if (! Confirm( -1, -1, "WARNING: I still have a bug to fix here...  You may get stange results",
-			     "if you edit this level.  Do you want to continue anyway?"))
-      {
-	 TermGfx();
-	 ForgetWTextureNames();
-	 ForgetFTextureNames();
-	 printf( "Editing aborted...   This bug will be fixed in a future release.\n");
-	 return;
-      }
-   }
-
    if (episode > 0 && level > 0)
    {
       ClearScreen();
       ReadLevelData( episode, level);
-      EditorLoop();
-      if (SaveChanges && MadeChanges && Registered)
-      {
-	 /* get the name of the new WAD file */
-	 outfile = GetMemory( 80);
-	 if (! strcmp(Level->wadfile->filename, "DOOM.WAD"))
-	    sprintf( outfile, "E%dL%d.WAD", episode, level);
-	 else
-	    strcpy( outfile, Level->wadfile->filename);
-	 do
-	 {
-	    InputFileName( -1, -1, "Name of the new WAD file:", 79, outfile);
-	 }
-	 while (outfile[0] == '\0' || !strcmp(outfile, "DOOM.WAD"));
-	 /* if the WAD file already exists, rename it to "*.BAK" */
-	 for (wad = WadFileList; wad; wad = wad->next)
-	    if (!stricmp( outfile, wad->filename))
-	       break;
-	 if (wad)
-	 {
-	    dotp = strrchr( wad->filename, '.');
-	    if (dotp == NULL)
-	       strcat( wad->filename, ".BAK");
-	    else
-	       strcpy( dotp, ".BAK");
-	    if (rename( outfile, wad->filename) < 0)
-	    {
-	       if (unlink( wad->filename) < 0)
-		  ProgError("cannot delete file \"%s\"\n", wad->filename);
-	       if (rename( outfile, wad->filename) < 0)
-		  ProgError("cannot rename \"%s\" to \"%s\"\n", outfile, wad->filename);
-	    }
-	 }
-	 /* save the new WAD file */
-	 SaveLevelData( outfile);
-      }
+      EditorLoop( episode, level);
       TermGfx();
       if (! Registered)
 	 printf( "Please register DOOM if you want to be able to save your changes.\n");
-      else if (! SaveChanges)
-	 printf( "Editing aborted...\n");
       else if (! MadeChanges)
 	 printf( "No changes made, nothing to save.\n");
       ForgetLevelData();
@@ -129,11 +77,8 @@ void EditLevel( int episode, int level)
       TermGfx();
    ForgetWTextureNames();
    ForgetFTextureNames();
-   if (outfile)
-      OpenPatchWad( outfile);
-   /* this should free the old "*.BAK" file */
-   CloseUnusedWadFiles();
 }
+
 
 
 /*
@@ -188,158 +133,161 @@ void ReadLevelData( int episode, int level)
    char name[ 7];
    int n, m;
    int val;
+   int OldNumVertexes;
+   int *VertexUsed;
 
-   /* find the various level information from the master dictionary */
+   /* find the various level information from the master directory */
    sprintf( name, "E%dM%d", episode, level);
    DisplayMessage( -1, -1, "Reading data for level %s...", name);
    Level = FindMasterDir( MasterDir, name);
    if (!Level)
       ProgError( "level data not found");
 
-   /* read in the things data */
+   /* get the number of Vertices */
+   dir = FindMasterDir( Level, "VERTEXES");
+   OldNumVertexes = (int) (dir->dir.size / 4L);
+   if (OldNumVertexes > 0)
+   {
+      VertexUsed = GetMemory( OldNumVertexes * sizeof( int));
+      for (n = 0; n < OldNumVertexes; n++)
+	 VertexUsed[ n] = FALSE;
+   }
+
+   /* read in the Things data */
    dir = FindMasterDir( Level, "THINGS");
    NumThings = (int) (dir->dir.size / 10L);
-   Things = GetFarMemory( (unsigned long) NumThings * sizeof( struct Thing));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumThings; n++)
+   if (NumThings > 0)
    {
-      BasicWadRead( dir->wadfile, &(Things[ n].xpos), 2);
-      BasicWadRead( dir->wadfile, &(Things[ n].ypos), 2);
-      BasicWadRead( dir->wadfile, &(Things[ n].angle), 2);
-      BasicWadRead( dir->wadfile, &(Things[ n].type), 2);
-      BasicWadRead( dir->wadfile, &(Things[ n].when), 2);
+      Things = GetFarMemory( (unsigned long) NumThings * sizeof( struct Thing));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumThings; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(Things[ n].xpos), 2);
+	 BasicWadRead( dir->wadfile, &(Things[ n].ypos), 2);
+	 BasicWadRead( dir->wadfile, &(Things[ n].angle), 2);
+	 BasicWadRead( dir->wadfile, &(Things[ n].type), 2);
+	 BasicWadRead( dir->wadfile, &(Things[ n].when), 2);
+      }
    }
 
-   /* read in the line def information */
+   /* read in the LineDef information */
    dir = FindMasterDir( Level, "LINEDEFS");
    NumLineDefs = (int) (dir->dir.size / 14L);
-   LineDefs = GetFarMemory( (unsigned long) NumLineDefs * sizeof( struct LineDef));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumLineDefs; n++)
+   if (NumLineDefs > 0)
    {
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].start), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].end), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].flags), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].type), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].tag), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef1), 2);
-      BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef2), 2);
+      LineDefs = GetFarMemory( (unsigned long) NumLineDefs * sizeof( struct LineDef));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].start), 2);
+	 VertexUsed[ LineDefs[ n].start] = TRUE;
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].end), 2);
+	 VertexUsed[ LineDefs[ n].end] = TRUE;
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].flags), 2);
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].type), 2);
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].tag), 2);
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef1), 2);
+	 BasicWadRead( dir->wadfile, &(LineDefs[ n].sidedef2), 2);
+      }
    }
 
-   /* read in the side def information */
+   /* read in the SideDef information */
    dir = FindMasterDir( Level, "SIDEDEFS");
    NumSideDefs = (int) (dir->dir.size / 30L);
-   SideDefs = GetFarMemory( (unsigned long) NumSideDefs * sizeof( struct SideDef));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumSideDefs; n++)
+   if (NumSideDefs > 0)
    {
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].xoff), 2);
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].yoff), 2);
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].tex1), 8);
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].tex2), 8);
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].tex3), 8);
-      BasicWadRead( dir->wadfile, &(SideDefs[ n].sector), 2);
-   }
-
-   /* read in the vertexes which are all the corners of the level */
-   dir = FindMasterDir( Level, "VERTEXES");
-   NumVertexes = (int) (dir->dir.size / 4L);
-   Vertexes = GetFarMemory( (unsigned long) NumVertexes * sizeof( struct Vertex));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumVertexes; n++)
-   {
-      BasicWadRead( dir->wadfile, &val, 2);
-      if (val < MinX)
-	 MinX = val;
-      if (val > MaxX)
-	 MaxX = val;
-      Vertexes[ n].x = val;
-      BasicWadRead( dir->wadfile, &val, 2);
-      if (val < MinY)
-	 MinY = val;
-      if (val > MaxY)
-	 MaxY = val;
-      Vertexes[ n].y = val;
-   }
-
-   if (Debug)
-   {
-      /* read in the segments information */
-      dir = FindMasterDir( Level, "SEGS");
-      NumSegs = (int) (dir->dir.size / 12L);
-      Segs = GetFarMemory( (unsigned long) NumSegs * sizeof( struct Seg));
+      SideDefs = GetFarMemory( (unsigned long) NumSideDefs * sizeof( struct SideDef));
       BasicWadSeek( dir->wadfile, dir->dir.start);
-      for (n = 0; n < NumSegs; n++)
+      for (n = 0; n < NumSideDefs; n++)
       {
-	 BasicWadRead( dir->wadfile, &(Segs[ n].start), 2);
-	 BasicWadRead( dir->wadfile, &(Segs[ n].end), 2);
-	 BasicWadRead( dir->wadfile, &(Segs[ n].angle), 2);
-	 BasicWadRead( dir->wadfile, &(Segs[ n].linedef), 2);
-	 BasicWadRead( dir->wadfile, &(Segs[ n].flip), 2);
-	 BasicWadRead( dir->wadfile, &(Segs[ n].dist), 2);
-      }
-
-      /* read in the subsectors information */
-      dir = FindMasterDir( Level, "SSECTORS");
-      NumSSectors = (int) (dir->dir.size / 4L);
-      SSectors = GetFarMemory( (unsigned long) NumSSectors * sizeof( struct SSector));
-      BasicWadSeek( dir->wadfile, dir->dir.start);
-      for (n = 0; n < NumSSectors; n++)
-      {
-	 BasicWadRead( dir->wadfile, &(SSectors[ n].num), 2);
-	 BasicWadRead( dir->wadfile, &(SSectors[ n].first), 2);
-      }
-
-      /* read in the nodes information */
-      dir = FindMasterDir( Level, "NODES");
-      NumNodes = (int) (dir->dir.size / 28L);
-      Nodes = GetFarMemory( (unsigned long) NumNodes * sizeof( struct Node));
-      BasicWadSeek( dir->wadfile, dir->dir.start);
-      for (n = 0; n < NumNodes; n++)
-      {
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].x), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].y), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].dx), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].dy), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].miny1), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxy1), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].minx1), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxx1), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].miny2), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxy2), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].minx2), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].maxx2), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].tree1), 2);
-	 BasicWadRead( dir->wadfile, &(Nodes[ n].tree2), 2);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].xoff), 2);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].yoff), 2);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].tex1), 8);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].tex2), 8);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].tex3), 8);
+	 BasicWadRead( dir->wadfile, &(SideDefs[ n].sector), 2);
       }
    }
-   else
+
+   /* read in the Vertices which are all the corners of the level, but ignore the */
+   /* Vertices not used in any LineDef (they usually are at the end of the list). */
+   NumVertexes = 0;
+   for (n = 0; n < OldNumVertexes; n++)
+      if (VertexUsed[ n])
+	 NumVertexes++;
+   if (NumVertexes > 0)
    {
-      Segs = NULL;
-      NumSegs = 0;
-      SSectors = NULL;
-      NumSSectors = 0;
-      Nodes = NULL;
-      NumNodes = 0;
+      Vertexes = GetFarMemory( (unsigned long) NumVertexes * sizeof( struct Vertex));
+      dir = FindMasterDir( Level, "VERTEXES");
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      MaxX = -32768;
+      MaxY = -32768;
+      MinX = 32767;
+      MinY = 32767;
+      m = 0;
+      for (n = 0; n < OldNumVertexes; n++)
+      {
+	 BasicWadRead( dir->wadfile, &val, 2);
+	 if (VertexUsed[ n])
+	 {
+	    if (val < MinX)
+	       MinX = val;
+	    if (val > MaxX)
+	       MaxX = val;
+	    Vertexes[ m].x = val;
+	 }
+	 BasicWadRead( dir->wadfile, &val, 2);
+	 if (VertexUsed[ n])
+	 {
+	    if (val < MinY)
+	       MinY = val;
+	    if (val > MaxY)
+	       MaxY = val;
+	    Vertexes[ m].y = val;
+	    m++;
+	 }
+      }
+      if (m != NumVertexes)
+	 ProgError("inconsistency in the Vertexes data\n");
    }
 
-   /* read in the sectors information */
+   if (OldNumVertexes > 0)
+   {
+      /* update the Vertex numbers in the LineDefs (not really necessary, but...) */
+      m = 0;
+      for (n = 0; n < OldNumVertexes; n++)
+	 if (VertexUsed[ n])
+	    VertexUsed[ n] = m++;
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 LineDefs[ n].start = VertexUsed[ LineDefs[ n].start];
+	 LineDefs[ n].end = VertexUsed[ LineDefs[ n].end];
+      }
+      free( VertexUsed);
+   }
+
+   /* ignore the Segs, SSectors and Nodes */
+
+   /* read in the Sectors information */
    dir = FindMasterDir( Level, "SECTORS");
    NumSectors = (int) (dir->dir.size / 26L);
-   Sectors = GetFarMemory( (unsigned long) NumSectors * sizeof( struct Sector));
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   for (n = 0; n < NumSectors; n++)
+   if (NumSectors > 0)
    {
-      BasicWadRead( dir->wadfile, &(Sectors[ n].floorh), 2);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].ceilh), 2);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].floort), 8);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].ceilt), 8);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].light), 2);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].special), 2);
-      BasicWadRead( dir->wadfile, &(Sectors[ n].tag), 2);
+      Sectors = GetFarMemory( (unsigned long) NumSectors * sizeof( struct Sector));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n < NumSectors; n++)
+      {
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].floorh), 2);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].ceilh), 2);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].floort), 8);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].ceilt), 8);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].light), 2);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].special), 2);
+	 BasicWadRead( dir->wadfile, &(Sectors[ n].tag), 2);
+      }
    }
 
-   /* ignore the last entries (reject & blockmap) */
+   /* ignore the last entries (Reject & BlockMap) */
 }
 
 
@@ -353,49 +301,134 @@ void ForgetLevelData()
    /* forget the level pointer */
    Level = NULL;
 
-   /* forget the things */
+   /* forget the Things */
    NumThings = 0;
    if (Things)
       farfree( Things);
+   Things = NULL;
 
-   /* forget the line defs */
+   /* forget the LineDefs */
    NumLineDefs = 0;
    if (LineDefs)
       farfree( LineDefs);
+   LineDefs = NULL;
 
-   /* forget the side defs */
+   /* forget the SideDefs */
    NumSideDefs = 0;
    if (SideDefs)
       farfree( SideDefs);
+   SideDefs = NULL;
 
-   /* forget the vertices */
+   /* forget the Vertices */
    NumVertexes = 0;
    if (Vertexes)
       farfree( Vertexes);
-   MaxX = -32768;
-   MaxY = -32768;
-   MinX = 32767;
-   MinY = 32767;
+   Vertexes = NULL;
 
-   /* forget the segments */
-   NumSegs = 0;
-   if (Segs)
-      farfree( Segs);
-
-   /* forget the subsectors */
-   NumSSectors = 0;
-   if (SSectors)
-      farfree( SSectors);
-
-   /* forget the nodes */
-   NumNodes = 0;
-   if (Nodes)
-      farfree( Nodes);
-
-   /* forget the sectors */
+   /* forget the Sectors */
    NumSectors = 0;
    if (Sectors)
       farfree( Sectors);
+   Sectors = NULL;
+}
+
+
+/*
+   get the name of the new WAD file
+*/
+
+char *GetWadFileName( int episode, int level)
+{
+   char *outfile = GetMemory( 80);
+   char *dotp;
+   WadPtr wad;
+
+   /* get the file name */
+   if (! strcmp(Level->wadfile->filename, "DOOM.WAD"))
+      sprintf( outfile, "E%dL%d.WAD", episode, level);
+   else
+      strcpy( outfile, Level->wadfile->filename);
+   do
+   {
+      InputFileName( -1, -1, "Name of the new WAD file:", 79, outfile);
+   }
+   while (!strcmp(outfile, "DOOM.WAD"));
+   /* escape */
+   if (outfile[ 0] == '\0')
+   {
+      free( outfile);
+      return NULL;
+   }
+   /* if the WAD file already exists, rename it to "*.BAK" */
+   for (wad = WadFileList; wad; wad = wad->next)
+      if (!stricmp( outfile, wad->filename))
+	 break;
+   if (wad)
+   {
+      dotp = strrchr( wad->filename, '.');
+      if (dotp == NULL)
+	 strcat( wad->filename, ".BAK");
+      else
+	 strcpy( dotp, ".BAK");
+      if (rename( outfile, wad->filename) < 0)
+      {
+	 if (unlink( wad->filename) < 0)
+	    ProgError("cannot delete file \"%s\"\n", wad->filename);
+	 if (rename( outfile, wad->filename) < 0)
+	    ProgError("cannot rename \"%s\" to \"%s\"\n", outfile, wad->filename);
+      }
+   }
+   return outfile;
+}
+
+
+/*
+   recursively save the Nodes data to a PWAD file
+*/
+
+void SaveNodes( FILE *file, NPtr node)
+{
+   /* Nodes tree walk: save child1, save child2, save parent */
+   if ((node->child1 & 0x8000) == 0)
+   {
+      SaveNodes( file, node->node1);
+      node->child1 = node->node1->num;
+   }
+   if ((node->child2 & 0x8000) == 0)
+   {
+      SaveNodes( file, node->node2);
+      node->child2 = node->node2->num;
+   }
+   WriteBytes( file, &(node->x), 2L);
+   WriteBytes( file, &(node->y), 2L);
+   WriteBytes( file, &(node->dx), 2L);
+   WriteBytes( file, &(node->dy), 2L);
+   WriteBytes( file, &(node->miny1), 2L);
+   WriteBytes( file, &(node->maxy1), 2L);
+   WriteBytes( file, &(node->minx1), 2L);
+   WriteBytes( file, &(node->maxx1), 2L);
+   WriteBytes( file, &(node->miny2), 2L);
+   WriteBytes( file, &(node->maxy2), 2L);
+   WriteBytes( file, &(node->minx2), 2L);
+   WriteBytes( file, &(node->maxx2), 2L);
+   WriteBytes( file, &(node->child1), 2L);
+   WriteBytes( file, &(node->child2), 2L);
+   node->num = NumNodes++;
+}
+
+
+
+/*
+   forget the Nodes
+*/
+
+void ForgetNodes( NPtr node)
+{
+   if ((node->child1 & 0x8000) == 0)
+      ForgetNodes( node->node1);
+   if ((node->child2 & 0x8000) == 0)
+      ForgetNodes( node->node2);
+   farfree( node);
 }
 
 
@@ -417,6 +450,7 @@ void SaveLevelData( char *outfile)
    long blocksize;
    int blockcount;
    long oldpos;
+   Bool newnodes;
 
    DisplayMessage( -1, -1, "Saving data to \"%s\"...", outfile);
    /* open the file */
@@ -439,6 +473,87 @@ void SaveLevelData( char *outfile)
       counter += 10L;
    }
    dir = dir->next;
+
+   /* update MinX, MinY, MaxX, MaxY */
+   MaxX = -32768;
+   MaxY = -32768;
+   MinX = 32767;
+   MinY = 32767;
+   for (n = 0; n < NumVertexes; n++)
+   {
+      if (Vertexes[ n].x < MinX)
+	 MinX = Vertexes[ n].x;
+      if (Vertexes[ n].x > MaxX)
+	 MaxX = Vertexes[ n].x;
+      if (Vertexes[ n].y < MinY)
+	 MinY = Vertexes[ n].y;
+      if (Vertexes[ n].y > MaxY)
+	 MaxY = Vertexes[ n].y;
+   }
+
+   /* do we need to rebuild the Nodes, Segs and SSectors? */
+   if (MadeMapChanges && (Expert || Confirm( -1, 270, "Do you want to rebuild the NODES, SEGS and SSECTORS?", "WARNING: you will find some bugs here...")))
+   {
+      SEPtr seglist, lastseg;
+
+      if (NumSideDefs > 500)
+	 DisplayMessage( -1, -1, "Rebuilding the NODES.  Please wait a few minutes...");
+      else
+	 DisplayMessage( -1, -1, "Rebuilding the NODES.  Please wait a few seconds...");
+      seglist = NULL;
+      for (n = 0; n < NumLineDefs; n++)
+      {
+	 if (LineDefs[ n].sidedef1 >= 0)
+	 {
+	    if (seglist)
+	    {
+	       LastSeg->next = GetMemory( sizeof( struct Seg));
+	       LastSeg = LastSeg->next;
+	    }
+	    else
+	    {
+	       seglist = GetMemory( sizeof( struct Seg));
+	       LastSeg = seglist;
+	    }
+	    LastSeg->next = NULL;
+	    LastSeg->start = LineDefs[ n].start;
+	    LastSeg->end = LineDefs[ n].end;
+	    LastSeg->angle = ComputeAngle(Vertexes[ LineDefs[ n].end].x - Vertexes[ LineDefs[ n].start].x,
+					  Vertexes[ LineDefs[ n].end].y - Vertexes[ LineDefs[ n].start].y);
+	    LastSeg->linedef = n;
+	    LastSeg->flip = 0;
+	    LastSeg->dist = 0;
+	 }
+	 if (LineDefs[ n].sidedef2 >= 0)
+	 {
+	    if (seglist)
+	    {
+	       LastSeg->next = GetMemory( sizeof( struct Seg));
+	       LastSeg = LastSeg->next;
+	    }
+	    else
+	    {
+	       seglist = GetMemory( sizeof( struct Seg));
+	       LastSeg = seglist;
+	    }
+	    LastSeg->next = NULL;
+	    LastSeg->start = LineDefs[ n].end;
+	    LastSeg->end = LineDefs[ n].start;
+	    LastSeg->angle = ComputeAngle(Vertexes[ LineDefs[ n].start].x - Vertexes[ LineDefs[ n].end].x,
+					  Vertexes[ LineDefs[ n].start].y - Vertexes[ LineDefs[ n].end].y);
+	    LastSeg->linedef = n;
+	    LastSeg->flip = 1;
+	    LastSeg->dist = 0;
+	 }
+      }
+      DrawScreenBox3D( 0, 0, 250, 52);
+      DrawScreenText( 10, 8, "Number of Vertices: %d", NumVertexes);
+      DrawScreenText( 10, 18, "Number of SideDefs: %d", NumSideDefs);
+      Nodes = CreateNodes( seglist);
+      newnodes = TRUE;
+   }
+   else
+      newnodes = FALSE;
 
    /* output the linedefs */
    for (n = 0; n < NumLineDefs; n++)
@@ -467,64 +582,69 @@ void SaveLevelData( char *outfile)
    }
    dir = dir->next;
 
-   /* output the vertexes */
-   for (n = 0; n < NumVertexes; n++)
+   if (newnodes)
    {
-      WriteBytes( file, &(Vertexes[ n].x), 2L);
-      WriteBytes( file, &(Vertexes[ n].y), 2L);
-      counter += 4L;
-   }
-   dir = dir->next;
+      SEPtr curse, oldse;
+      SSPtr curss, oldss;
 
-   if (Debug)
-   {
-      /* output the segs */
-      for (n = 0; n < NumSegs; n++)
+      /* output the Vertices */
+      for (n = 0; n < NumVertexes; n++)
       {
-	 WriteBytes( file, &(Segs[ n].start), 2L);
-	 WriteBytes( file, &(Segs[ n].end), 2L);
-	 WriteBytes( file, &(Segs[ n].angle), 2L);
-	 WriteBytes( file, &(Segs[ n].linedef), 2L);
-	 WriteBytes( file, &(Segs[ n].flip), 2L);
-	 WriteBytes( file, &(Segs[ n].dist), 2L);
-	 counter += 12L;
-      }
-      dir = dir->next;
-
-      /* output the ssectors */
-      for (n = 0; n < NumSSectors; n++)
-      {
-	 WriteBytes( file, &(SSectors[ n].num), 2L);
-	 WriteBytes( file, &(SSectors[ n].first), 2L);
+	 WriteBytes( file, &(Vertexes[ n].x), 2L);
+	 WriteBytes( file, &(Vertexes[ n].y), 2L);
 	 counter += 4L;
       }
       dir = dir->next;
 
-      /* output the nodes */
-      for (n = 0; n < NumNodes; n++)
+      /* output and forget the Segments */
+      curse = Segs;
+      while (curse)
       {
-	 WriteBytes( file, &(Nodes[ n].x), 2L);
-	 WriteBytes( file, &(Nodes[ n].y), 2L);
-	 WriteBytes( file, &(Nodes[ n].dx), 2L);
-	 WriteBytes( file, &(Nodes[ n].dy), 2L);
-	 WriteBytes( file, &(Nodes[ n].miny1), 2L);
-	 WriteBytes( file, &(Nodes[ n].maxy1), 2L);
-	 WriteBytes( file, &(Nodes[ n].minx1), 2L);
-	 WriteBytes( file, &(Nodes[ n].maxx1), 2L);
-	 WriteBytes( file, &(Nodes[ n].miny2), 2L);
-	 WriteBytes( file, &(Nodes[ n].maxy2), 2L);
-	 WriteBytes( file, &(Nodes[ n].minx2), 2L);
-	 WriteBytes( file, &(Nodes[ n].maxx2), 2L);
-	 WriteBytes( file, &(Nodes[ n].tree1), 2L);
-	 WriteBytes( file, &(Nodes[ n].tree2), 2L);
-	 counter += 28L;
+	 WriteBytes( file, &(curse->start), 2L);
+	 WriteBytes( file, &(curse->end), 2L);
+	 WriteBytes( file, &(curse->angle), 2L);
+	 WriteBytes( file, &(curse->linedef), 2L);
+	 WriteBytes( file, &(curse->flip), 2L);
+	 WriteBytes( file, &(curse->dist), 2L);
+	 oldse = curse;
+	 curse = curse->next;
+	 farfree( oldse);
+	 counter += 12L;
       }
+      Segs = NULL;
       dir = dir->next;
+
+      /* output and forget the SSectors */
+      curss = SSectors;
+      while (curss)
+      {
+	 WriteBytes( file, &(curss->num), 2L);
+	 WriteBytes( file, &(curss->first), 2L);
+	 oldss = curss;
+	 curss = curss->next;
+	 farfree( oldss);
+	 counter += 4L;
+      }
+      SSectors = NULL;
+      dir = dir->next;
+
+      /* output the Nodes */
+      NumNodes = 0;
+      SaveNodes( file, Nodes);
+      counter += (long) NumNodes * 28L;
+      dir = dir->next;
+
+      /* forget the Nodes */
+      ForgetNodes( Nodes);
+      Nodes = NULL;
+
+      ClearScreen();
    }
    else
    {
+      /* copy the Vertices, Segs, SSectors and Nodes */
       data = GetMemory( 0x8000 + 2);
-      for (n = 0; n < 3; n++)
+      for (n = 0; n < 4; n++)
       {
 	 size = dir->dir.size;
 	 BasicWadSeek( dir->wadfile, dir->dir.start);
@@ -542,7 +662,7 @@ void SaveLevelData( char *outfile)
       free( data);
    }
 
-   /* output the sectors */
+   /* output the Sectors */
    for (n = 0; n < NumSectors; n++)
    {
       WriteBytes( file, &(Sectors[ n].floorh), 2L);
@@ -556,21 +676,46 @@ void SaveLevelData( char *outfile)
    }
    dir = dir->next;
 
-   /* copy the reject data */
-   data = GetMemory( 0x8000 + 2);
-   size = dir->dir.size;
-   BasicWadSeek( dir->wadfile, dir->dir.start);
-   while (size > 0x8000)
+   if (MadeMapChanges && (Expert || Confirm( -1, 270, "Do you want to rebuild the REJECT data?", NULL)))
    {
-      BasicWadRead( dir->wadfile, data, 0x8000);
-      WriteBytes( file, data, 0x8000);
-      size -= 0x8000;
+      /* create and output the reject data */
+      DisplayMessage( -1, -1, "Rebuilding the REJECT data.  Please wait a few seconds...");
+      size = ((long) NumSectors * (long) NumSectors + 7L) / 8L;
+      data = GetMemory( (size_t) size);
+      for (i = 0; i < size; i++)
+	 ((char *) data)[ i] = 0;
+      for (i = 0; i < NumSectors; i++)
+	 for (j = 0; j < NumSectors; j++)
+	 {
+/*
+	    if (Reject( i, j))
+	       data[ (i * NumSectors + j) / 8] |= 1 <<
+*/
+	 }
+      WriteBytes( file, data, size);
+      counter += size;
+      dir = dir->next;
+      free( data);
+      ClearScreen();
    }
-   BasicWadRead( dir->wadfile, data, size);
-   WriteBytes( file, data, size);
-   counter += size;
-   dir = dir->next;
-   free( data);
+   else
+   {
+      /* copy the Reject data */
+      data = GetMemory( 0x8000 + 2);
+      size = dir->dir.size;
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      while (size > 0x8000)
+      {
+	 BasicWadRead( dir->wadfile, data, 0x8000);
+	 WriteBytes( file, data, 0x8000);
+	 size -= 0x8000;
+      }
+      BasicWadRead( dir->wadfile, data, size);
+      WriteBytes( file, data, size);
+      counter += size;
+      dir = dir->next;
+      free( data);
+   }
 
    if (MadeMapChanges && (Expert || Confirm( -1, 270, "Do you want to rebuild the BLOCKMAP?", NULL)))
    {
@@ -593,28 +738,32 @@ void SaveLevelData( char *outfile)
       counter += blocksize - 7L;
       blockcount = MaxX * MaxY + 4;
       for (i = 0; i < MaxY; i++)
+      {
+	 setcolor( YELLOW);
+	 DrawScreenBox( 0, 0, ((long) getmaxx() * (long) i) / (long) MaxY, 10);
 	 for (j = 0; j < MaxX; j++)
-	    {
-	       blockptr[ MaxX * i + j] = blockcount;
-	       n = 0;
-	       WriteBytes( file, &n, 2L);
-	       counter += 2L;
-	       blocksize += 2L;
-	       blockcount++;
-	       for (n = 0; n < NumLineDefs; n++)
-		  if (IsLineDefInside( n, MinX + j * 128, MinY + i * 128, MinX + 127 + j * 128, MinY + 127 + i * 128))
-		  {
-		     WriteBytes( file, &n, 2L);
-		     counter += 2L;
-		     blocksize += 2L;
-		     blockcount++;
-		  }
-	       n = -1;
-	       WriteBytes( file, &n, 2L);
-	       counter += 2L;
-	       blocksize += 2L;
-	       blockcount++;
-	    }
+	 {
+	    blockptr[ MaxX * i + j] = blockcount;
+	    n = 0;
+	    WriteBytes( file, &n, 2L);
+	    counter += 2L;
+	    blocksize += 2L;
+	    blockcount++;
+	    for (n = 0; n < NumLineDefs; n++)
+	       if (IsLineDefInside( n, MinX + j * 128, MinY + i * 128, MinX + 127 + j * 128, MinY + 127 + i * 128))
+	       {
+		  WriteBytes( file, &n, 2L);
+		  counter += 2L;
+		  blocksize += 2L;
+		  blockcount++;
+	       }
+	    n = -1;
+	    WriteBytes( file, &n, 2L);
+	    counter += 2L;
+	    blocksize += 2L;
+	    blockcount++;
+	 }
+      }
       size = ftell( file);
       fseek( file, oldpos, SEEK_SET);
       WriteBytes( file, blockptr, (long) (MaxX * MaxY * sizeof( int)));
@@ -674,49 +823,45 @@ void SaveLevelData( char *outfile)
    counter += size;
    dir = dir->next;
 
-   size = (long) NumVertexes * 4L;
+   if (newnodes)
+      size = (long) NumVertexes * 4L;
+   else
+      size = dir->dir.size;
    WriteBytes( file, &counter, 4L);
    WriteBytes( file, &size, 4L);
    WriteBytes( file, "VERTEXES", 8L);
    counter += size;
    dir = dir->next;
 
-   if (Debug)
-   {
+   if (newnodes)
       size = (long) NumSegs * 12L;
-      WriteBytes( file, &counter, 4L);
-      WriteBytes( file, &size, 4L);
-      WriteBytes( file, "SEGS\0\0\0\0", 8L);
-      counter += size;
-      dir = dir->next;
-
-      size = (long) NumSSectors * 4L;
-      WriteBytes( file, &counter, 4L);
-      WriteBytes( file, &size, 4L);
-      WriteBytes( file, "SSECTORS", 8L);
-      counter += size;
-      dir = dir->next;
-
-      size = (long) NumNodes * 28L;
-      WriteBytes( file, &counter, 4L);
-      WriteBytes( file, &size, 4L);
-      WriteBytes( file, "NODES\0\0\0", 8L);
-      counter += size;
-      dir = dir->next;
-   }
    else
-   {
-      for (n = 0; n < 3; n++)
-      {
-	 size = dir->dir.size;
-	 WriteBytes( file, &counter, 4L);
-	 WriteBytes( file, &size, 4L);
-	 WriteBytes( file, &(dir->dir.name), 8L);
-	 counter += size;
-	 dir = dir->next;
-      }
-   }
+      size = dir->dir.size;
+   WriteBytes( file, &counter, 4L);
+   WriteBytes( file, &size, 4L);
+   WriteBytes( file, "SEGS\0\0\0\0", 8L);
+   counter += size;
+   dir = dir->next;
 
+   if (newnodes)
+      size = (long) NumSSectors * 4L;
+   else
+      size = dir->dir.size;
+   WriteBytes( file, &counter, 4L);
+   WriteBytes( file, &size, 4L);
+   WriteBytes( file, "SSECTORS", 8L);
+   counter += size;
+   dir = dir->next;
+
+   if (newnodes)
+      size = (long) NumNodes * 28L;
+   else
+      size = dir->dir.size;
+   WriteBytes( file, &counter, 4L);
+   WriteBytes( file, &size, 4L);
+   WriteBytes( file, "NODES\0\0\0", 8L);
+   counter += size;
+   dir = dir->next;
 
    size = (long) NumSectors * 26L;
    WriteBytes( file, &counter, 4L);
@@ -746,6 +891,16 @@ void SaveLevelData( char *outfile)
 
    /* close the file */
    fclose( file);
+
+   NumSegs = 0;
+   NumSSectors = 0;
+   NumNodes = 0;
+
+   /* update pointers in Master Directory */
+   OpenPatchWad( outfile);
+
+   /* this should free the old "*.BAK" file */
+   CloseUnusedWadFiles();
 }
 
 
@@ -944,7 +1099,7 @@ void DisplayHelp( int objtype, int grid)
    DrawScreenText( -1, -1, "Space - Change the move/scroll speed");
    DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", Scale);
    DrawScreenText( -1, -1, "G     - Change the grid scale (cur.: %d)", grid);
-   if (GetCurObject( objtype) >= 0)
+   if (GetCurObject( objtype, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) >= 0)
       setcolor( DARKGRAY);
    DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
    DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
@@ -984,14 +1139,14 @@ void DisplayHelp( int objtype, int grid)
    the editor main loop
 */
 
-void EditorLoop()
+void EditorLoop( int episode, int level)
 {
    int    EditMode = OBJ_THINGS;
    int    CurObject = -1;
    int    OldObject = -1;
-   int    RedrawMap = TRUE;
-   int    RedrawObj = FALSE;
-   int    DragObject = FALSE;
+   Bool   RedrawMap = TRUE;
+   Bool   RedrawObj = FALSE;
+   Bool   DragObject = FALSE;
    int    key, buttons, oldbuttons;
    int    GridScale = 0;
    SelPtr Selected = NULL;
@@ -999,7 +1154,6 @@ void EditorLoop()
    OrigX = (MinX + MaxX) / 2;
    OrigY = (MinY + MaxY) / 2;
    Scale = 10;
-   SaveChanges = FALSE;
    MadeChanges = FALSE;
    MadeMapChanges = FALSE;
    PointerX = 319;
@@ -1085,7 +1239,7 @@ void EditorLoop()
 	 /* check if there is something near the pointer */
 	 OldObject = CurObject;
 	 if ((bioskey( 2) & 0x03) == 0x00)  /* no shift keys */
-	    CurObject = GetCurObject( EditMode);
+	    CurObject = GetCurObject( EditMode, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4));
 	 if (CurObject < 0)
 	    CurObject = OldObject;
       }
@@ -1148,8 +1302,21 @@ void EditorLoop()
 	 if ((key & 0x00FF) == 'Q' || (key & 0x00FF) == 'q')
 	 {
 	    ForgetSelection( &Selected);
-	    SaveChanges = Registered;
-	    break;
+	    if (Registered && MadeChanges)
+	    {
+	       char *outfile;
+
+	       outfile = GetWadFileName( episode, level);
+	       if (outfile)
+	       {
+		  SaveLevelData( outfile);
+		  break;
+	       }
+	       else
+		  RedrawMap = TRUE;
+	    }
+	    else
+	       break;
 	 }
 	 else if ((key & 0x00FF) == 0x001B)
 	 {
@@ -1163,6 +1330,17 @@ void EditorLoop()
 	 else if ((key & 0xFF00) == 0x3B00)
 	 {
 	    DisplayHelp( EditMode, GridScale);
+	    RedrawMap = TRUE;
+	 }
+
+	 /* user wants to save the level data */
+	 else if ((key & 0xFF00) == 0x3C00 && Registered)
+	 {
+	    char *outfile;
+
+	    outfile = GetWadFileName( episode, level);
+	    if (outfile)
+	       SaveLevelData( outfile);
 	    RedrawMap = TRUE;
 	 }
 
@@ -1259,15 +1437,6 @@ void EditorLoop()
 		  EditMode = OBJ_SECTORS;
 		  break;
 	       case OBJ_SECTORS:
-		  if (Debug)
-		     EditMode = OBJ_SEGS;
-		  else
-		     EditMode = OBJ_THINGS;
-		  break;
-	       case OBJ_SEGS:
-		  EditMode = OBJ_NODES;
-		  break;
-	       case OBJ_NODES:
 		  EditMode = OBJ_THINGS;
 		  break;
 	       }
@@ -1277,10 +1446,7 @@ void EditorLoop()
 	       switch (EditMode)
 	       {
 	       case OBJ_THINGS:
-		  if (Debug)
-		     EditMode = OBJ_NODES;
-		  else
-		     EditMode = OBJ_SECTORS;
+		  EditMode = OBJ_SECTORS;
 		  break;
 	       case OBJ_VERTEXES:
 		  EditMode = OBJ_THINGS;
@@ -1290,12 +1456,6 @@ void EditorLoop()
 		  break;
 	       case OBJ_SECTORS:
 		  EditMode = OBJ_LINEDEFS;
-		  break;
-	       case OBJ_SEGS:
-		  EditMode = OBJ_SECTORS;
-		  break;
-	       case OBJ_NODES:
-		  EditMode = OBJ_SEGS;
 		  break;
 	       }
 	    }
@@ -1340,7 +1500,7 @@ void EditorLoop()
 	    DragObject = !DragObject;
 
 	 /* user wants to select the next or previous object */
-	 else if (((key & 0x00FF) == 'N' || (key & 0x00FF) == 'n' || (key & 0x00FF) == '>') && GetCurObject( EditMode) < 0)
+	 else if (((key & 0x00FF) == 'N' || (key & 0x00FF) == 'n' || (key & 0x00FF) == '>') && GetCurObject( EditMode, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) < 0)
 	 {
 	    if (CurObject < GetMaxObjectNum( EditMode))
 	       CurObject++;
@@ -1348,7 +1508,7 @@ void EditorLoop()
 	       CurObject = 0;
 	    RedrawObj = TRUE;
 	 }
-	 else if (((key & 0x00FF) == 'P' || (key & 0x00FF) == 'p' || (key & 0x00FF) == '<') && GetCurObject( EditMode) < 0)
+	 else if (((key & 0x00FF) == 'P' || (key & 0x00FF) == 'p' || (key & 0x00FF) == '<') && GetCurObject( EditMode, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) < 0)
 	 {
 	    if (CurObject > 0)
 	       CurObject--;
@@ -1356,7 +1516,7 @@ void EditorLoop()
 	       CurObject = GetMaxObjectNum( EditMode);
 	    RedrawObj = TRUE;
 	 }
-	 else if (((key & 0x00FF) == 'J' || (key & 0x00FF) == 'j' || (key & 0x00FF) == '#') && GetCurObject( EditMode) < 0)
+	 else if (((key & 0x00FF) == 'J' || (key & 0x00FF) == 'j' || (key & 0x00FF) == '#') && GetCurObject( EditMode, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) < 0)
 	 {
 	    OldObject = InputObjectNumber( 140, 200, EditMode, CurObject);
 	    if (OldObject >= 0)
@@ -1445,7 +1605,7 @@ void EditorLoop()
 	       EditMode = OBJ_LINEDEFS;
 	       for (cur = Selected; cur->next; cur = cur->next)
 	       {
-		  InsertObject( EditMode, -1, GridScale);
+		  InsertObject( EditMode, -1, 0, 0);
 		  CurObject = GetMaxObjectNum( EditMode);
 		  LineDefs[ CurObject].start = cur->next->objnum;
 		  LineDefs[ CurObject].end = cur->objnum;
@@ -1465,11 +1625,11 @@ void EditorLoop()
 	       if (cur == NULL)
 	       {
 		  EditMode = OBJ_SECTORS;
-		  InsertObject( EditMode, -1, GridScale);
+		  InsertObject( EditMode, -1, 0, 0);
 		  CurObject = GetMaxObjectNum( EditMode);
 		  for (cur = Selected; cur; cur = cur->next)
 		  {
-		     InsertObject( OBJ_SIDEDEFS, -1, GridScale);
+		     InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
 		     SideDefs[ NumSideDefs - 1].sector = CurObject;
 		     if (LineDefs[ cur->objnum].sidedef1 >= 0)
 			LineDefs[ cur->objnum].sidedef2 = NumSideDefs - 1;
@@ -1483,7 +1643,10 @@ void EditorLoop()
 	    else
 	    {
 	       ForgetSelection( &Selected);
-	       InsertObject( EditMode, CurObject, GridScale);
+	       if (GridScale > 0)
+		  InsertObject( EditMode, CurObject, (MAPX( PointerX) / GridScale) * GridScale, (MAPY( PointerY) / GridScale) * GridScale);
+	       else
+		  InsertObject( EditMode, CurObject, MAPX( PointerX), MAPY( PointerY));
 	       CurObject = GetMaxObjectNum( EditMode);
 	       if (EditMode == OBJ_LINEDEFS)
 	       {
@@ -1508,45 +1671,49 @@ void EditorLoop()
 	    DrawPointer();
       }
 
-      /* move the map if the pointer is near the edge of the screen */
-      if (PointerY <= 20)
+      /* check if Scroll Lock is off */
+      if ((bioskey( 2) & 0x10) == 0x00)
       {
-	 if (! UseMouse)
-	    PointerY += MoveSpeed;
-	 if (MAPY(239) < MaxY)
+	 /* move the map if the pointer is near the edge of the screen */
+	 if (PointerY <= 20)
 	 {
-	    OrigY += MoveSpeed * 2 * Scale;
-	    RedrawMap = TRUE;
+	    if (! UseMouse)
+	       PointerY += MoveSpeed;
+	    if (MAPY(239) < MaxY)
+	    {
+	       OrigY += MoveSpeed * 2 * Scale;
+	       RedrawMap = TRUE;
+	    }
 	 }
-      }
-      if (PointerY >= 469)
-      {
-	 if (! UseMouse)
-	    PointerY -= MoveSpeed;
-	 if (MAPY(239) > MinY)
+	 if (PointerY >= 469)
 	 {
-	    OrigY -= MoveSpeed * 2 * Scale;
-	    RedrawMap = TRUE;
+	    if (! UseMouse)
+	       PointerY -= MoveSpeed;
+	    if (MAPY(239) > MinY)
+	    {
+	       OrigY -= MoveSpeed * 2 * Scale;
+	       RedrawMap = TRUE;
+	    }
 	 }
-      }
-      if (PointerX <= 20)
-      {
-	 if (! UseMouse)
-	    PointerX += MoveSpeed;
-	 if (MAPX(319) > MinX)
+	 if (PointerX <= 20)
 	 {
-	    OrigX -= MoveSpeed * 2 * Scale;
-	    RedrawMap = TRUE;
+	    if (! UseMouse)
+	       PointerX += MoveSpeed;
+	    if (MAPX(319) > MinX)
+	    {
+	       OrigX -= MoveSpeed * 2 * Scale;
+	       RedrawMap = TRUE;
+	    }
 	 }
-      }
-      if (PointerX >= 619)
-      {
-	 if (! UseMouse)
-	    PointerX -= MoveSpeed;
-	 if (MAPX(319) < MaxX)
+	 if (PointerX >= 619)
 	 {
-	    OrigX += MoveSpeed * 2 * Scale;
-	    RedrawMap = TRUE;
+	    if (! UseMouse)
+	       PointerX -= MoveSpeed;
+	    if (MAPX(319) < MaxX)
+	    {
+	       OrigX += MoveSpeed * 2 * Scale;
+	       RedrawMap = TRUE;
+	    }
 	 }
       }
    }
@@ -1577,7 +1744,7 @@ void DrawMap( int editmode, int grid)
    }
 
    /* draw the linedefs to form the map */
-   if (editmode == OBJ_VERTEXES || editmode == OBJ_NODES)
+   if (editmode == OBJ_VERTEXES)
    {
       setcolor( LIGHTGRAY);
       for (n = 0; n < NumLineDefs; n++)
@@ -1642,39 +1809,14 @@ void DrawMap( int editmode, int grid)
 		      Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
       }
 
-   /* draw the segs (DEBUG) */
-   if (editmode == OBJ_SEGS)
-   {
-      for (n = 0; n < NumSegs; n++)
-      {
-	 setcolor( LIGHTGREEN + (Segs[ n].flip & 1));
-	 DrawMapLine( Vertexes[ Segs[ n].start].x, Vertexes[ Segs[ n].start].y,
-		      Vertexes[ Segs[ n].end].x, Vertexes[ Segs[ n].end].y);
-	 /* (*TEST*)
-	 setcolor( LIGHTRED + (Segs[ n].flip & 1));
-	 DrawMapArrow( Vertexes[ Segs[ n].start].x, Vertexes[ Segs[ n].start].y,
-		       Segs[ n].angle);
-	 */
-      }
-   }
-
    /* draw in the vertices */
-   if (editmode == OBJ_VERTEXES || editmode == OBJ_SEGS)
+   if (editmode == OBJ_VERTEXES)
    {
       setcolor( LIGHTGREEN);
       for (n = 0; n < NumVertexes; n++)
       {
 	 DrawMapLine( Vertexes[ n].x - OBJSIZE, Vertexes[ n].y - OBJSIZE, Vertexes[ n].x + OBJSIZE, Vertexes[ n].y + OBJSIZE);
 	 DrawMapLine( Vertexes[ n].x + OBJSIZE, Vertexes[ n].y - OBJSIZE, Vertexes[ n].x - OBJSIZE, Vertexes[ n].y + OBJSIZE);
-      }
-   }
-   if (Debug && editmode == OBJ_LINEDEFS)
-   {
-      setcolor( LIGHTGREEN);
-      for (n = 0; n < NumLineDefs; n++)
-      {
-	 DrawMapLine( Vertexes[ LineDefs[ n].start].x - OBJSIZE, Vertexes[ LineDefs[ n].start].y - OBJSIZE, Vertexes[ LineDefs[ n].start].x + OBJSIZE, Vertexes[ LineDefs[ n].start].y + OBJSIZE);
-	 DrawMapLine( Vertexes[ LineDefs[ n].start].x + OBJSIZE, Vertexes[ LineDefs[ n].start].y - OBJSIZE, Vertexes[ LineDefs[ n].start].x - OBJSIZE, Vertexes[ LineDefs[ n].start].y + OBJSIZE);
       }
    }
 
@@ -1695,21 +1837,6 @@ void DrawMap( int editmode, int grid)
       {
 	 DrawMapLine( Things[ n].xpos - OBJSIZE, Things[ n].ypos, Things[ n].xpos + OBJSIZE, Things[ n].ypos);
 	 DrawMapLine( Things[ n].xpos, Things[ n].ypos - OBJSIZE, Things[ n].xpos, Things[ n].ypos + OBJSIZE);
-      }
-   }
-
-   /* draw in the nodes */
-   if (editmode == OBJ_NODES)
-   {
-      for (n = 0; n < NumNodes; n++)
-      {
-/*
-	 setcolor( LIGHTRED);
-	 DrawMapLine( Nodes[ n].x, Nodes[ n].y, Nodes[ n].x + Nodes[ n].dx, Nodes[ n].y + Nodes[n ].dy);
-*/
-	 setcolor( LIGHTGREEN);
-	 DrawMapLine( Nodes[ n].x - OBJSIZE, Nodes[ n].y - OBJSIZE, Nodes[ n].x + OBJSIZE, Nodes[ n].y + OBJSIZE);
-	 DrawMapLine( Nodes[ n].x + OBJSIZE, Nodes[ n].y - OBJSIZE, Nodes[ n].x - OBJSIZE, Nodes[ n].y + OBJSIZE);
       }
    }
 
@@ -1743,7 +1870,7 @@ void HighlightSelection( int objtype, SelPtr list)
    test if an object is in the selection list
 */
 
-int IsSelected( SelPtr list, int objnum)
+Bool IsSelected( SelPtr list, int objnum)
 {
    SelPtr cur;
 

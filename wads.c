@@ -22,29 +22,29 @@ MDirPtr MasterDir = NULL;        /* the master directory */
 
 void OpenMainWad( char *filename)
 {
-   MDirPtr last, new;
+   MDirPtr lastp, newp;
    long n;
    WadPtr wad;
 
    /* open the wad file */
-   printf( "Loading main WAD file: %s...\n", filename);
+   printf( "\nLoading main WAD file: %s...\n", filename);
    wad = BasicWadOpen( filename);
    if (strncmp( wad->type, "IWAD", 4))
       ProgError( "\"%s\" is not the main WAD file", filename);
 
    /* create the master directory */
-   last = NULL;
+   lastp = NULL;
    for (n = 0; n < wad->dirsize; n++)
    {
-      new = GetMemory( sizeof( struct MasterDirectory));
-      new->next = NULL;
-      new->wadfile = wad;
-      memcpy( &(new->dir), &(wad->directory[ n]), sizeof( struct Directory));
+      newp = GetMemory( sizeof( struct MasterDirectory));
+      newp->next = NULL;
+      newp->wadfile = wad;
+      memcpy( &(newp->dir), &(wad->directory[ n]), sizeof( struct Directory));
       if (MasterDir)
-	 last->next = new;
+	 lastp->next = newp;
       else
-	 MasterDir = new;
-      last = new;
+	 MasterDir = newp;
+      lastp = newp;
    }
 
    /* check if registered version */
@@ -262,7 +262,7 @@ WadPtr BasicWadOpen( char *filename)
    read bytes from a file and store it into an address with error checking
 */
 
-void BasicWadRead( WadPtr wadfile, void far *addr, long size)
+void BasicWadRead( WadPtr wadfile, void huge *addr, long size)
 {
    if (fread( addr, 1, size, wadfile->fileinfo) != size)
       ProgError( "error reading from \"%s\"", wadfile->filename);
@@ -375,7 +375,7 @@ void BuildNewMainWad( char *filename)
    FILE *file;
    long counter = 12;
    MDirPtr cur;
-   void far *data;
+   void huge *data;
    long size;
    long dirstart;
    long dirnum;
@@ -444,7 +444,7 @@ void BuildNewMainWad( char *filename)
    output bytes to a binary file with error checking
 */
 
-void WriteBytes( FILE *file, void far *addr, long size)
+void WriteBytes( FILE *file, void huge *addr, long size)
 {
    if (! Registered)
       return;
@@ -458,7 +458,7 @@ void WriteBytes( FILE *file, void far *addr, long size)
    check if a file exists and is readable
 */
 
-int Exists( char *filename)
+Bool Exists( char *filename)
 {
    FILE *test;
 

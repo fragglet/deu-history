@@ -21,22 +21,20 @@ extern int NumSideDefs;		/* number of side defs */
 extern SDPtr SideDefs;		/* side defs data */
 extern int NumVertexes;		/* number of vertexes */
 extern VPtr Vertexes;		/* vertex data */
-extern int NumSegs;		/* number of segs */
-extern SEPtr Segs;		/* segs data */
-extern int NumNodes;		/* number of nodes */
-extern NPtr Nodes;		/* nodes data */
+extern int NumSegs;		/* number of segments */
+extern SEPtr Segs;		/* list of segments */
+extern SEPtr LastSeg;		/* last segment in the list */
 extern int NumSSectors;		/* number of subsectors */
-extern SSPtr SSectors;		/* subsectors data */
+extern SSPtr SSectors;		/* list of subsectors */
+extern SSPtr LastSSector;	/* last subsector in the list */
 extern int NumSectors;		/* number of sectors */
 extern SPtr Sectors;		/* sectors data */
 extern int MaxX;		/* maximum X value of map */
 extern int MaxY;		/* maximum Y value of map */
 extern int MinX;		/* minimum X value of map */
 extern int MinY;		/* minimum Y value of map */
-extern int MadeChanges;		/* made changes? */
-extern int MadeMapChanges;	/* made changes that need rebuilding? */
-
-
+extern Bool MadeChanges;	/* made changes? */
+extern Bool MadeMapChanges;	/* made changes that need rebuilding? */
 
 /*
    get the number of objets of a given type minus one
@@ -57,8 +55,6 @@ int GetMaxObjectNum( int objtype)
       return NumSegs - 1;
    case OBJ_SSECTORS:
       return NumSSectors - 1;
-   case OBJ_NODES:
-      return NumNodes - 1;
    case OBJ_SECTORS:
       return NumSectors - 1;
    }
@@ -67,15 +63,11 @@ int GetMaxObjectNum( int objtype)
 
 
 /*
-   check if there is something of interest near the pointer
+   check if there is something of interest inside the given box
 */
 
-int GetCurObject( int objtype)
+int GetCurObject( int objtype, int x0, int y0, int x1, int y1)
 {
-   int x0 = MAPX(PointerX - 4);
-   int x1 = MAPX(PointerX + 4);
-   int y0 = MAPY(PointerY - 4);
-   int y1 = MAPY(PointerY + 4);
    int n, m, cur, curx;
    int lx0, ly0, lx1, ly1;
 
@@ -104,25 +96,6 @@ int GetCurObject( int objtype)
    case OBJ_VERTEXES:
       for (n = 0; n < NumVertexes; n++)
 	 if (Vertexes[ n].x >= x0 && Vertexes[ n].x <= x1 && Vertexes[ n].y >= y0 && Vertexes[ n].y <= y1)
-	 {
-	    cur = n;
-	    break;
-	 }
-      break;
-   case OBJ_SEGS:
-      for (n = 0; n < NumSegs; n++)
-      {
-	 m = Segs[ n].start;
-	 if (Vertexes[ m].x >= x0 && Vertexes[ m].x <= x1 && Vertexes[ m].y >= y0 && Vertexes[ m].y <= y1)
-	 {
-	    cur = n;
-	    break;
-	 }
-      }
-      break;
-   case OBJ_NODES:
-      for (n = 0; n < NumNodes; n++)
-	 if (Nodes[ n].x >= x0 && Nodes[ n].x <= x1 && Nodes[ n].y >= y0 && Nodes[ n].y <= y1)
 	 {
 	    cur = n;
 	    break;
@@ -192,6 +165,9 @@ void HighlightObject( int objtype, int objnum, int color)
       DrawMapLine( Things[ objnum].xpos + OBJSIZE * 2, Things[ objnum].ypos - OBJSIZE * 2, Things[ objnum].xpos - OBJSIZE * 2, Things[ objnum].ypos - OBJSIZE * 2);
       break;
    case OBJ_LINEDEFS:
+      n = (Vertexes[ LineDefs[ objnum].start].x + Vertexes[ LineDefs[ objnum].end].x) / 2;
+      m = (Vertexes[ LineDefs[ objnum].start].y + Vertexes[ LineDefs[ objnum].end].y) / 2;
+      DrawMapLine( n, m, n + (Vertexes[ LineDefs[ objnum].end].y - Vertexes[ LineDefs[ objnum].start].y) / 2, m + (Vertexes[ LineDefs[ objnum].start].x - Vertexes[ LineDefs[ objnum].end].x) / 2);
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Vertexes[ LineDefs[ objnum].start].x, Vertexes[ LineDefs[ objnum].start].y,
 		     Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
@@ -221,44 +197,6 @@ void HighlightObject( int objtype, int objnum, int color)
 	    if (LineDefs[ m].tag == Sectors[ objnum].tag)
 	       HighlightObject( OBJ_LINEDEFS, m, LIGHTRED);
       }
-      setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
-      break;
-   case OBJ_SEGS: /* DEBUG */
-      setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
-      DrawMapVector( Vertexes[ Segs[ objnum].start].x, Vertexes[ Segs[ objnum].start].y,
-		     Vertexes[ Segs[ objnum].end].x, Vertexes[ Segs[ objnum].end].y);
-      setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
-      break;
-   case OBJ_SSECTORS: /* DEBUG */
-      for (n = SSectors[ objnum].first; n < SSectors[ objnum].first + SSectors[ objnum].num; n++)
-	 HighlightObject( OBJ_SEGS, n, color);
-      break;
-   case OBJ_NODES: /* DEBUG */
-      if (color == YELLOW)
-      {
-	 if (Nodes[ objnum].tree1 & 0x8000)
-	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree1 & 0x7FFFF, LIGHTCYAN);
-	 else
-	    HighlightObject( OBJ_NODES, Nodes[ objnum].tree1, LIGHTCYAN);
-	 if (Nodes[ objnum].tree2 & 0x8000)
-	    HighlightObject( OBJ_SSECTORS, Nodes[ objnum].tree2 & 0x7FFFF, LIGHTGREEN);
-	 else
-	    HighlightObject( OBJ_NODES, Nodes[ objnum].tree2, LIGHTGREEN);
-	 setwritemode( XOR_PUT);
-	 setcolor( CYAN);
-	 DrawMapLine( Nodes[ objnum].minx1, Nodes[ objnum].miny1, Nodes[ objnum].minx1, Nodes[ objnum].maxy1);
-	 DrawMapLine( Nodes[ objnum].minx1, Nodes[ objnum].maxy1, Nodes[ objnum].maxx1, Nodes[ objnum].maxy1);
-	 DrawMapLine( Nodes[ objnum].maxx1, Nodes[ objnum].maxy1, Nodes[ objnum].maxx1, Nodes[ objnum].miny1);
-	 DrawMapLine( Nodes[ objnum].maxx1, Nodes[ objnum].miny1, Nodes[ objnum].minx1, Nodes[ objnum].miny1);
-	 setcolor( GREEN);
-	 DrawMapLine( Nodes[ objnum].minx2, Nodes[ objnum].miny2, Nodes[ objnum].minx2, Nodes[ objnum].maxy2);
-	 DrawMapLine( Nodes[ objnum].minx2, Nodes[ objnum].maxy2, Nodes[ objnum].maxx2, Nodes[ objnum].maxy2);
-	 DrawMapLine( Nodes[ objnum].maxx2, Nodes[ objnum].maxy2, Nodes[ objnum].maxx2, Nodes[ objnum].miny2);
-	 DrawMapLine( Nodes[ objnum].maxx2, Nodes[ objnum].miny2, Nodes[ objnum].minx2, Nodes[ objnum].miny2);
-	 setcolor( color);
-      }
-      setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
-      DrawMapVector( Nodes[ objnum].x, Nodes[ objnum].y, Nodes[ objnum].x + Nodes[ objnum].dx, Nodes[ objnum].y + Nodes[ objnum].dy);
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
    }
@@ -384,38 +322,6 @@ void DisplayObjectInfo( int objtype, int objnum)
       setcolor( BLACK);
       DrawScreenText( 5, 469, "Coordinates: (%d, %d)", Vertexes[ objnum].x, Vertexes[ objnum].y);
       break;
-   case OBJ_SEGS:
-      DrawScreenBox3D( 0, 410, 225, 479);
-      if (objnum < 0)
-	break;
-      setcolor( YELLOW);
-      DrawScreenText( 5, 415, "Selected Segment (#%d)", objnum);
-      setcolor( BLACK);
-      DrawScreenText( 5, 429, "Vertexes:    (#%d, #%d)", Segs[ objnum].start, Segs[ objnum].end);
-      DrawScreenText( 5, 439, "Angle:       %d (%dø)", Segs[ objnum].angle, (int) (Segs[ objnum].angle * 0.0055));
-      DrawScreenText( 5, 449, "Flip flag:   %d", Segs[ objnum].flip);
-      DrawScreenText( 5, 459, "Distance:    %d", Segs[ objnum].dist);
-      DrawScreenText( 5, 469, "LineDef:     #%d", Segs[ objnum].linedef);
-      break;
-   case OBJ_NODES:
-      DrawScreenBox3D( 0, 410, 340, 479);
-      if (objnum < 0)
-	break;
-      setcolor( YELLOW);
-      DrawScreenText( 5, 415, "Selected Node (#%d)", objnum);
-      setcolor( BLACK);
-      DrawScreenText( 5, 429, "Coordinates: (%d, %d) + (%d, %d)", Nodes[ objnum].x, Nodes[ objnum].y, Nodes[ objnum].dx, Nodes[ objnum].dy);
-      DrawScreenText( 5, 439, "Rectangle 1: %d, %d, %d, %d", Nodes[ objnum].minx1, Nodes[ objnum].miny1, Nodes[ objnum].maxx1, Nodes[ objnum].maxy1);
-      DrawScreenText( 5, 449, "Rectangle 2: %d, %d, %d, %d", Nodes[ objnum].minx2, Nodes[ objnum].miny2, Nodes[ objnum].maxx2, Nodes[ objnum].maxy2);
-      if (Nodes[ objnum].tree1 & 0x8000)
-	 DrawScreenText( 5, 459, "Child 1:     #%d (SSector)", Nodes[ objnum].tree1 & 0x7FFF);
-      else
-	 DrawScreenText( 5, 459, "Child 1:     #%d (Node)", Nodes[ objnum].tree1);
-      if (Nodes[ objnum].tree2 & 0x8000)
-	 DrawScreenText( 5, 469, "Child 2:     #%d (SSector)", Nodes[ objnum].tree2 & 0x7FFF);
-      else
-	 DrawScreenText( 5, 469, "Child 2:     #%d (Node)", Nodes[ objnum].tree2);
-      break;
    case OBJ_SECTORS:
       DrawScreenBox3D( 0, 390, 255, 479);
       if (objnum < 0)
@@ -459,7 +365,6 @@ void DisplayObjectInfo( int objtype, int objnum)
 
 /*
    delete an object (*recursive*)
-   WARNING: Don't use the Segs or Nodes editor after having deleted one object!
 */
 void DeleteObject( int objtype, int objnum)
 {
@@ -471,9 +376,17 @@ void DeleteObject( int objtype, int objnum)
    case OBJ_THINGS:
       /* delete the Thing */
       NumThings--;
-      for (n = objnum; n < NumThings; n++)
-	 Things[ n] = Things[ n + 1];
-      Things = ResizeFarMemory( Things, NumThings * sizeof( struct Thing));
+      if (NumThings > 0)
+      {
+	 for (n = objnum; n < NumThings; n++)
+	    Things[ n] = Things[ n + 1];
+	 Things = ResizeFarMemory( Things, NumThings * sizeof( struct Thing));
+      }
+      else
+      {
+	 farfree( Things);
+	 Things = NULL;
+      }
       break;
    case OBJ_LINEDEFS:
       /* delete the two SideDefs bound to this LineDef */
@@ -483,10 +396,17 @@ void DeleteObject( int objtype, int objnum)
 	 DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef2);
       /* delete the LineDef */
       NumLineDefs--;
-      for (n = objnum; n < NumLineDefs; n++)
-	 LineDefs[ n] = LineDefs[ n + 1];
-      LineDefs = ResizeFarMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
-      MadeMapChanges = TRUE;
+      if (NumLineDefs > 0)
+      {
+	 for (n = objnum; n < NumLineDefs; n++)
+	    LineDefs[ n] = LineDefs[ n + 1];
+	 LineDefs = ResizeFarMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
+      }
+      else
+      {
+	 farfree( LineDefs);
+	 LineDefs = NULL;
+      }
       break;
    case OBJ_SIDEDEFS:
       /* change the LineDefs references */
@@ -503,9 +423,18 @@ void DeleteObject( int objtype, int objnum)
       }
       /* delete the SideDef */
       NumSideDefs--;
-      for (n = objnum; n < NumSideDefs; n++)
-	 SideDefs[ n] = SideDefs[ n + 1];
-      SideDefs = ResizeFarMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
+      if (NumSideDefs > 0)
+      {
+	 for (n = objnum; n < NumSideDefs; n++)
+	    SideDefs[ n] = SideDefs[ n + 1];
+	 SideDefs = ResizeFarMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
+      }
+      else
+      {
+	 farfree( SideDefs);
+	 SideDefs = NULL;
+      }
+      MadeMapChanges = TRUE;
       break;
    case OBJ_VERTEXES:
       /* delete the LineDefs bound to this Vertex and change the references */
@@ -523,9 +452,17 @@ void DeleteObject( int objtype, int objnum)
       }
       /* delete the Vertex */
       NumVertexes--;
-      for (n = objnum; n < NumVertexes; n++)
-	 Vertexes[ n] = Vertexes[ n + 1];
-      Vertexes = ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
+      if (NumVertexes > 0)
+      {
+	 for (n = objnum; n < NumVertexes; n++)
+	    Vertexes[ n] = Vertexes[ n + 1];
+	 Vertexes = ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
+      }
+      else
+      {
+	 farfree( Vertexes);
+	 Vertexes = NULL;
+      }
       break;
    case OBJ_SECTORS:
       /* delete the SideDefs bound to this Sector and change the references */
@@ -542,9 +479,17 @@ void DeleteObject( int objtype, int objnum)
       }
       /* delete the Sector */
       NumSectors--;
-      for (n = objnum; n < NumSectors; n++)
-	 Sectors[ n] = Sectors[ n + 1];
-      Sectors = ResizeFarMemory( Sectors, NumSectors * sizeof( struct Sector));
+      if (NumSectors > 0)
+      {
+	 for (n = objnum; n < NumSectors; n++)
+	    Sectors[ n] = Sectors[ n + 1];
+	 Sectors = ResizeFarMemory( Sectors, NumSectors * sizeof( struct Sector));
+      }
+      else
+      {
+	 farfree( Sectors);
+	 Sectors = NULL;
+      }
       break;
    default:
       Beep();
@@ -556,7 +501,7 @@ void DeleteObject( int objtype, int objnum)
 /*
    insert a new object
 */
-void InsertObject(int objtype, int copyfrom, int grid)
+void InsertObject(int objtype, int copyfrom, int xpos, int ypos)
 {
    int last;
 
@@ -565,17 +510,12 @@ void InsertObject(int objtype, int copyfrom, int grid)
    {
    case OBJ_THINGS:
       last = NumThings++;
-      Things = ResizeFarMemory( Things, (unsigned long) NumThings * sizeof( struct Thing));
-      if (grid > 0)
-      {
-	 Things[ last].xpos  = (MAPX(PointerX) / grid) * grid;
-	 Things[ last].ypos  = (MAPY(PointerY) / grid) * grid;
-      }
+      if (last > 0)
+	 Things = ResizeFarMemory( Things, (unsigned long) NumThings * sizeof( struct Thing));
       else
-      {
-	 Things[ last].xpos  = MAPX(PointerX);
-	 Things[ last].ypos  = MAPY(PointerY);
-      }
+	 Things = GetFarMemory( sizeof( struct Thing));
+      Things[ last].xpos = xpos;
+      Things[ last].ypos = ypos;
       if (copyfrom >= 0)
       {
 	 Things[ last].type  = Things[ copyfrom].type;
@@ -591,7 +531,10 @@ void InsertObject(int objtype, int copyfrom, int grid)
       break;
    case OBJ_LINEDEFS:
       last = NumLineDefs++;
-      LineDefs = ResizeFarMemory( LineDefs, (unsigned long) NumLineDefs * sizeof( struct LineDef));
+      if (last > 0)
+	 LineDefs = ResizeFarMemory( LineDefs, (unsigned long) NumLineDefs * sizeof( struct LineDef));
+      else
+	 LineDefs = GetFarMemory( sizeof( struct LineDef));
       if (copyfrom >= 0)
       {
 	 LineDefs[ last].start = LineDefs[ copyfrom].start;
@@ -610,12 +553,14 @@ void InsertObject(int objtype, int copyfrom, int grid)
       }
       LineDefs[ last].sidedef1 = -1;
       LineDefs[ last].sidedef2 = -1;
-      MadeMapChanges = TRUE;
       break;
    case OBJ_SIDEDEFS:
       /* SideDefs are added from the LineDefs menu, so "copyfrom" should always be -1.  But I test it anyway. */
       last = NumSideDefs++;
-      SideDefs = ResizeFarMemory( SideDefs, (unsigned long) NumSideDefs * sizeof( struct SideDef));
+      if (last > 0)
+	 SideDefs = ResizeFarMemory( SideDefs, (unsigned long) NumSideDefs * sizeof( struct SideDef));
+      else
+	 SideDefs = GetFarMemory( sizeof( struct SideDef));
       if (copyfrom >= 0)
       {
 	 SideDefs[ last].xoff = SideDefs[ copyfrom].xoff;
@@ -634,54 +579,23 @@ void InsertObject(int objtype, int copyfrom, int grid)
 	 strcpy( SideDefs[ last].tex3, "STARTAN3");
 	 SideDefs[ last].sector = NumSectors - 1;
       }
+      MadeMapChanges = TRUE;
       break;
    case OBJ_VERTEXES:
       last = NumVertexes++;
-      Vertexes = ResizeFarMemory( Vertexes, (unsigned long) NumVertexes * sizeof( struct Vertex));
-      if (grid > 0)
-      {
-	 Vertexes[ last].x  = (MAPX(PointerX) / grid) * grid;
-	 Vertexes[ last].y  = (MAPY(PointerY) / grid) * grid;
-      }
+      if (last > 0)
+	 Vertexes = ResizeFarMemory( Vertexes, (unsigned long) NumVertexes * sizeof( struct Vertex));
       else
-      {
-	 Vertexes[ last].x  = MAPX(PointerX);
-	 Vertexes[ last].y  = MAPY(PointerY);
-      }
-      break;
-   case OBJ_SEGS:
-      last = NumSegs++;
-      Segs = ResizeFarMemory( Segs, (unsigned long) NumSegs * sizeof( struct Seg));
-      if (copyfrom >= 0)
-      {
-	 Segs[ last].start = Segs[ copyfrom].start;
-	 Segs[ last].end = Segs[ copyfrom].end;
-	 Segs[ last].angle = ComputeAngle(Vertexes[ Segs[ last].end].x - Vertexes[ Segs[ last].start].x,
-					  Vertexes[ Segs[ last].end].y - Vertexes[ Segs[ last].start].y);
-	 Segs[ last].linedef = Segs[ copyfrom].linedef;
-	 Segs[ last].flip = Segs[ copyfrom].flip;
-	 Segs[ last].dist = Segs[ copyfrom].dist;
-      }
-      else
-      {
-	 Segs[ last].start = 0;
-	 Segs[ last].end = NumVertexes - 1;
-	 Segs[ last].angle = ComputeAngle(Vertexes[ Segs[ last].end].x - Vertexes[ Segs[ last].start].x,
-					  Vertexes[ Segs[ last].end].y - Vertexes[ Segs[ last].start].y);
-	 Segs[ last].linedef = 0;
-	 Segs[ last].flip = 0;
-	 Segs[ last].dist = 0;
-      }
-      break;
-   case OBJ_SSECTORS:
-      last = NumSSectors++;
-      SSectors = ResizeFarMemory( SSectors, (unsigned long) NumSSectors * sizeof( struct SSector));
-      SSectors[ last].num = 1;
-      SSectors[ last].first = NumSegs - 1;
+	 Vertexes = GetFarMemory( sizeof( struct Vertex));
+      Vertexes[ last].x = xpos;
+      Vertexes[ last].y = ypos;
       break;
    case OBJ_SECTORS:
       last = NumSectors++;
-      Sectors = ResizeFarMemory( Sectors, (unsigned long) NumSectors * sizeof( struct Sector));
+      if (last > 0)
+	 Sectors = ResizeFarMemory( Sectors, (unsigned long) NumSectors * sizeof( struct Sector));
+      else
+	 Sectors = GetFarMemory( sizeof( struct Sector));
       if (copyfrom >= 0)
       {
 	 Sectors[ last].floorh = Sectors[ copyfrom].floorh;
@@ -800,7 +714,7 @@ int InputObjectNumber( int x0, int y0, int objtype, int curobj)
 /*
    ask for an object number and display a warning message
 */
-int InputObjectXRef( int x0, int y0, int objtype, int allownone, int curobj)
+int InputObjectXRef( int x0, int y0, int objtype, Bool allownone, int curobj)
 {
    int val, key;
    char prompt[ 80];
@@ -834,8 +748,9 @@ int InputObjectXRef( int x0, int y0, int objtype, int allownone, int curobj)
 */
 int Input2VertexNumbers( int x0, int y0, char *prompt1, int *v1, int *v2)
 {
-   int val, key;
-   int maxlen, first, ok;
+   int  val, key;
+   int  maxlen, first;
+   Bool ok;
    char prompt2[ 80];
 
    if (UseMouse)
@@ -1155,18 +1070,19 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	 break;
 
       case 3:
-	 switch (DisplayMenu( 42, 84, "Choose the difficulty level(s)",
-			      "D12         (Easy only)",
-			      "D3          (Medium only)",
-			      "D12, D3     (Easy and Medium)",
-			      "D4          (Hard only)",
-			      "D12, D4     (Easy and Hard)",
-			      "D3, D4      (Medium and Hard)",
-			      "D12, D3, D4 (Easy, Medium, Hard)",
-			      "Toggle \"Deaf/Ambush\" bit",
-			      "Toggle \"Multi-player only\" bit",
-			      "(Enter a decimal value)",
-			      NULL))
+	 val = DisplayMenu( 42, 84, "Choose the difficulty level(s)",
+			    "D12         (Easy only)",
+			    "D3          (Medium only)",
+			    "D12, D3     (Easy and Medium)",
+			    "D4          (Hard only)",
+			    "D12, D4     (Easy and Hard)",
+			    "D3, D4      (Medium and Hard)",
+			    "D12, D3, D4 (Easy, Medium, Hard)",
+			    "Toggle \"Deaf/Ambush\" bit",
+			    "Toggle \"Multi-player only\" bit",
+			    "(Enter a decimal value)",
+			    NULL);
+	 switch (val)
 	 {
 	 case 1:
 	 case 2:
@@ -1190,8 +1106,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    MadeChanges = TRUE;
 	    break;
 	 case 10:
-	    if (val == 10)
-	       val = InputIntegerValue( 84,  188, 1, 31, Things[ obj->objnum].when);
+	    val = InputIntegerValue( 84,  188, 1, 31, Things[ obj->objnum].when);
 	    if (val > 0)
 	    {
 	       for (cur = obj; cur; cur = cur->next)
@@ -1234,9 +1149,9 @@ void EditObjectInfo( int objtype, SelPtr obj)
 			   NULL))
       {
       case 1:
-	 for (n = 0; n < 8; n++)
+	 for (n = 0; n < 9; n++)
 	    menustr[ n] = GetMemory( 60);
-	 sprintf( menustr[ 7], "Edit LineDef #%d", obj->objnum);
+	 sprintf( menustr[ 8], "Edit LineDef #%d", obj->objnum);
 	 sprintf( menustr[ 0], "Change Flags            (Current: %d)", LineDefs[ obj->objnum].flags);
 	 sprintf( menustr[ 1], "Change Type             (Current: %d)", LineDefs[ obj->objnum].type);
 	 sprintf( menustr[ 2], "Change Sector tag       (Current: %d)", LineDefs[ obj->objnum].tag);
@@ -1244,8 +1159,9 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	 sprintf( menustr[ 4], "Change Ending Vertex    (Current: #%d)", LineDefs[ obj->objnum].end);
 	 sprintf( menustr[ 5], "Change 1st SideDef ref. (Current: #%d)", LineDefs[ obj->objnum].sidedef1);
 	 sprintf( menustr[ 6], "Change 2nd SideDef ref. (Current: #%d)", LineDefs[ obj->objnum].sidedef2);
-	 val = DisplayMenuArray( 42, 64, menustr[ 7], 7, menustr);
-	 for (n = 0; n < 8; n++)
+	 sprintf( menustr[ 7], "Flip LineDef");
+	 val = DisplayMenuArray( 42, 64, menustr[ 8], 8, menustr);
+	 for (n = 0; n < 9; n++)
 	    free( menustr[ n]);
 	 switch (val)
 	 {
@@ -1347,6 +1263,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       for (cur = obj; cur; cur = cur->next)
 		  LineDefs[ cur->objnum].start = val;
 	       MadeChanges = TRUE;
+	       MadeMapChanges = TRUE;
 	    }
 	    break;
 	 case 5:
@@ -1356,6 +1273,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       for (cur = obj; cur; cur = cur->next)
 		  LineDefs[ cur->objnum].end = val;
 	       MadeChanges = TRUE;
+	       MadeMapChanges = TRUE;
 	    }
 	    break;
 	 case 6:
@@ -1365,6 +1283,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       for (cur = obj; cur; cur = cur->next)
 		  LineDefs[ cur->objnum].sidedef1 = val;
 	       MadeChanges = TRUE;
+	       MadeMapChanges = TRUE;
 	    }
 	    break;
 	 case 7:
@@ -1374,7 +1293,11 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       for (cur = obj; cur; cur = cur->next)
 		  LineDefs[ cur->objnum].sidedef2 = val;
 	       MadeChanges = TRUE;
+	       MadeMapChanges = TRUE;
 	    }
+	    break;
+	 case 8:
+	    NotImplemented();
 	    break;
 	 }
 	 break;
@@ -1396,7 +1319,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    for (cur = obj; cur; cur = cur->next)
 	       if (LineDefs[ cur->objnum].sidedef1 == -1)
 	       {
-		  InsertObject( OBJ_SIDEDEFS, -1, 0);
+		  InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
 		  LineDefs[ cur->objnum].sidedef1 = GetMaxObjectNum( OBJ_SIDEDEFS);
 	       }
 	    break;
@@ -1424,12 +1347,12 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       for (cur = obj; cur; cur = cur->next)
 		  if (LineDefs[ cur->objnum].sidedef1 == -1)
 		  {
-		     InsertObject( OBJ_SIDEDEFS, -1, 0);
+		     InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
 		     LineDefs[ cur->objnum].sidedef1 = GetMaxObjectNum( OBJ_SIDEDEFS);
 		  }
 		  else if (LineDefs[ cur->objnum].sidedef2 == -1)
 		  {
-		     InsertObject( OBJ_SIDEDEFS, -1, 0);
+		     InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
 		     LineDefs[ cur->objnum].sidedef2 = GetMaxObjectNum( OBJ_SIDEDEFS);
 		  }
 	       break;
@@ -1469,7 +1392,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    break;
 	 case 2:
 	    strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
-	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
+	    ChooseWallTexture( 84, 128, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1491,7 +1414,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    break;
 	 case 4:
 	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
-	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
+	    ChooseWallTexture( 84, 148, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1513,7 +1436,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    break;
 	 case 6:
 	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
-	    ChooseWallTexture( "Choose a wall texture", NumWTexture, WTexture, texname);
+	    ChooseWallTexture( 84, 168, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1578,6 +1501,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    for (cur = obj; cur; cur = cur->next)
 	       Vertexes[ cur->objnum].x += n;
 	    MadeChanges = TRUE;
+	    MadeMapChanges = TRUE;
 	 }
 	 break;
 
@@ -1589,120 +1513,34 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    for (cur = obj; cur; cur = cur->next)
 	       Vertexes[ cur->objnum].y += n;
 	    MadeChanges = TRUE;
-	 }
-	 break;
-      }
-      break;
-
-
-   case OBJ_SEGS:
-      for (n = 0; n < 7; n++)
-	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 6], "Edit Seg #%d", obj->objnum);
-      sprintf( menustr[ 0], "Change Flip flag       (Current: %d)", Segs[ obj->objnum].flip);
-      sprintf( menustr[ 1], "Change Distance        (Current: %d)", Segs[ obj->objnum].dist);
-      sprintf( menustr[ 2], "Change Angle           (Current: %d)", Segs[ obj->objnum].angle);
-      sprintf( menustr[ 3], "Change Starting Vertex (Current: #%d)", Segs[ obj->objnum].start);
-      sprintf( menustr[ 4], "Change Ending Vertex   (Current: #%d)", Segs[ obj->objnum].end);
-      sprintf( menustr[ 5], "Change LineDef ref.    (Current: #%d)", Segs[ obj->objnum].linedef);
-      val = DisplayMenuArray( 0, 30, menustr[ 6], 6, menustr);
-      for (n = 0; n < 7; n++)
-	 free( menustr[ n]);
-      switch (val)
-      {
-      case 1:
-	 val = InputIntegerValue( 42, 64, 0, 255, Segs[ obj->objnum].flip);
-	 if (val >= 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	       Segs[ cur->objnum].flip = val;
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 2:
-	 val = InputIntegerValue( 42, 74, 0, 255, Segs[ obj->objnum].dist);
-	 if (val >= 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	       Segs[ cur->objnum].dist = val;
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 3:
-	 if (Confirm( 42, 74, "The angle is automatically updated by this program.", "Do you really want to change this value?"))
-	 {
-	    val = InputIntegerValue( 42, 84, -32767, 32767, Segs[ obj->objnum].angle);
-	    if (val >= -32767)
-	    {
-	       for (cur = obj; cur; cur = cur->next)
-		  Segs[ cur->objnum].angle = val;
-	       MadeChanges = TRUE;
-	    }
-
-	 }
-	 break;
-      case 4:
-	 val = InputObjectXRef( 42, 94, OBJ_VERTEXES, FALSE, Segs[ obj->objnum].start);
-	 if (val >= 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	    {
-	       Segs[ cur->objnum].start = val;
-	       Segs[ cur->objnum].angle = ComputeAngle(Vertexes[ Segs[ cur->objnum].end].x - Vertexes[ Segs[ cur->objnum].start].x,
-						       Vertexes[ Segs[ cur->objnum].end].y - Vertexes[ Segs[ cur->objnum].start].y);
-	    }
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 5:
-	 val = InputObjectXRef( 42, 104, OBJ_VERTEXES, FALSE, Segs[ obj->objnum].end);
-	 if (val >= 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	    {
-	       Segs[ cur->objnum].end = val;
-	       Segs[ cur->objnum].angle = ComputeAngle(Vertexes[ Segs[ cur->objnum].end].x - Vertexes[ Segs[ cur->objnum].start].x,
-						       Vertexes[ Segs[ cur->objnum].end].y - Vertexes[ Segs[ cur->objnum].start].y);
-	    }
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 6:
-	 val = InputObjectXRef( 42, 114, OBJ_LINEDEFS, FALSE, Segs[ obj->objnum].linedef);
-	 if (val >= 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	       Segs[ cur->objnum].linedef = val;
-	    MadeChanges = TRUE;
+	    MadeMapChanges = TRUE;
 	 }
 	 break;
       }
       break;
 
    case OBJ_SECTORS:
-      for (n = 0; n < 10; n++)
+      for (n = 0; n < 8; n++)
 	 menustr[ n] = GetMemory( 60);
-      sprintf( menustr[ 9], "Edit Sector #%d", obj->objnum);
+      sprintf( menustr[ 7], "Edit Sector #%d", obj->objnum);
       sprintf( menustr[ 0], "Change Floor height     (Current: %d)", Sectors[ obj->objnum].floorh);
       sprintf( menustr[ 1], "Change Ceiling height   (Current: %d)", Sectors[ obj->objnum].ceilh);
       texname[ 8] = '\0';
       strncpy( texname, Sectors[ obj->objnum].floort, 8);
       sprintf( menustr[ 2], "Change Floor texture    (Current: %s)", texname);
-      sprintf( menustr[ 3], "Display Floor texture");
       strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
-      sprintf( menustr[ 4], "Change Ceiling texture  (Current: %s)", texname);
-      sprintf( menustr[ 5], "Display Ceiling texture");
-      sprintf( menustr[ 6], "Change Light level      (Current: %d)", Sectors[ obj->objnum].light);
-      sprintf( menustr[ 7], "Change Type             (Current: %d)", Sectors[ obj->objnum].special);
-      sprintf( menustr[ 8], "Change LineDef tag      (Current: %d)", Sectors[ obj->objnum].tag);
-      val = DisplayMenuArray( 0, 30, menustr[ 9], 9, menustr);
-      for (n = 0; n < 10; n++)
+      sprintf( menustr[ 3], "Change Ceiling texture  (Current: %s)", texname);
+      sprintf( menustr[ 4], "Change Light level      (Current: %d)", Sectors[ obj->objnum].light);
+      sprintf( menustr[ 5], "Change Type             (Current: %d)", Sectors[ obj->objnum].special);
+      sprintf( menustr[ 6], "Change LineDef tag      (Current: %d)", Sectors[ obj->objnum].tag);
+      val = DisplayMenuArray( 0, 30, menustr[ 7], 7, menustr);
+      for (n = 0; n < 8; n++)
 	 free( menustr[ n]);
       switch (val)
       {
       case 1:
-	 val = InputIntegerValue( 42, 64, -512, 512, Sectors[ obj->objnum].floorh);
-	 if (val >= -264)
+	 val = InputIntegerValue( 42, 64, -511, 511, Sectors[ obj->objnum].floorh);
+	 if (val >= -511)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
 	       Sectors[ cur->objnum].floorh = val;
@@ -1710,8 +1548,8 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	 }
 	 break;
       case 2:
-	 val = InputIntegerValue( 42, 74, -512, 512, Sectors[ obj->objnum].ceilh);
-	 if (val >= -264)
+	 val = InputIntegerValue( 42, 74, -511, 511, Sectors[ obj->objnum].ceilh);
+	 if (val >= -511)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
 	       Sectors[ cur->objnum].ceilh = val;
@@ -1720,7 +1558,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	 break;
       case 3:
 	 strncpy( texname, Sectors[ obj->objnum].floort, 8);
-	 InputNameFromList( 42, 84, "Enter a floor texture name:", NumFTexture, FTexture, texname);
+	 ChooseFloorTexture( 42, 84, "Choose a floor texture", NumFTexture, FTexture, texname);
 	 if (strlen(texname) > 0)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
@@ -1729,36 +1567,16 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	 }
 	 break;
       case 4:
-	 strncpy( texname, Sectors[ obj->objnum].floort, 8);
-	 ChooseFloorTexture( "Choose a floor texture", NumFTexture, FTexture, texname);
+	 strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
+	 ChooseFloorTexture( 42, 94, "Choose a ceiling texture", NumFTexture, FTexture, texname);
 	 if (strlen(texname) > 0)
 	 {
 	    for (cur = obj; cur; cur = cur->next)
-	       strncpy( Sectors[ cur->objnum].floort, texname, 8);
+	       strncpy( Sectors[ cur->objnum].ceilt, texname, 8);
 	    MadeChanges = TRUE;
 	 }
 	 break;
       case 5:
-	 strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
-	 InputNameFromList( 42, 104, "Enter a ceiling texture name:", NumFTexture, FTexture, texname);
-	 if (strlen(texname) > 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	       strncpy( Sectors[ cur->objnum].ceilt, texname, 8);
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 6:
-	 strncpy( texname, Sectors[ obj->objnum].ceilt, 8);
-	 ChooseFloorTexture( "Choose a ceiling texture", NumFTexture, FTexture, texname);
-	 if (strlen(texname) > 0)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	       strncpy( Sectors[ cur->objnum].ceilt, texname, 8);
-	    MadeChanges = TRUE;
-	 }
-	 break;
-      case 7:
 	 val = InputIntegerValue( 42, 124, 0, 255, Sectors[ obj->objnum].light);
 	 if (val >= 0)
 	 {
@@ -1767,7 +1585,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    MadeChanges = TRUE;
 	 }
 	 break;
-      case 8:
+      case 6:
 	 val = DisplayMenu( 42, 134, "Choose a special behaviour",
 			    GetSectorTypeLongName(0),
 			    GetSectorTypeLongName(1),
@@ -1826,7 +1644,7 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    break;
 	 }
 	 break;
-      case 9:
+      case 7:
 	 val = InputIntegerValue( 42, 144, 0, 999, Sectors[ obj->objnum].tag);
 	 if (val >= 0)
 	 {
@@ -1881,7 +1699,7 @@ void MoveObjectToCoords( int objtype, SelPtr obj, int x, int y)
    check if a (part of a) LineDef is inside a given block
 */
 
-int IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1)
+Bool IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1)
 {
    int lx0 = Vertexes[ LineDefs[ ldnum].start].x;
    int ly0 = Vertexes[ LineDefs[ ldnum].start].y;
@@ -1890,6 +1708,10 @@ int IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1)
    int i;
 
    /* do you like mathematics? */
+   if (lx0 >= x0 && lx0 <= x1 && ly0 >= y0 && ly0 <= y1)
+      return TRUE; /* the LineDef start is entirely inside the square */
+   if (lx1 >= x0 && lx1 <= x1 && ly1 >= y0 && ly1 <= y1)
+      return TRUE; /* the LineDef end is entirely inside the square */
    if ((ly0 > y0) != (ly1 > y0))
    {
       i = lx0 + (int) ( (long) (y0 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
@@ -1914,13 +1736,505 @@ int IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1)
       if (i >= y0 && i <= y1)
 	 return TRUE; /* the LineDef crosses the x1 side (up) */
    }
-   if (lx0 >= x0 && lx0 <= x1 && ly0 >= y0 && ly0 <= y1)
-      return TRUE; /* the LineDef is entirely inside the square */
-   if (lx1 >= x0 && lx1 <= x1 && ly1 >= y0 && ly1 <= y1)
-      return TRUE; /* paranoia */
    return FALSE;
 }
 
+
+
+/*
+   display some informations while the user is waiting
+*/
+void ShowProgress( int objtype)
+{
+   switch (objtype)
+   {
+   case OBJ_VERTEXES:
+      DrawScreenBox3D( 0, 0, 200, 22);
+      DrawScreenText( 10, 8, "Number of Vertices: %d", NumVertexes);
+      break;
+   case OBJ_SIDEDEFS:
+      DrawScreenBox3D( 0, 30, 200, 52);
+      DrawScreenText( 10, 38, "Number of SideDefs: %d", NumSideDefs);
+      break;
+   case OBJ_SSECTORS:
+      DrawScreenBox3D( 0, 60, 200, 92);
+      DrawScreenText( 10, 68, "Number of Segs:     %d", NumSegs);
+      DrawScreenText( 10, 78, "Number of SSectors: %d", NumSSectors);
+      break;
+   }
+}
+
+
+
+/*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*DEBUG*/
+void ShowSeg( SEPtr seg, int color)
+{
+   int n, m;
+
+   setwritemode( XOR_PUT);
+   setcolor( color);
+   n = (Vertexes[ seg->start].x + Vertexes[ seg->end].x) / 2;
+   m = (Vertexes[ seg->start].y + Vertexes[ seg->end].y) / 2;
+   DrawMapLine( n, m, n + (Vertexes[ seg->end].y - Vertexes[ seg->start].y) / 2, m + (Vertexes[ seg->start].x - Vertexes[ seg->end].x) / 2);
+   setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
+   DrawMapVector( Vertexes[ seg->start].x, Vertexes[ seg->start].y,
+		  Vertexes[ seg->end].x, Vertexes[ seg->end].y);
+   setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
+   setwritemode( COPY_PUT);
+}
+
+
+
+/*
+   check if a list of Segs should be divided in smaller parts (by a nodeline)
+*/
+
+Bool NeedFurtherDivision( SEPtr seglist)
+{
+   SEPtr curseg, refseg;
+   int   sector;
+
+   /* the sector number must be the same for all Segs */
+   if (seglist->flip)
+      sector = SideDefs[ LineDefs[ seglist->linedef].sidedef2].sector;
+   else
+      sector = SideDefs[ LineDefs[ seglist->linedef].sidedef1].sector;
+   for (curseg = seglist->next; curseg; curseg = curseg->next)
+   {
+      if (curseg->flip)
+      {
+	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef2].sector != sector)
+	    return TRUE;
+      }
+      else
+      {
+	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef1].sector != sector)
+	    return TRUE;
+      }
+   }
+   /* the angle between two successive Segs must be <= 32767 */
+   for (refseg = seglist; refseg; refseg = refseg->next)
+   {
+      for (curseg = seglist; curseg; curseg = curseg->next)
+	 if (curseg->start == refseg->end && (unsigned int) (refseg->angle - curseg->angle) > (unsigned int) 32767)
+	    return TRUE;
+   }
+   /* no need to split the list: these Segs can be put in a SSector */
+   return FALSE;
+}
+
+
+
+/*
+   find the point of intersection for two lines
+*/
+
+Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2)
+{
+   /* floating-point required because long integers cause errors */
+   double x1  = Vertexes[ seg1->start].x;
+   double y1  = Vertexes[ seg1->start].y;
+   double dx1 = Vertexes[ seg1->end].x - Vertexes[ seg1->start].x;
+   double dy1 = Vertexes[ seg1->end].y - Vertexes[ seg1->start].y;
+   double x2  = Vertexes[ seg2->start].x;
+   double y2  = Vertexes[ seg2->start].y;
+   double dx2 = Vertexes[ seg2->end].x - Vertexes[ seg2->start].x;
+   double dy2 = Vertexes[ seg2->end].y - Vertexes[ seg2->start].y;
+   double d;
+
+   d = dy1 * dx2 - dx1 * dy2;
+   if (d != 0.0)
+   {
+      x1 = y1 * dx1 - x1 * dy1;
+      x2 = y2 * dx2 - x2 * dy2;
+      /* (*x, *y) = intersection */
+      *x = (int) ((dx1 * x2 - dx2 * x1) / d);
+      *y = (int) ((dy1 * x2 - dy2 * x1) / d);
+      /* check if the intersection is not at one end of a Seg */
+      if ((*x != Vertexes[ seg1->start].x || *y != Vertexes[ seg1->start].y) && (*x != Vertexes[ seg1->end].x || *y != Vertexes[ seg1->end].y)
+       && (*x != Vertexes[ seg2->start].x || *y != Vertexes[ seg2->start].y) && (*x != Vertexes[ seg2->end].x || *y != Vertexes[ seg2->end].y))
+	 return TRUE; /* intersection OK */
+      else
+	 return FALSE; /* not a real intersection point (round-off error in a previous operation) */
+   }
+   else
+      return FALSE; /* parallel lines */
+}
+
+
+
+/*
+   create a SSector from a list of Segs
+*/
+
+int CreateSSector( SEPtr seglist)
+{
+   /* update the SSectors list */
+   NumSSectors++;
+   if (SSectors)
+   {
+      LastSSector->next = GetMemory( sizeof( struct SSector));
+      LastSSector = LastSSector->next;
+   }
+   else
+   {
+      SSectors = GetMemory( sizeof( struct SSector));
+      LastSSector = SSectors;
+   }
+   LastSSector->next = NULL;
+   /* number of first Segment in this SubSector */
+   LastSSector->first = NumSegs;
+   /* update the Segs list */
+   if (Segs == NULL)
+      Segs = seglist;
+   else
+      LastSeg->next = seglist;
+   NumSegs++;
+   for (LastSeg = seglist; LastSeg->next; LastSeg = LastSeg->next)
+      NumSegs++;
+   /* total number of Segments in this SubSector */
+   LastSSector->num = NumSegs - LastSSector->first;
+   /* while the user is waiting... */
+   ShowProgress( OBJ_SSECTORS);
+   /* return the number of this SubSector */
+   return NumSSectors - 1;
+}
+
+
+
+/*
+   create all the Nodes from a list of Segs
+*/
+
+NPtr CreateNodes( SEPtr seglist)
+{
+   NPtr   node;
+   SEPtr  nodeline, curseg;
+   int    splits, minsplits;
+   int    num1, num2, mindiff;
+   long   a, b, c, d;
+   SEPtr  segs1, lastseg1;
+   SEPtr  segs2, lastseg2;
+   /* ***DEBUG*** */
+   static SEPtr lastnodeline = NULL;
+
+   /* new Node */
+   node = GetMemory( sizeof( struct Node));
+
+   /* find nodeline - brute force: try with all Segs */
+   minsplits = 32767;
+   mindiff = 32767;
+   segs1 = NULL;
+   for (nodeline = seglist; nodeline; nodeline = nodeline->next)
+   {
+      /* compute x, y, dx, dy */
+      long x = Vertexes[ nodeline->start].x;
+      long y = Vertexes[ nodeline->start].y;
+      long dx = Vertexes[ nodeline->end].x - Vertexes[ nodeline->start].x;
+      long dy = Vertexes[ nodeline->end].y - Vertexes[ nodeline->start].y;
+      /* compute number of splits */
+      splits = 0;
+      num1 = 0;
+      num2 = 0;
+      for (curseg = seglist; curseg; curseg = curseg->next)
+      {
+	 if (curseg == nodeline)
+	 {
+	    num1++;
+	    continue;
+	 }
+	 a = ((long) Vertexes[ curseg->start].x - x) * dy;
+	 b = ((long) Vertexes[ curseg->start].y - y) * dx;
+	 c = ((long) Vertexes[ curseg->end].x - x) * dy;
+	 d = ((long) Vertexes[ curseg->end].y - y) * dx;
+	 if ((a != b) && (c != d) && ((a > b) != (c > d)))
+	 {
+	    int newx, newy;
+	    /* we should have an intersection, but... */
+	    /* check for round-off errors (intersection of long diagonal lines) */
+	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
+	    {
+	       splits++; /* one more split */
+	       num1++;
+	       num2++;
+	    }
+	 }
+	 else if ((a > b) || ((a == b) && (c > d))
+		  || ((a == b) && (c == d) && ((dx > 0) == ((Vertexes[ curseg->end].x - Vertexes[ curseg->start].x) > 0)) && ((dy > 0) == ((Vertexes[ curseg->end].y - Vertexes[ curseg->start].y) > 0))))
+	    num1++; /* one more Seg on the first (right) side */
+	 else
+	    num2++; /* one more Seg on the second (left) side */
+	 if (splits > minsplits)
+	    break;  /* don't waste time */
+      }
+      /* there must be at least one Seg on each side */
+      if (num1 > 0 && num2 > 0)
+      {
+	 /* now, num1 = difference in number of Segs between two sides */
+	 if (num1 > num2)
+	    num1 = num1 - num2;
+	 else
+	    num1 = num2 - num1;
+	 /* minimal number of splits = candidate for nodeline */
+	 if (splits < minsplits || (splits == minsplits && num1 < mindiff))
+	 {
+	    minsplits = splits; /* minimal number of splits */
+	    mindiff = num1; /* minimal difference between the two sides */
+	    segs1 = nodeline; /* save the nodeline */
+	 }
+      }
+   }
+
+   if (segs1)
+      nodeline = segs1;
+   else
+      ProgError( "nodeline not found (check if all sectors are closed)");
+
+   /* ***DEBUG*** */
+   if (nodeline == lastnodeline)
+      ProgError( "nodeline picked twice (this is a BUG!)");
+   lastnodeline = nodeline;
+
+   /* compute x, y, dx, dy */
+   node->x = Vertexes[ nodeline->start].x;
+   node->y = Vertexes[ nodeline->start].y;
+   node->dx = Vertexes[ nodeline->end].x - Vertexes[ nodeline->start].x;
+   node->dy = Vertexes[ nodeline->end].y - Vertexes[ nodeline->start].y;
+
+   /* split seglist in segs1 and segs2 */
+   segs1 = NULL;
+   segs2 = NULL;
+   while (seglist)
+   {
+      curseg = seglist;
+      seglist = seglist->next;
+      a = (long) (Vertexes[ curseg->start].x - node->x) * (long) (node->dy);
+      b = (long) (Vertexes[ curseg->start].y - node->y) * (long) (node->dx);
+      c = (long) (Vertexes[ curseg->end].x - node->x) * (long) (node->dy);
+      d = (long) (Vertexes[ curseg->end].y - node->y) * (long) (node->dx);
+      if ((a > b) || ((a == b) && (c > d))
+	  || ((a == b) && (c == d) && ((node->dx > 0) == ((Vertexes[ curseg->end].x - Vertexes[ curseg->start].x) > 0)) && ((node->dy > 0) == ((Vertexes[ curseg->end].y - Vertexes[ curseg->start].y) > 0))))
+      {
+	 /* the starting Vertex is on the first side (right) of the nodeline */
+	 if (segs1)
+	 {
+	    lastseg1->next = curseg;
+	    lastseg1 = lastseg1->next;
+	 }
+	 else
+	 {
+	    segs1 = curseg;
+	    lastseg1 = segs1;
+	 }
+	 lastseg1->next = NULL;
+	 if (c < d)
+	 {
+	    int newx, newy;
+
+	    /* the ending Vertex is on the other side: split the Seg in two */
+	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
+	    {
+	       InsertObject( OBJ_VERTEXES, -1, newx, newy);
+	       if (segs2)
+	       {
+		  lastseg2->next = GetFarMemory( sizeof( struct Seg));
+		  lastseg2 = lastseg2->next;
+	       }
+	       else
+	       {
+		  segs2 = GetFarMemory( sizeof( struct Seg));
+		  lastseg2 = segs2;
+	       }
+	       lastseg2->next = NULL;
+	       lastseg2->start = NumVertexes - 1;
+	       lastseg2->end = lastseg1->end;
+	       lastseg2->angle = lastseg1->angle;
+	       lastseg2->linedef = lastseg1->linedef;
+	       lastseg2->flip = lastseg1->flip;
+	       lastseg2->dist = lastseg1->dist + ComputeDist( newx - Vertexes[ lastseg1->start].x, newy - Vertexes[ lastseg1->start].y);
+	       lastseg1->end = NumVertexes - 1;
+	       ShowProgress( OBJ_VERTEXES);
+	    }
+	 }
+      }
+      else
+      {
+	 /* the starting Vertex is on the second side (left) of the nodeline */
+	 if (segs2)
+	 {
+	    lastseg2->next = curseg;
+	    lastseg2 = lastseg2->next;
+	 }
+	 else
+	 {
+	    segs2 = curseg;
+	    lastseg2 = segs2;
+	 }
+	 lastseg2->next = NULL;
+	 if (c > d)
+	 {
+	    int newx, newy;
+
+	    /* the ending Vertex is on the other side: split the Seg in two */
+	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
+	    {
+	       InsertObject( OBJ_VERTEXES, -1, newx, newy);
+	       if (segs1)
+	       {
+		  lastseg1->next = GetFarMemory( sizeof( struct Seg));
+		  lastseg1 = lastseg1->next;
+	       }
+	       else
+	       {
+		  segs1 = GetFarMemory( sizeof( struct Seg));
+		  lastseg1 = segs1;
+	       }
+	       lastseg1->next = NULL;
+	       lastseg1->start = NumVertexes - 1;
+	       lastseg1->end = lastseg2->end;
+	       lastseg1->angle = lastseg2->angle;
+	       lastseg1->linedef = lastseg2->linedef;
+	       lastseg1->flip = lastseg2->flip;
+	       lastseg1->dist = lastseg2->dist + ComputeDist( newx - Vertexes[ lastseg2->start].x, newy - Vertexes[ lastseg2->start].y);
+	       lastseg2->end = NumVertexes - 1;
+	       ShowProgress( OBJ_VERTEXES);
+	    }
+	 }
+      }
+   }
+
+   /* now, we should have all the Segs in segs1 and segs2 */
+   if (segs1 == NULL || segs2 == NULL)
+      ProgError("cannot split the Segs list (this is a BUG!)");
+
+   /* compute minx1, miny1, maxx1, maxy1 */
+   node->maxx1 = -32768;
+   node->maxy1 = -32768;
+   node->minx1 = 32767;
+   node->miny1 = 32767;
+   for (curseg = segs1; curseg; curseg = curseg->next)
+   {
+      if (Vertexes[ curseg->start].x < node->minx1)
+	 node->minx1 = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].x > node->maxx1)
+	 node->maxx1 = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].y < node->miny1)
+	 node->miny1 = Vertexes[ curseg->start].y;
+      if (Vertexes[ curseg->start].y > node->maxy1)
+	 node->maxy1 = Vertexes[ curseg->start].y;
+      if (Vertexes[ curseg->end].x < node->minx1)
+	 node->minx1 = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].x > node->maxx1)
+	 node->maxx1 = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].y < node->miny1)
+	 node->miny1 = Vertexes[ curseg->end].y;
+      if (Vertexes[ curseg->end].y > node->maxy1)
+	 node->maxy1 = Vertexes[ curseg->end].y;
+   }
+
+   /* create Nodes or SSectors from segs1 */
+   if (NeedFurtherDivision( segs1))
+   {
+      node->node1 = CreateNodes( segs1);
+      node->child1 = 0;
+   }
+   else
+   {
+      node->node1 = NULL;
+      node->child1 = CreateSSector( segs1) | 0x8000;
+   }
+
+   /* compute minx2, miny2, maxx2, maxy2 */
+   node->maxx2 = -32768;
+   node->maxy2 = -32768;
+   node->minx2 = 32767;
+   node->miny2 = 32767;
+   for (curseg = segs2; curseg; curseg = curseg->next)
+   {
+      if (Vertexes[ curseg->start].x < node->minx2)
+	 node->minx2 = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].x > node->maxx2)
+	 node->maxx2 = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].y < node->miny2)
+	 node->miny2 = Vertexes[ curseg->start].y;
+      if (Vertexes[ curseg->start].y > node->maxy2)
+	 node->maxy2 = Vertexes[ curseg->start].y;
+      if (Vertexes[ curseg->end].x < node->minx2)
+	 node->minx2 = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].x > node->maxx2)
+	 node->maxx2 = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].y < node->miny2)
+	 node->miny2 = Vertexes[ curseg->end].y;
+      if (Vertexes[ curseg->end].y > node->maxy2)
+	 node->maxy2 = Vertexes[ curseg->end].y;
+   }
+
+   /* create Nodes or SSectors from segs2 */
+   if (NeedFurtherDivision( segs2))
+   {
+      node->node2 = CreateNodes( segs2);
+      node->child2 = 0;
+   }
+   else
+   {
+      node->node2 = NULL;
+      node->child2 = CreateSSector( segs2) | 0x8000;
+   }
+   /* this Node is OK */
+   return node;
+}
+
+
+/*
+   IF YOU ARE WRITING A DOOM EDITOR, PLEASE READ THIS:
+
+   I spent a lot of time writing the Nodes builder.  There are some bugs in
+   it, but most of the code is OK.  If you steal any ideas from this program,
+   put a prominent message in your own editor to make it CLEAR that some
+   original ideas were taken from DEU.  Thanks.
+
+   While everyone was talking about LineDefs, I had the idea of taking only
+   the Segs into account, and creating the Segs directly from the SideDefs.
+   Also, dividing the list of Segs in two after each call to CreateNodes makes
+   the algorithm faster.  I use several other tricks, such as looking at the
+   two ends of a Seg to see on which side of the nodeline it lies or if it
+   should be split in two.  I took me a lot of time and efforts to do this.
+
+   I give this algorithm to whoever wants to use it, but with this condition:
+   if your program uses some of the ideas from DEU or the whole algorithm, you
+   MUST tell it to the user.  And if you post a message with all or parts of
+   this algorithm in it, please post this notice also.  I don't want to speak
+   legalese; I hope that you understand me...  I kindly give the sources of my
+   program to you: please be kind with me...
+
+   If you need more information about this, here is my E-mail address:
+   quinet@montefiore.ulg.ac.be (Rapha‰l Quinet).
+
+   Short description of the algorithm:
+     1 - Create one Seg for each SideDef: pick each LineDef in turn.  If it
+	 has a "first" SideDef, then create a normal Seg.  If it has a
+	 "second" SideDef, then create a flipped Seg.
+     2 - Call CreateNodes with the current list of Segs.  The list of Segs is
+	 the only argument to CreateNodes.
+     3 - Save the Nodes, Segs and SSectors to disk.  Start with the leaves of
+	 the Nodes tree and continue up to the root (last Node).
+
+   CreateNodes does the following:
+     1 - Pick a nodeline amongst the Segs (minimize the number of splits and
+	 keep the tree as balanced as possible).
+     2 - Move all Segs on the right of the nodeline in a list (segs1) and do
+	 the same for all Segs on the left of the nodeline (in segs2).
+     3 - If the first list (segs1) contains references to more than one
+	 Sector or if the angle between two adjacent Segs is greater than
+	 180ø, then call CreateNodes with this (smaller) list.  Else, create
+	 a SubSector with all these Segs.
+     4 - Do the same for the second list (segs2).
+     5 - Return the new node (its two children are already OK).
+
+   Each time CreateSSector is called, the Segs are put in a global list.
+   When there is no more Seg in CreateNodes' list, then they are all in the
+   global list and ready to be saved to disk.
+*/
 
 
 /* end of file */

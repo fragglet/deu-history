@@ -17,11 +17,24 @@
 #include "deu.h"
 
 /* global variables */
-int Registered = FALSE;		/* registered or shareware game? */
-int Debug = FALSE;		/* are we debugging? */
-int SwapButtons = FALSE;	/* swap right and middle mouse buttons */
-int Quiet = FALSE;		/* don't play a sound when an object is selected */
-int Expert = FALSE;		/* don't ask for confirmation for some operations */
+Bool Registered = FALSE;	/* registered or shareware game? */
+Bool Debug = FALSE;		/* are we debugging? */
+Bool SwapButtons = FALSE;	/* swap right and middle mouse buttons */
+Bool Quiet = FALSE;		/* don't play a sound when an object is selected */
+Bool Expert = FALSE;		/* don't ask for confirmation for some operations */
+char *MainWad = "DOOM.WAD";	/* name of the main wad file */
+char **PatchWads = NULL;	/* list of patch wad files */
+OptDesc options[] =		/* description of the command line options */
+{
+   { "d", "debug", OPT_BOOLEAN, "Debug mode ON.  Useless now..", "Debug mode OFF", &Debug },
+   { "q", "quiet", OPT_BOOLEAN, "Quiet mode ON", "Quiet mode OFF", &Quiet },
+   { "e", "expert", OPT_BOOLEAN, "Expert mode ON", "Expert mode OFF", &Expert },
+   { "sb", "swapbuttons", OPT_BOOLEAN, "Mouse buttons swapped", "Mouse buttons restored", &SwapButtons },
+   { "w", "main", OPT_STRING, "Main WAD file", NULL, &MainWad },
+   { NULL, "file", OPT_STRINGLIST, "Patch WAD file", NULL, &PatchWads },
+   { "pw", "pwad", OPT_STRINGACC, "Patch WAD file", NULL, &PatchWads },
+   { NULL, NULL, OPT_NONE, NULL, NULL, NULL }
+};
 
 
 /*
@@ -33,64 +46,17 @@ int main( int argc, char *argv[])
    Credits( stdout);
    argv++;
    argc--;
-   /* parse the command line arguments */
-   while (argc && **argv == '-' && strcmp( *argv, "-file"))
-   {
-      if (!strcmp( *argv, "-d") || !strcmp( *argv, "-debug"))
+   /* read config file and command line options */
+   ParseConfigFileOptions( DEU_CONFIG_FILE);
+   ParseCommandLineOptions( argc, argv);
+   /* load the wad files */
+   OpenMainWad( MainWad);
+   if (PatchWads)
+      while (PatchWads[ 0])
       {
-	 Debug = !Debug;
-	 if (Debug)
-	    printf( "Debug mode ON.\n");
-	 else
-	    printf( "Debug mode OFF.\n");
+	 OpenPatchWad( strupr( PatchWads[ 0]));
+	 PatchWads++;
       }
-      else if (!strcmp( *argv, "-sb") || !strcmp( *argv, "-swapbuttons"))
-      {
-	 SwapButtons = !SwapButtons;
-	 if (SwapButtons)
-	    printf( "Mouse buttons swapped.\n");
-	 else
-	    printf( "Mouse buttons restored.\n");
-      }
-      else if (!strcmp( *argv, "-q") || !strcmp( *argv, "-quiet"))
-      {
-	 Quiet = !Quiet;
-	 if (Quiet)
-	    printf( "Quiet mode ON.\n");
-	 else
-	    printf( "Quiet mode OFF.\n");
-      }
-      else if (!strcmp( *argv, "-e") || !strcmp( *argv, "-expert"))
-      {
-	 Expert = !Expert;
-	 if (Expert)
-	    printf( "Expert mode ON.\n");
-	 else
-	    printf( "Expert mode OFF.\n");
-      }
-      else
-	 ProgError( "Invalid argument: %s", *argv);
-      argv++;
-      argc--;
-   }
-   /* load the WAD files */
-   if (argc)
-   {
-      /* load the main wad file */
-      if (!strcmp( *argv, "-file"))
-      {
-	 OpenMainWad( "DOOM.WAD");
-	 if (argc <= 1)
-	    ProgError( "Missing patch wad after \"-file\"");
-      }
-      else
-	 OpenMainWad( strupr( *argv));
-      /* load the patch wad files */
-      for (argv++, argc--; argc; argv++, argc--)
-	 OpenPatchWad( strupr( *argv));
-   }
-   else
-      OpenMainWad( "DOOM.WAD");
    /* sanity check */
    CloseUnusedWadFiles();
    /* all systems go! */
@@ -103,14 +69,284 @@ int main( int argc, char *argv[])
 
 
 /*
+   Append a string to a null-terminated string list
+*/
+
+void AppendItemToList( char ***list, char *item)
+{
+   int i;
+
+   i = 0;
+   if (*list != NULL)
+   {
+      /* count the number of elements in the list (last = null) */
+      while ((*list)[ i] != NULL)
+	 i++;
+      /* expand the list */
+      *list = ResizeMemory( *list, (i + 2) * sizeof( char **));
+   }
+   else
+   {
+      /* create a new list */
+      *list = GetMemory( 2 * sizeof( char **));
+   }
+   /* append the new element */
+   (*list)[ i] = item;
+   (*list)[ i + 1] = NULL;
+}
+
+
+
+/*
+   Handle command line options
+*/
+
+void ParseCommandLineOptions( int argc, char *argv[])
+{
+   int optnum;
+
+   while (argc > 0)
+   {
+      if (argv[ 0][ 0] != '-' && argv[ 0][ 0] != '+')
+	 ProgError( "options must start with '-' or '+'");
+      if (!strcmp( argv[ 0], "-?") || !strcmp( argv[ 0], "-h") || !strcmp( argv[ 0], "-help"))
+      {
+	 Usage( stdout);
+	 exit( 0);
+      }
+      for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
+      {
+	 if (!strcmp( &(argv[ 0][ 1]), options[ optnum].short_name) || !strcmp( &(argv[ 0][ 1]), options[ optnum].long_name))
+	 {
+	    switch (options[ optnum].opt_type)
+	    {
+	    case OPT_BOOLEAN:
+	       if (argv[ 0][ 0] == '-')
+	       {
+		  *((Bool *) (options[ optnum].data_ptr)) = TRUE;
+		  if (options[ optnum].msg_if_true)
+		     printf("%s.\n", options[ optnum].msg_if_true);
+	       }
+	       else
+	       {
+		  *((Bool *) (options[ optnum].data_ptr)) = FALSE;
+		  if (options[ optnum].msg_if_false)
+		     printf("%s.\n", options[ optnum].msg_if_false);
+	       }
+	       break;
+	    case OPT_INTEGER:
+	       if (argc <= 1)
+		  ProgError( "missing argument after \"%s\"", argv[ 0]);
+	       argv++;
+	       argc--;
+	       *((int *) (options[ optnum].data_ptr)) = atoi( argv[ 0]);
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %d.\n", options[ optnum].msg_if_true, atoi( argv[ 0]));
+	       break;
+	    case OPT_STRING:
+	       if (argc <= 1)
+		  ProgError( "missing argument after \"%s\"", argv[ 0]);
+	       argv++;
+	       argc--;
+	       *((char **) (options[ optnum].data_ptr)) = argv[ 0];
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %s.\n", options[ optnum].msg_if_true, argv[ 0]);
+	       break;
+	    case OPT_STRINGACC:
+	       if (argc <= 1)
+		  ProgError( "missing argument after \"%s\"", argv[ 0]);
+	       argv++;
+	       argc--;
+	       AppendItemToList( (char ***) options[ optnum].data_ptr, argv[ 0]);
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %s.\n", options[ optnum].msg_if_true, argv[ 0]);
+	       break;
+	    case OPT_STRINGLIST:
+	       if (argc <= 1)
+		  ProgError( "missing argument after \"%s\"", argv[ 0]);
+	       while (argc > 1 && argv[ 1][ 0] != '-' && argv[ 1][ 0] != '+')
+	       {
+		  argv++;
+		  argc--;
+		  AppendItemToList( (char ***) options[ optnum].data_ptr, argv[ 0]);
+		  if (options[ optnum].msg_if_true)
+		     printf("%s: %s.\n", options[ optnum].msg_if_true, argv[ 0]);
+	       }
+	       break;
+	    default:
+	       ProgError( "unknown option type (BUG!)");
+	    }
+	    break;
+	 }
+      }
+      if (options[ optnum].opt_type == OPT_NONE)
+	 ProgError( "invalid argument: \"%s\"", argv[ 0]);
+      argv++;
+      argc--;
+   }
+}
+
+
+
+/*
+   read the config file
+*/
+
+void ParseConfigFileOptions( char *filename)
+{
+   FILE *cfgfile;
+   char  line[ 1024];
+   char *value;
+   char *option;
+   char *p;
+   int   optnum;
+
+   if ((cfgfile = fopen (filename, "r")) == NULL)
+   {
+      printf( "Warning: Configuration file not found (%s)\n", filename);
+      return;
+   }
+   while (fgets (line, 1024, cfgfile) != NULL)
+   {
+      if (line[0] == '#' || strlen( line) < 2)
+	 continue;
+      if (line[ strlen( line) - 1] == '\n')
+	 line[ strlen( line) - 1] = '\0';
+      /* skip blanks before the option name */
+      option = line;
+      while (isspace( option[ 0]))
+	 option++;
+      /* skip the option name */
+      value = option;
+      while (value[ 0] && value[ 0] != '=' && !isspace( value[ 0]))
+	 value++;
+      if (!value[ 0])
+	 ProgError( "invalid line in %s (ends prematurely)", filename);
+      if (value[ 0] == '=')
+      {
+	 /* mark the end of the option name */
+	 value[ 0] = '\0';
+      }
+      else
+      {
+	 /* mark the end of the option name */
+	 value[ 0] = '\0';
+	 value++;
+	 /* skip blanks after the option name */
+	 while (isspace( value[ 0]))
+	    value++;
+	 if (value[ 0] != '=')
+	    ProgError( "invalid line in %s (no '=')", filename);
+      }
+      value++;
+      /* skip blanks after the equal sign */
+      while (isspace( value[ 0]))
+	 value++;
+      for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
+      {
+	 if (!strcmp( option, options[ optnum].long_name))
+	 {
+	    switch (options[ optnum].opt_type)
+	    {
+	    case OPT_BOOLEAN:
+	       if (!stricmp(value, "yes") || !stricmp(value, "true") || !stricmp(value, "on") || !stricmp(value, "1"))
+	       {
+		  *((Bool *) (options[ optnum].data_ptr)) = TRUE;
+		  if (options[ optnum].msg_if_true)
+		     printf("%s.\n", options[ optnum].msg_if_true);
+	       }
+	       else if (!stricmp(value, "no") || !stricmp(value, "false") || !stricmp(value, "off") || !stricmp(value, "0"))
+	       {
+		  *((Bool *) (options[ optnum].data_ptr)) = FALSE;
+		  if (options[ optnum].msg_if_false)
+		     printf("%s.\n", options[ optnum].msg_if_false);
+	       }
+	       else
+		  ProgError( "invalid value for option %s: \"%s\"", option, value);
+	       break;
+	    case OPT_INTEGER:
+	       *((int *) (options[ optnum].data_ptr)) = atoi( value);
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %d.\n", options[ optnum].msg_if_true, atoi( value));
+	       break;
+	    case OPT_STRING:
+	       p = GetMemory( (strlen( value) + 1) * sizeof( char));
+	       strcpy( p, value);
+	       *((char **) (options[ optnum].data_ptr)) = p;
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %s.\n", options[ optnum].msg_if_true, value);
+	       break;
+	    case OPT_STRINGACC:
+	       p = GetMemory( (strlen( value) + 1) * sizeof( char));
+	       strcpy( p, value);
+	       AppendItemToList( (char ***) options[ optnum].data_ptr, p);
+	       if (options[ optnum].msg_if_true)
+		  printf("%s: %s.\n", options[ optnum].msg_if_true, value);
+	       break;
+	    case OPT_STRINGLIST:
+	       while (value[ 0])
+	       {
+		  option = value;
+		  while (option[ 0] && !isspace( option[ 0]))
+		     option++;
+		  option[ 0] = '\0';
+		  option++;
+		  while (isspace( option[ 0]))
+		     option++;
+		  p = GetMemory( (strlen( value) + 1) * sizeof( char));
+		  strcpy( p, value);
+		  AppendItemToList( (char ***) options[ optnum].data_ptr, p);
+		  if (options[ optnum].msg_if_true)
+		     printf("%s: %s.\n", options[ optnum].msg_if_true, value);
+		  value = option;
+	       }
+	       break;
+	    default:
+	       ProgError( "unknown option type (BUG!)");
+	    }
+	    break;
+	 }
+      }
+      if (options[ optnum].opt_type == OPT_NONE)
+	 ProgError( "Invalid option in %s: \"%s\"", filename, option);
+   }
+   fclose( cfgfile);
+}
+
+
+/*
+   output the program usage to the specified file
+*/
+
+void Usage( FILE *where)
+{
+   fprintf( where, "Usage:\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-q] [-e] [-file <pwad_files>...]\n");
+   fprintf( where, "   -w    Gives the name of the main wad file. (also -main)  Default is DOOM.WAD\n");
+   fprintf( where, "   -d    Enter debug mode. (also -debug)\n");
+   fprintf( where, "   -q    Suppresses sounds. (also -quiet)\n");
+   fprintf( where, "   -e    Stops prompts for confirmation. (also -expert)\n");
+   fprintf( where, "   -sb   Swaps the mouse buttons. (also -swapbuttons)\n");
+   fprintf( where, "   -pw   To add one patch wad file to be loaded (may be repeated). (also -pwad)\n");
+   fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
+}
+
+
+
+/*
    output the credits of the program to the specified file
 */
 
 void Credits( FILE *where)
 {
-   fprintf( where, "New DEU: Doom Editor Utility, ver %s.\n", DEU_VERSION);
-   fprintf( where, "By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be).\n");
-   fprintf( where, "Based on DEU by Brendon J Wyber (b.wyber@csc.canterbury.ac.nz),\n\n");
+   fprintf( where, "DEU: Doom Editor Utility, ver %s.\n", DEU_VERSION);
+   fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n");
+   fprintf( where, "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n\n");
+
+   fprintf( where, "*   This is a beta version: please test it and report any bugs to me:   *\n");
+   fprintf( where, "*   quinet@montefiore.ulg.ac.be.  Take a look from time to time on my   *\n");
+   fprintf( where, "*   FTP server (bear.montefiore.ulg.ac.be) for any newer versions.      *\n");
+   fprintf( where, "*   Please do not distribute this temporary version.  Thanks.           *\n\n");
 }
 
 
@@ -135,13 +371,17 @@ void ProgError( char *errstr, ...)
 {
    va_list args;
 
-   TermGfx();
+   Beep();
+   if (GfxMode)
+   {
+      sleep( 1);
+      TermGfx();
+   }
    va_start( args, errstr);
    printf( "\nProgram Error: *** ");
    vprintf( errstr, args);
    printf( " ***\n");
    va_end( args);
-   Beep();
    ForgetLevelData();
    CloseWadFiles();
    exit( 5);
@@ -181,9 +421,9 @@ void *ResizeMemory( void *old, size_t size)
    allocate memory from the far heap with error checking
 */
 
-void far *GetFarMemory( unsigned long size)
+void huge *GetFarMemory( unsigned long size)
 {
-   void far *ret = farmalloc( size);
+   void huge *ret = farmalloc( size);
    if (!ret)
       ProgError( "out of memory (cannot allocate %lu far bytes)", size);
    return ret;
@@ -195,9 +435,9 @@ void far *GetFarMemory( unsigned long size)
    reallocate memory from the far heap with error checking
 */
 
-void far *ResizeFarMemory( void far *old, unsigned long size)
+void huge *ResizeFarMemory( void huge *old, unsigned long size)
 {
-   void far *ret = farrealloc( old, size);
+   void huge *ret = farrealloc( old, size);
    if (!ret)
       ProgError( "out of memory (cannot reallocate %lu far bytes)", size);
    return ret;
@@ -244,6 +484,7 @@ void MainLoop()
 	 printf( "M[aster] [outfile]                -- to list the master directory\n");
 	 printf( "Q[uit]                            -- to quit\n");
 	 printf( "R[ead] <WadFile>                  -- to read a new wad patch file\n");
+	 printf( "S[prites] [sname]                 -- to display the sprites\n");
 	 printf( "W[ads]                            -- to display the open wads\n");
       }
 
@@ -252,7 +493,17 @@ void MainLoop()
       {
 	 printf( "%-20s  IWAD  (Main wad file)\n", WadFileList->filename);
 	 for (wad = WadFileList->next; wad; wad = wad->next)
-	    printf( "%-20s  PWAD  (Patch wad file for episode %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
+	 {
+	    if (wad->directory[ 0].name[ 0] == 'E' && wad->directory[ 0].name[ 2] == 'M')
+	       printf( "%-20s  PWAD  (Patch wad file for episode %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
+	    else
+	    {
+	       /* kluge */
+	       strncpy( input, wad->directory[ 0].name, 8);
+	       input[ 8] = '\0';
+	       printf( "%-20s  PWAD  (Patch wad file for %s)\n", wad->filename, input);
+	    }
+	 }
       }
 
       /* user asked to quit */
@@ -402,6 +653,15 @@ void MainLoop()
 	 }
 	 else
 	    DumpDirectoryEntry( stdout, com);
+      }
+
+      /* user asked to see the sprites */
+      else if (!strcmp( com, "SPRITES") || !strcmp( com, "S"))
+      {
+	 InitGfx();
+	 com = strtok( NULL, " ");
+	 ChooseSprite( -1, -1, "Sprite viewer", com);
+	 TermGfx();
       }
 
       /* unknown command */

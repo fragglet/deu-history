@@ -15,6 +15,7 @@
 /*
    draws a line of text in a menu
 */
+
 void DisplayMenuText( int x0, int y0, int line, char *text)
 {
    if (UseMouse)
@@ -32,11 +33,13 @@ void DisplayMenuText( int x0, int y0, int line, char *text)
 /*
    display and execute a menu
 */
+
 int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menustr[ 30])
 {
    va_list args;
-   int maxlen, line, oldline, ok;
-   int key, buttons, oldbuttons;
+   int     maxlen, line, oldline;
+   Bool    ok;
+   int     key, buttons, oldbuttons;
 
    /* compute maxlen */
    if (menutitle)
@@ -149,11 +152,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 /*
    display and execute a menu defined with variable arguments
 */
+
 int DisplayMenu( int x0, int y0, char *menutitle, ...)
 {
    va_list args;
-   int num;
-   char *menustr[ 30];
+   int     num;
+   char   *menustr[ 30];
 
    /* put the va_args in the menustr table */
    num = 0;
@@ -171,10 +175,11 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
 /*
    display the integer input box
 */
+
 int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
 {
-   int key, val, neg;
-   int ok, firstkey;
+   int  key, val;
+   Bool neg, ok, firstkey;
 
    setcolor( WHITE);
    DrawScreenBox( x0 + 1, y0 + 1, x0 + 61, y0 + 13);
@@ -237,9 +242,10 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
 /*
    ask for an integer value and check for minimum and maximum
 */
+
 int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 {
-   int val, key;
+   int  val, key;
    char prompt[ 80];
 
    if (UseMouse)
@@ -263,15 +269,16 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 
 
 /*
-   ask for a name in a given list
+   ask for a name in a given list and call a function (for displaying objects, etc.)
 */
-void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list, char *name)
-{
-   int key, n, l;
-   int maxlen, ok, firstkey;
 
-   if (UseMouse)
-      HideMousePointer();
+void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, char *name, int width, int height, void (*hookfunc)(int x1, int y1, char *name))
+{
+   int  key, n, l;
+   int  x1, y1, x2, y2;
+   int  maxlen;
+   Bool ok, firstkey;
+
    /* compute maxlen */
    maxlen = 1;
    for (n = 0; n < listsize; n++)
@@ -281,19 +288,42 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
       name[ n] = '\0';
    /* compute the minimum width of the dialog box */
    l = maxlen;
-   if (strlen( prompt) - 13 > l)
-     l = strlen( prompt) - 13;
+   if (strlen( prompt) > l + 12)
+      l = strlen( prompt) - 12;
+   l = l * 8 + 110;
+   x1 = l + 3;
+   y1 = 10 + 1;
+   if (width > 0)
+      l += 10 + width;
+   if (height > 65)
+      n = height + 20;
+   else
+      n = 85;
    if (x0 < 0)
-      x0 = 259 - 4 * l;
+      x0 = (getmaxx() - l) / 2;
    if (y0 < 0)
-      y0 = 197;
+      y0 = (getmaxy() - n) / 2;
+   x1 += x0;
+   y1 += y0;
+   if (x1 + width - 1 < getmaxx())
+      x2 = x1 + width - 1;
+   else
+      x2 = getmaxx();
+   if (y1 + height - 1 < getmaxy())
+      y2 = y1 + height - 1;
+   else
+      y2 = getmaxy();
    /* draw the dialog box */
-   DrawScreenBox3D( x0, y0, x0 + 120 + 8 * l, y0 + 85);
-   setcolor( WHITE);
+   DrawScreenBox3D( x0, y0, x0 + l, y0 + n);
+   setcolor( (GfxMode < 0) ? WHITE2 : WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
    DrawScreenBox( x0 + 11, y0 + 29, x0 + 101, y0 + 41);
-   setcolor( DARKGRAY);
+   if (width > 0)
+      DrawScreenBox( x1, y1, x2 + 1, y2 + 1);
+   setcolor( (GfxMode < 0) ? DARKGRAY2 : DARKGRAY);
    DrawScreenBox( x0 + 10, y0 + 28, x0 + 100, y0 + 40);
+   if (width > 0)
+      DrawScreenBox( x1 - 1, y1 - 1, x2, y2);
    firstkey = TRUE;
    for (;;)
    {
@@ -302,22 +332,28 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
 	 if (strcmp( name, list[ n]) <= 0)
 	    break;
       ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
-      if (n > listsize - 5)
-	 n = listsize - 5;
+      if (n > listsize - 1)
+	 n = listsize - 1;
       /* display the five next items in the list */
-      setcolor( LIGHTGRAY);
-      DrawScreenBox( x0 + 120, y0 + 30, x0 + 120 + 8 * maxlen, y0 + 80);
+      setcolor( (GfxMode < 0) ? LIGHTGRAY2 : LIGHTGRAY);
+      DrawScreenBox( x0 + 110, y0 + 30, x0 + 110 + 8 * maxlen, y0 + 80);
       setcolor( BLACK);
-      for (l = 0; l < 5; l++)
-	 DrawScreenText( x0 + 120, y0 + 30 + l * 10, list[ n + l]);
+      for (l = 0; l < 5 && n + l < listsize; l++)
+	 DrawScreenText( x0 + 110, y0 + 30 + l * 10, list[ n + l]);
       l = strlen( name);
-      setcolor( BLACK);
       DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
       if (ok)
-	 setcolor( WHITE);
+	 setcolor( (GfxMode < 0) ? WHITE2 : WHITE);
       else
-	 setcolor( LIGHTGRAY);
+	 setcolor( (GfxMode < 0) ? LIGHTGRAY2 : LIGHTGRAY);
       DrawScreenText( x0 + 13, y0 + 31, name);
+      if (hookfunc)
+      {
+	 setviewport( x1, y1, x2, y2, TRUE);
+	 clearviewport();
+	 hookfunc( 0, 0, name);
+	 setviewport( 0, 0, getmaxx(), getmaxy(), TRUE);
+      }
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {
@@ -338,10 +374,23 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
       }
       else if (l > 0 && (key & 0x00FF) == 0x0008)
 	 name[ l - 1] = '\0';
-      else if (n < listsize && (key & 0xFF00) == 0x5000)
+      else if (n < listsize - 1 && (key & 0xFF00) == 0x5000)
 	 strcpy(name, list[ n + 1]);
       else if (n > 0 && (key & 0xFF00) == 0x4800)
 	 strcpy(name, list[ n - 1]);
+      else if (n < listsize - 5 && (key & 0xFF00) == 0x5100)
+	 strcpy(name, list[ n + 5]);
+      else if (n > 0 && (key & 0xFF00) == 0x4900)
+      {
+	 if (n > 5)
+	    strcpy(name, list[ n - 5]);
+	 else
+	    strcpy(name, list[ 0]);
+      }
+      else if ((key & 0xFF00) == 0x4F00)
+	 strcpy(name, list[ listsize - 1]);
+      else if ((key & 0xFF00) == 0x4700)
+	 strcpy(name, list[ 0]);
       else if ((key & 0x00FF) == 0x0009)
 	 strcpy(name, list[ n]);
       else if (ok && (key & 0x00FF) == 0x000D)
@@ -354,6 +403,19 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
       else
 	 Beep();
    }
+}
+
+
+
+/*
+   ask for a name in a given list
+*/
+
+void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list, char *name)
+{
+   if (UseMouse)
+      HideMousePointer();
+   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, name, 0, 0, NULL);
    if (UseMouse)
       ShowMousePointer();
 }
@@ -363,10 +425,11 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
 /*
    ask for a filename
 */
+
 void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
 {
-   int key, l, boxlen;
-   int ok, firstkey;
+   int   key, l, boxlen;
+   Bool  ok, firstkey;
    char *p;
 
    if (UseMouse)
@@ -471,7 +534,7 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
 /*
    ask for confirmation (prompt2 may be NULL)
 */
-int Confirm( int x0, int y0, char *prompt1, char *prompt2)
+Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
 {
    int key;
    int maxlen = 46;
