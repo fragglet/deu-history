@@ -393,7 +393,7 @@ void ParseConfigFileOptions( char *filename)
 void Usage( FILE *where)
 {
    fprintf( where, "Usage:\n");
-   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-qq] [-e] [-a] [-i] [-mg] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-config <ini_file>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-qq] [-e] [-a] [-i] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-config <ini_file>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
    fprintf( where, "   -w    Gives the name of the main wad file (also -main).  Default is DOOM.WAD\n");
    fprintf( where, "   -d    Enter debug mode (also -debug).\n");
    fprintf( where, "   -c    Use the alternate Things color set (also -color2).\n");
@@ -402,7 +402,6 @@ void Usage( FILE *where)
    fprintf( where, "   -e    Stops prompts for confirmation (also -expert).\n");
    fprintf( where, "   -a    To have an additive selection box (also -addselbox).\n");
    fprintf( where, "   -i    Show the info bar in the editors (also -infobar).\n");
-   fprintf( where, "   -mg   Use a minimum grid of 8x8 for Vertices (also -mingrid8x8).\n");
    fprintf( where, "   -z    Set the initial zoom factor for the editors (also -zoom).\n");
    fprintf( where, "   -v    Set the default video mode number (also -video).\n");
    fprintf( where, "   -bgi  Set the default video driver (*.BGI file).\n");
@@ -573,7 +572,7 @@ void MainLoop()
 
       /* user just hit return */
       if (com == NULL)
-	 printf( "[Please enter a command.]\n");
+	 printf( "[Please enter a command or ? for help.]\n");
 
       /* user inputting for help */
       else if (!strcmp( com, "?"))

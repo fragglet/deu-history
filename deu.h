@@ -26,7 +26,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.2"	/* the version number */
+#define DEU_VERSION	"5.21"	/* the version number */
 
 
 
