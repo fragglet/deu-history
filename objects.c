@@ -69,7 +69,8 @@ int GetMaxObjectNum( int objtype)
 int GetCurObject( int objtype, int x0, int y0, int x1, int y1)
 {
    int n, m, cur, curx;
-   int lx0, ly0, lx1, ly1;
+   int lx0, ly0, lx1, ly1, yy;
+   int midx, midy;
 
    cur = -1;
 
@@ -105,15 +106,17 @@ int GetCurObject( int objtype, int x0, int y0, int x1, int y1)
       /* hack, hack...  I look for the first LineDef crossing an horizontal half-line drawn from the cursor */
       curx = MaxX + 1;
       cur = -1;
+      midx = (x0 + x1) / 2;
+      midy = (y0 + y1) / 2;
       for (n = 0; n < NumLineDefs; n++)
-	 if ((Vertexes[ LineDefs[ n].start].y > MAPY( PointerY)) != (Vertexes[ LineDefs[ n].end].y > MAPY( PointerY)))
+	 if ((Vertexes[ LineDefs[ n].start].y > midy != (Vertexes[ LineDefs[ n].end].y > midy)))
 	 {
 	    lx0 = Vertexes[ LineDefs[ n].start].x;
 	    ly0 = Vertexes[ LineDefs[ n].start].y;
 	    lx1 = Vertexes[ LineDefs[ n].end].x;
 	    ly1 = Vertexes[ LineDefs[ n].end].y;
-	    m = lx0 + (int) ((long) (MAPY( PointerY) - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
-	    if (m >= MAPX( PointerX) && m < curx)
+	    m = lx0 + (int) ((long) (midy - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
+	    if (m >= midx && m < curx)
 	    {
 	       curx = m;
 	       cur = n;
@@ -155,7 +158,7 @@ void HighlightObject( int objtype, int objnum, int color)
 
    /* use XOR mode : drawing any line twice erases it */
    setwritemode( XOR_PUT);
-   setcolor( color);
+   SetColor( color);
    switch ( objtype)
    {
    case OBJ_THINGS:
@@ -167,11 +170,11 @@ void HighlightObject( int objtype, int objnum, int color)
    case OBJ_LINEDEFS:
       n = (Vertexes[ LineDefs[ objnum].start].x + Vertexes[ LineDefs[ objnum].end].x) / 2;
       m = (Vertexes[ LineDefs[ objnum].start].y + Vertexes[ LineDefs[ objnum].end].y) / 2;
-      DrawMapLine( n, m, n + (Vertexes[ LineDefs[ objnum].end].y - Vertexes[ LineDefs[ objnum].start].y) / 2, m + (Vertexes[ LineDefs[ objnum].start].x - Vertexes[ LineDefs[ objnum].end].x) / 2);
+      DrawMapLine( n, m, n + (Vertexes[ LineDefs[ objnum].end].y - Vertexes[ LineDefs[ objnum].start].y) / 3, m + (Vertexes[ LineDefs[ objnum].start].x - Vertexes[ LineDefs[ objnum].end].x) / 3);
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Vertexes[ LineDefs[ objnum].start].x, Vertexes[ LineDefs[ objnum].start].y,
 		     Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
-      if (color == YELLOW && LineDefs[ objnum].tag > 0)
+      if (color != LIGHTRED && LineDefs[ objnum].tag > 0)
       {
 	 for (m = 0; m < NumSectors; m++)
 	    if (Sectors[ m].tag == LineDefs[ objnum].tag)
@@ -191,7 +194,7 @@ void HighlightObject( int objtype, int objnum, int color)
 	 if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum || SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
 	    DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
 			 Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
-      if (color == YELLOW && Sectors[ objnum].tag > 0)
+      if (color != LIGHTRED && Sectors[ objnum].tag > 0)
       {
 	 for (m = 0; m < NumLineDefs; m++)
 	    if (LineDefs[ m].tag == Sectors[ objnum].tag)
@@ -214,37 +217,44 @@ void DisplayObjectInfo( int objtype, int objnum)
 {
    char texname[ 9];
    int  tag, n;
+   int  x0, y0;
 
    switch (objtype)
    {
    case OBJ_THINGS:
-      DrawScreenBox3D( 0, 420, 260, 479);
+      x0 = 0;
+      y0 = getmaxy() - 60;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D( x0, y0, x0 + 260, y0 + 60);
       if (objnum < 0)
       {
-	 DrawScreenText( 60, 440, "Use the cursor to");
-	 DrawScreenText( 72, 450, "select a Thing  ");
+	 DrawScreenText( x0 + 60, y0 + 20, "Use the cursor to");
+	 DrawScreenText( x0 + 72, y0 + 30, "select a Thing  ");
 	 break;
       }
-      setcolor( YELLOW);
-      DrawScreenText( 5, 425, "Selected Thing (#%d)", objnum);
-      setcolor( BLACK);
-      DrawScreenText( 5, 439, "Coordinates:  (%d, %d)", Things[ objnum].xpos, Things[ objnum].ypos);
-      DrawScreenText( 5, 449, "Type:         %s", GetThingName( Things[ objnum].type));
-      DrawScreenText( 5, 459, "Angle:        %s", GetAngleName( Things[ objnum].angle));
-      DrawScreenText( 5, 469, "Appears when: %s", GetWhenName( Things[ objnum].when));
+      SetColor( YELLOW);
+      DrawScreenText( x0 + 5, y0 + 5, "Selected Thing (#%d)", objnum);
+      SetColor( BLACK);
+      DrawScreenText( -1, y0 + 20, "Coordinates:  (%d, %d)", Things[ objnum].xpos, Things[ objnum].ypos);
+      DrawScreenText( -1, -1, "Type:         %s", GetThingName( Things[ objnum].type));
+      DrawScreenText( -1, -1, "Angle:        %s", GetAngleName( Things[ objnum].angle));
+      DrawScreenText( -1, -1, "Appears when: %s", GetWhenName( Things[ objnum].when));
       break;
    case OBJ_LINEDEFS:
-      DrawScreenBox3D(   0, 400, 218, 479);
-      DrawScreenBox3D( 220, 400, 438, 479);
-      DrawScreenBox3D( 440, 400, 639, 479);
+      x0 = 0;
+      y0 = getmaxy() - 80;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D(   x0, y0, x0 + 218, y0 + 80);
       if (objnum >= 0)
       {
-	 setcolor( YELLOW);
-	 DrawScreenText( 5, 405, "Selected LineDef (#%d)", objnum);
-	 setcolor( BLACK);
-	 DrawScreenText( 5, 419, "Vertexes:    (#%d, #%d)", LineDefs[ objnum].start, LineDefs[ objnum].end);
-	 DrawScreenText( 5, 429, "Flags:%3d    %s", LineDefs[ objnum].flags, GetLineDefFlagsName( LineDefs[ objnum].flags));
-	 DrawScreenText( 5, 439, "Type: %3d %s", LineDefs[ objnum].type, GetLineDefTypeName( LineDefs[ objnum].type));
+	 SetColor( YELLOW);
+	 DrawScreenText( x0 + 5, y0 + 5, "Selected LineDef (#%d)", objnum);
+	 SetColor( BLACK);
+	 DrawScreenText( -1, y0 + 20, "Vertexes:    (#%d, #%d)", LineDefs[ objnum].start, LineDefs[ objnum].end);
+	 DrawScreenText( -1, -1, "Flags:%3d    %s", LineDefs[ objnum].flags, GetLineDefFlagsName( LineDefs[ objnum].flags));
+	 DrawScreenText( -1, -1, "Type: %3d %s", LineDefs[ objnum].type, GetLineDefTypeName( LineDefs[ objnum].type));
 	 tag = LineDefs[ objnum].tag;
 	 if (tag > 0)
 	 {
@@ -255,93 +265,111 @@ void DisplayObjectInfo( int objtype, int objnum)
 	 else
 	    n = NumSectors;
 	 if (n < NumSectors)
-	    DrawScreenText( 5, 449, "Sector tag:  %d (#%d)", tag, n);
+	    DrawScreenText( -1, -1, "Sector tag:  %d (#%d)", tag, n);
 	 else
-	    DrawScreenText( 5, 449, "Sector tag:  %d (none)", tag);
-	 DrawScreenText( 5, 459, "1st SideDef: #%d", LineDefs[ objnum].sidedef1);
-	 DrawScreenText( 5, 469, "2nd SideDef: #%d", LineDefs[ objnum].sidedef2);
+	    DrawScreenText( -1, -1, "Sector tag:  %d (none)", tag);
+	 DrawScreenText( -1, -1, "1st SideDef: #%d", LineDefs[ objnum].sidedef1);
+	 DrawScreenText( -1, -1, "2nd SideDef: #%d", LineDefs[ objnum].sidedef2);
       }
       else
       {
-	setcolor( DARKGRAY);
-	DrawScreenText( 25, 435, "(No LineDef selected)");
+	SetColor( DARKGRAY);
+	DrawScreenText( x0 + 25, y0 + 35, "(No LineDef selected)");
       }
+      x0 = 220;
+      y0 = getmaxy() - 80;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D( x0, y0, x0 + 218, y0 + 80);
       if (objnum >= 0 && LineDefs[ objnum].sidedef1 >= 0)
       {
-	 setcolor( YELLOW);
-	 DrawScreenText( 225, 405, "First SideDef (#%d)", LineDefs[ objnum].sidedef1);
-	 setcolor( BLACK);
+	 SetColor( YELLOW);
+	 DrawScreenText( x0 + 5, y0 + 5, "First SideDef (#%d)", LineDefs[ objnum].sidedef1);
+	 SetColor( BLACK);
 	 texname[ 8] = '\0';
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex3, 8);
-	 DrawScreenText( 225, 419, "Normal texture: %s", texname);
+	 DrawScreenText( -1, y0 + 20, "Normal texture: %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex1, 8);
-	 DrawScreenText( 225, 429, "Upper texture:  %s", texname);
+	 DrawScreenText( -1, -1, "Upper texture:  %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef1].tex2, 8);
-	 DrawScreenText( 225, 439, "Lower texture:  %s", texname);
-	 DrawScreenText( 225, 449, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].xoff);
-	 DrawScreenText( 225, 459, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].yoff);
-	 DrawScreenText( 225, 469, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef1].sector);
+	 DrawScreenText( -1, -1, "Lower texture:  %s", texname);
+	 DrawScreenText( -1, -1, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].xoff);
+	 DrawScreenText( -1, -1, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef1].yoff);
+	 DrawScreenText( -1, -1, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef1].sector);
       }
       else
       {
-	setcolor( DARKGRAY);
-	DrawScreenText( 255, 435, "(No first SideDef)");
+	SetColor( DARKGRAY);
+	DrawScreenText( x0 + 25, y0 + 35, "(No first SideDef)");
       }
+      x0 = 440;
+      y0 = getmaxy() - 80;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D( x0, y0, x0 + 200, y0 + 80);
       if (objnum >= 0 && LineDefs[ objnum].sidedef2 >= 0)
       {
-	 setcolor( YELLOW);
-	 DrawScreenText( 445, 405, "Second SideDef (#%d)", LineDefs[ objnum].sidedef2);
-	 setcolor( BLACK);
+	 SetColor( YELLOW);
+	 DrawScreenText( x0 + 5, y0 + 5, "Second SideDef (#%d)", LineDefs[ objnum].sidedef2);
+	 SetColor( BLACK);
 	 texname[ 8] = '\0';
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex3, 8);
-	 DrawScreenText( 445, 419, "Normal texture: %s", texname);
+	 DrawScreenText( -1, y0 + 20, "Normal texture: %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex1, 8);
-	 DrawScreenText( 445, 429, "Upper texture:  %s", texname);
+	 DrawScreenText( -1, -1, "Upper texture:  %s", texname);
 	 strncpy( texname, SideDefs[ LineDefs[ objnum].sidedef2].tex2, 8);
-	 DrawScreenText( 445, 439, "Lower texture:  %s", texname);
-	 DrawScreenText( 445, 449, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].xoff);
-	 DrawScreenText( 445, 459, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].yoff);
-	 DrawScreenText( 445, 469, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef2].sector);
+	 DrawScreenText( -1, -1, "Lower texture:  %s", texname);
+	 DrawScreenText( -1, -1, "Tex. X offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].xoff);
+	 DrawScreenText( -1, -1, "Tex. Y offset:  %d", SideDefs[ LineDefs[ objnum].sidedef2].yoff);
+	 DrawScreenText( -1, -1, "Sector:         #%d", SideDefs[ LineDefs[ objnum].sidedef2].sector);
       }
       else
       {
-	setcolor( DARKGRAY);
-	DrawScreenText( 465, 435, "(No second SideDef)");
+	SetColor( DARKGRAY);
+	DrawScreenText( x0 + 25, y0 + 35, "(No second SideDef)");
       }
       break;
    case OBJ_VERTEXES:
-      DrawScreenBox3D( 0, 450, 220, 479);
+      x0 = 0;
+      y0 = getmaxy() - 30;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D( x0, y0, x0 + 220, y0 + 30);
       if (objnum < 0)
       {
-	 setcolor( DARKGRAY);
-	 DrawScreenText( 30, 462, "(No Vertex selected)");
+	 SetColor( DARKGRAY);
+	 DrawScreenText( x0 + 30, y0 + 12, "(No Vertex selected)");
 	 break;
       }
-      setcolor( YELLOW);
-      DrawScreenText( 5, 455, "Selected Vertex (#%d)", objnum);
-      setcolor( BLACK);
-      DrawScreenText( 5, 469, "Coordinates: (%d, %d)", Vertexes[ objnum].x, Vertexes[ objnum].y);
+      SetColor( YELLOW);
+      DrawScreenText( x0 + 5, y0 + 5, "Selected Vertex (#%d)", objnum);
+      SetColor( BLACK);
+      DrawScreenText( -1, y0 + 20, "Coordinates: (%d, %d)", Vertexes[ objnum].x, Vertexes[ objnum].y);
       break;
    case OBJ_SECTORS:
-      DrawScreenBox3D( 0, 390, 255, 479);
+      x0 = 0;
+      y0 = getmaxy() - 90;
+      if (InfoShown)
+	 y0 -= 13;
+      DrawScreenBox3D( x0, y0, x0 + 255, y0 + 90);
       if (objnum < 0)
       {
-	setcolor( DARKGRAY);
-	DrawScreenText( 48, 425, "(No Sector selected)");
+	SetColor( DARKGRAY);
+	DrawScreenText( x0 + 48, y0 + 35, "(No Sector selected)");
 	break;
       }
-      setcolor( YELLOW);
-      DrawScreenText( 5, 395, "Selected Sector (#%d)", objnum);
-      setcolor( BLACK);
-      DrawScreenText( 5, 409, "Floor height:    %d", Sectors[ objnum].floorh);
-      DrawScreenText( 5, 419, "Ceiling height:  %d", Sectors[ objnum].ceilh);
+      SetColor( YELLOW);
+      DrawScreenText( x0 + 5, y0 + 5, "Selected Sector (#%d)", objnum);
+      SetColor( BLACK);
+      DrawScreenText( -1, y0 + 20, "Floor height:    %d", Sectors[ objnum].floorh);
+      DrawScreenText( -1, -1, "Ceiling height:  %d", Sectors[ objnum].ceilh);
       texname[ 8] = '\0';
       strncpy( texname, Sectors[ objnum].floort, 8);
-      DrawScreenText( 5, 429, "Floor texture:   %s", texname);
+      DrawScreenText( -1, -1, "Floor texture:   %s", texname);
       strncpy( texname, Sectors[ objnum].ceilt, 8);
-      DrawScreenText( 5, 439, "Ceiling texture: %s", texname);
-      DrawScreenText( 5, 449, "Light level:     %d", Sectors[ objnum].light);
-      DrawScreenText( 5, 459, "Type: %3d        %s", Sectors[ objnum].special, GetSectorTypeName( Sectors[ objnum].special));
+      DrawScreenText( -1, -1, "Ceiling texture: %s", texname);
+      DrawScreenText( -1, -1, "Light level:     %d", Sectors[ objnum].light);
+      DrawScreenText( -1, -1, "Type: %3d        %s", Sectors[ objnum].special, GetSectorTypeName( Sectors[ objnum].special));
       tag = Sectors[ objnum].tag;
       if (tag == 0)
 	 n = NumLineDefs;
@@ -350,13 +378,13 @@ void DisplayObjectInfo( int objtype, int objnum)
 	    if (LineDefs[ n].tag == tag)
 	       break;
       if (n < NumLineDefs)
-	 DrawScreenText( 5, 469, "LineDef tag:     %d (#%d)", tag, n);
+	 DrawScreenText( -1, -1, "LineDef tag:     %d (#%d)", tag, n);
       else if (tag == 99 || tag == 999)
-	 DrawScreenText( 5, 469, "LineDef tag:     %d (stairs?)", tag);
+	 DrawScreenText( -1, -1, "LineDef tag:     %d (stairs?)", tag);
       else if (tag == 666)
-	 DrawScreenText( 5, 469, "LineDef tag:     %d (lower@end)", tag);
+	 DrawScreenText( -1, -1, "LineDef tag:     %d (lower@end)", tag);
       else
-	 DrawScreenText( 5, 469, "LineDef tag:     %d (none)", tag);
+	 DrawScreenText( -1, -1, "LineDef tag:     %d (none)", tag);
       break;
    }
 }
@@ -625,8 +653,245 @@ void InsertObject(int objtype, int copyfrom, int xpos, int ypos)
 
 
 /*
+   ... Yuck!
+*/
+int Input2Numbers( int x0, int y0, char *name1, char *name2, int *v1, int *v2)
+{
+   int  val, key;
+   int  maxlen, first;
+   Bool ok;
+   char prompt1[ 80];
+   char *prompt2;
+
+   if (UseMouse)
+      HideMousePointer();
+   sprintf( prompt1, "Give the %s and %s for the new Sector", name1, name2);
+   prompt2 = "Enter two numbers between 0 and 1024:";
+   if (strlen( prompt1) > strlen( prompt2))
+      maxlen = strlen( prompt1);
+   else
+      maxlen = strlen( prompt2);
+   if (x0 < 0)
+      x0 = 307 - 4 * maxlen;
+   if (y0 < 0)
+      y0 = 202;
+   DrawScreenBox3D( x0, y0, x0 + 25 + 8 * maxlen, y0 + 75);
+   DrawScreenText( x0 + 10, y0 + 36, name1);
+   DrawScreenText( x0 + 180, y0 + 36, name2);
+   SetColor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt1);
+   DrawScreenText( x0 + 10, y0 + 18, prompt2);
+   first = TRUE;
+   key = 0;
+   for (;;)
+   {
+      ok = TRUE;
+      DrawScreenBox3D( x0 + 10, y0 + 48, x0 + 71, y0 + 61);
+      if (*v1 < 0 || *v1 > 1024)
+      {
+	 SetColor( DARKGRAY);
+	 ok = FALSE;
+      }
+      DrawScreenText( x0 + 14, y0 + 51, "%d", *v1);
+      DrawScreenBox3D( x0 + 180, y0 + 48, x0 + 241, y0 + 61);
+      if (*v2 < 0 || *v2 > 1024)
+      {
+	 SetColor( DARKGRAY);
+	 ok = FALSE;
+      }
+      DrawScreenText( x0 + 184, y0 + 51, "%d", *v2);
+      if (first)
+	 key = InputInteger( x0 + 10, y0 + 48, v1, 0, 1024);
+      else
+	 key = InputInteger( x0 + 180, y0 + 48, v2, 0, 1024);
+      if ((key & 0xFF00) == 0x4B00 || (key & 0xFF00) == 0x4D00 || (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
+	 first = !first;
+      else if ((key & 0x00FF) == 0x001B)
+	 break;
+      else if ((key & 0x00FF) == 0x000D)
+      {
+	 if (first)
+	    first = FALSE;
+	 else if (ok)
+	    break;
+	 else
+	    Beep();
+      }
+      else
+	 Beep();
+   }
+   if (UseMouse)
+      ShowMousePointer();
+   return ((key & 0x00FF) == 0x000D);
+}
+
+
+
+/*
+   find a free tag number
+*/
+
+int FindFreeTag()
+{
+   int  tag, n;
+   Bool ok;
+
+   tag = 1;
+   ok = FALSE;
+   while (! ok)
+   {
+      ok = TRUE;
+      for (n = 0; n < NumLineDefs; n++)
+	 if (LineDefs[ n].tag == tag)
+	 {
+	    ok = FALSE;
+	    break;
+	 }
+      if (ok)
+	 for (n = 0; n < NumSectors; n++)
+	    if (Sectors[ n].tag == tag)
+	    {
+	       ok = FALSE;
+	       break;
+	    }
+      tag++;
+   }
+   return tag;
+}
+
+
+
+/*
+   insert a standard object at given position
+*/
+
+void InsertStandardObject( int xpos, int ypos)
+{
+   int sector;
+   int choice;
+   int n;
+   int a, b;
+
+   sector = GetCurObject( OBJ_SECTORS, xpos, ypos, xpos, ypos);
+   if (sector >= 0)
+      choice = DisplayMenu( -1, -1, "Insert a pre-defined object (inside a Sector)",
+			   "Rectangle",
+			   "Polygon (N sides)",
+			   "Door |",
+			   "Door -",
+			   "Stairs |",
+			   "Stairs -",
+			   "Hidden stairs |",
+			   "Hidden stairs -",
+			   NULL);
+   else
+      choice = DisplayMenu( -1, -1, "Insert a pre-defined object (outside)",
+			   "Rectangle",
+			   "Polygon (N sides)",
+			   NULL);
+   /* !!!! Should also check for overlapping objects !!!! */
+   switch (choice)
+   {
+   case 1:
+      a = 256;
+      b = 128;
+      if (Input2Numbers( -1, -1, "Width", "Height", &a, &b))
+      {
+	 xpos = xpos - a / 2;
+	 ypos = ypos - b / 2;
+	 InsertObject( OBJ_VERTEXES, -1, xpos, ypos);
+	 InsertObject( OBJ_VERTEXES, -1, xpos + a, ypos);
+	 InsertObject( OBJ_VERTEXES, -1, xpos + a, ypos + b);
+	 InsertObject( OBJ_VERTEXES, -1, xpos, ypos + b);
+	 if (sector < 0)
+	    InsertObject( OBJ_SECTORS, -1, 0, 0);
+	 for (n = 0; n < 4; n++)
+	 {
+	    InsertObject( OBJ_LINEDEFS, -1, 0, 0);
+	    InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
+	    LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
+	    if (sector >= 0)
+	       SideDefs[ NumSideDefs - 1].sector = sector;
+	 }
+	 if (sector >= 0)
+	 {
+	    LineDefs[ NumLineDefs - 4].start = NumVertexes - 4;
+	    LineDefs[ NumLineDefs - 4].end = NumVertexes - 3;
+	    LineDefs[ NumLineDefs - 3].start = NumVertexes - 3;
+	    LineDefs[ NumLineDefs - 3].end = NumVertexes - 2;
+	    LineDefs[ NumLineDefs - 2].start = NumVertexes - 2;
+	    LineDefs[ NumLineDefs - 2].end = NumVertexes - 1;
+	    LineDefs[ NumLineDefs - 1].start = NumVertexes - 1;
+	    LineDefs[ NumLineDefs - 1].end = NumVertexes - 4;
+	 }
+	 else
+	 {
+	    LineDefs[ NumLineDefs - 4].start = NumVertexes - 1;
+	    LineDefs[ NumLineDefs - 4].end = NumVertexes - 2;
+	    LineDefs[ NumLineDefs - 3].start = NumVertexes - 2;
+	    LineDefs[ NumLineDefs - 3].end = NumVertexes - 3;
+	    LineDefs[ NumLineDefs - 2].start = NumVertexes - 3;
+	    LineDefs[ NumLineDefs - 2].end = NumVertexes - 4;
+	    LineDefs[ NumLineDefs - 1].start = NumVertexes - 4;
+	    LineDefs[ NumLineDefs - 1].end = NumVertexes - 1;
+	 }
+      }
+      break;
+   case 2:
+      a = 8;   /* input !!!! */
+      b = 128; /* input !!!! */
+      if (Input2Numbers( -1, -1, "Number of sides", "Radius", &a, &b))
+      {
+	 InsertPolygonVertices( xpos, ypos, a, b);
+	 if (sector < 0)
+	    InsertObject( OBJ_SECTORS, -1, 0, 0);
+	 for (n = 0; n < a; n++)
+	 {
+	    InsertObject( OBJ_LINEDEFS, -1, 0, 0);
+	    InsertObject( OBJ_SIDEDEFS, -1, 0, 0);
+	    LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
+	    if (sector >= 0)
+	       SideDefs[ NumSideDefs - 1].sector = sector;
+	 }
+	 if (sector >= 0)
+	 {
+	    LineDefs[ NumLineDefs - 1].start = NumVertexes - 1;
+	    LineDefs[ NumLineDefs - 1].end = NumVertexes - a;
+	    for (n = 2; n <= a; n++)
+	    {
+	       LineDefs[ NumLineDefs - n].start = NumVertexes - n;
+	       LineDefs[ NumLineDefs - n].end = NumVertexes - n + 1;
+	    }
+	 }
+	 else
+	 {
+	    LineDefs[ NumLineDefs - 1].start = NumVertexes - a;
+	    LineDefs[ NumLineDefs - 1].end = NumVertexes - 1;
+	    for (n = 2; n <= a; n++)
+	    {
+	       LineDefs[ NumLineDefs - n].start = NumVertexes - n + 1;
+	       LineDefs[ NumLineDefs - n].end = NumVertexes - n;
+	    }
+	 }
+      }
+      break;
+   case 3:
+   case 4:
+   case 5:
+   case 6:
+   case 7:
+   case 8:
+     NotImplemented();
+     break;
+   }
+}
+
+
+
+/*
    display and execute a "things" menu
 */
+
 int DisplayThingsMenu( int x0, int y0, char *menutitle, ...)
 {
    va_list args;
@@ -699,7 +964,7 @@ int InputObjectNumber( int x0, int y0, int objtype, int curobj)
       HideMousePointer();
    sprintf( prompt, "Enter a %s number between 0 and %d:", GetObjectTypeName( objtype), GetMaxObjectNum( objtype));
    DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
-   setcolor( WHITE);
+   SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
    val = curobj;
    while (((key = InputInteger( x0 + 10, y0 + 28, &val, 0, GetMaxObjectNum( objtype))) & 0x00FF) != 0x000D && (key & 0x00FF) != 0x001B)
@@ -726,11 +991,11 @@ int InputObjectXRef( int x0, int y0, int objtype, Bool allownone, int curobj)
    if (val < 40)
       val = 40;
    DrawScreenBox3D( x0, y0, x0 + 25 + 8 * val, y0 + (allownone ? 85 : 75));
-   setcolor( WHITE);
+   SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
    if (allownone)
       DrawScreenText( x0 + 10, y0 + 18, "or -1 for none:");
-   setcolor( RED);
+   SetColor( RED);
    DrawScreenText( x0 + 10, y0 + (allownone ? 60 : 50), "Warning: modifying the cross-references");
    DrawScreenText( x0 + 10, y0 + (allownone ? 70 : 60), "between some objects may crash the game.");
    val = curobj;
@@ -767,7 +1032,7 @@ int Input2VertexNumbers( int x0, int y0, char *prompt1, int *v1, int *v2)
    DrawScreenBox3D( x0, y0, x0 + 25 + 8 * maxlen, y0 + 75);
    DrawScreenText( x0 + 10, y0 + 36, "From this Vertex");
    DrawScreenText( x0 + 180, y0 + 36, "To this Vertex");
-   setcolor( WHITE);
+   SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt1);
    DrawScreenText( x0 + 10, y0 + 18, prompt2);
    first = TRUE;
@@ -778,14 +1043,14 @@ int Input2VertexNumbers( int x0, int y0, char *prompt1, int *v1, int *v2)
       DrawScreenBox3D( x0 + 10, y0 + 48, x0 + 71, y0 + 61);
       if (*v1 < 0 || *v1 >= NumVertexes)
       {
-	 setcolor( DARKGRAY);
+	 SetColor( DARKGRAY);
 	 ok = FALSE;
       }
       DrawScreenText( x0 + 14, y0 + 51, "%d", *v1);
       DrawScreenBox3D( x0 + 180, y0 + 48, x0 + 241, y0 + 61);
       if (*v2 < 0 || *v2 >= NumVertexes)
       {
-	 setcolor( DARKGRAY);
+	 SetColor( DARKGRAY);
 	 ok = FALSE;
       }
       DrawScreenText( x0 + 184, y0 + 51, "%d", *v2);
@@ -1297,7 +1562,17 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    }
 	    break;
 	 case 8:
-	    NotImplemented();
+	    for (cur = obj; cur; cur = cur->next)
+	    {
+	       val = LineDefs[ cur->objnum].end;
+	       LineDefs[ cur->objnum].end = LineDefs[ cur->objnum].start;
+	       LineDefs[ cur->objnum].start = val;
+	       val = LineDefs[ cur->objnum].sidedef1;
+	       LineDefs[ cur->objnum].sidedef1 = LineDefs[ cur->objnum].sidedef2;
+	       LineDefs[ cur->objnum].sidedef2 = val;
+	    }
+	    MadeChanges = TRUE;
+	    MadeMapChanges = TRUE;
 	    break;
 	 }
 	 break;
@@ -1358,30 +1633,27 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       break;
 	    }
 	 }
-	 for (n = 0; n < 10; n++)
+	 for (n = 0; n < 7; n++)
 	    menustr[ n] = GetMemory( 60);
-	 sprintf( menustr[ 9], "Edit SideDef #%d", sdlist->objnum);
+	 sprintf( menustr[ 6], "Edit SideDef #%d", sdlist->objnum);
 	 texname[ 8] = '\0';
 	 strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
 	 sprintf( menustr[ 0], "Change Normal Texture   (Current: %s)", texname);
-	 sprintf( menustr[ 1], "Display Normal Texture");
 	 strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
-	 sprintf( menustr[ 2], "Change Upper texture    (Current: %s)", texname);
-	 sprintf( menustr[ 3], "Display Upper texture");
+	 sprintf( menustr[ 1], "Change Upper texture    (Current: %s)", texname);
 	 strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
-	 sprintf( menustr[ 4], "Change Lower texture    (Current: %s)", texname);
-	 sprintf( menustr[ 5], "Display Lower texture");
-	 sprintf( menustr[ 6], "Change Texture X offset (Current: %d)", SideDefs[ sdlist->objnum].xoff);
-	 sprintf( menustr[ 7], "Change Texture Y offset (Current: %d)", SideDefs[ sdlist->objnum].yoff);
-	 sprintf( menustr[ 8], "Change Sector ref.      (Current: #%d)", SideDefs[ sdlist->objnum].sector);
-	 val = DisplayMenuArray( 42, 84, menustr[ 9], 9, menustr);
-	 for (n = 0; n < 10; n++)
+	 sprintf( menustr[ 2], "Change Lower texture    (Current: %s)", texname);
+	 sprintf( menustr[ 3], "Change Texture X offset (Current: %d)", SideDefs[ sdlist->objnum].xoff);
+	 sprintf( menustr[ 4], "Change Texture Y offset (Current: %d)", SideDefs[ sdlist->objnum].yoff);
+	 sprintf( menustr[ 5], "Change Sector ref.      (Current: #%d)", SideDefs[ sdlist->objnum].sector);
+	 val = DisplayMenuArray( 42, 84, menustr[ 6], 6, menustr);
+	 for (n = 0; n < 7; n++)
 	    free( menustr[ n]);
 	 switch (val)
 	 {
 	 case 1:
 	    strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
-	    InputNameFromList( 84, 118, "Enter a wall texture name:", NumWTexture, WTexture, texname);
+	    ChooseWallTexture( 84, 118, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1391,62 +1663,29 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	    }
 	    break;
 	 case 2:
-	    strncpy( texname, SideDefs[ sdlist->objnum].tex3, 8);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
 	    ChooseWallTexture( 84, 128, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
-		     strncpy( SideDefs[ cur->objnum].tex3, texname, 8);
+		     strncpy( SideDefs[ cur->objnum].tex1, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 3:
-	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
-	    InputNameFromList( 84, 138, "Enter a wall texture name:", NumWTexture, WTexture, texname);
+	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
+	    ChooseWallTexture( 84, 138, "Choose a wall texture", NumWTexture, WTexture, texname);
 	    if (strlen(texname) > 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
 		  if (cur->objnum >= 0)
-		     strncpy( SideDefs[ cur->objnum].tex1, texname, 8);
+		     strncpy( SideDefs[ cur->objnum].tex2, texname, 8);
 	       MadeChanges = TRUE;
 	    }
 	    break;
 	 case 4:
-	    strncpy( texname, SideDefs[ sdlist->objnum].tex1, 8);
-	    ChooseWallTexture( 84, 148, "Choose a wall texture", NumWTexture, WTexture, texname);
-	    if (strlen(texname) > 0)
-	    {
-	       for (cur = sdlist; cur; cur = cur->next)
-		  if (cur->objnum >= 0)
-		     strncpy( SideDefs[ cur->objnum].tex1, texname, 8);
-	       MadeChanges = TRUE;
-	    }
-	    break;
-	 case 5:
-	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
-	    InputNameFromList( 84, 158, "Enter a wall texture name:", NumWTexture, WTexture, texname);
-	    if (strlen(texname) > 0)
-	    {
-	       for (cur = sdlist; cur; cur = cur->next)
-		  if (cur->objnum >= 0)
-		     strncpy( SideDefs[ cur->objnum].tex2, texname, 8);
-	       MadeChanges = TRUE;
-	    }
-	    break;
-	 case 6:
-	    strncpy( texname, SideDefs[ sdlist->objnum].tex2, 8);
-	    ChooseWallTexture( 84, 168, "Choose a wall texture", NumWTexture, WTexture, texname);
-	    if (strlen(texname) > 0)
-	    {
-	       for (cur = sdlist; cur; cur = cur->next)
-		  if (cur->objnum >= 0)
-		     strncpy( SideDefs[ cur->objnum].tex2, texname, 8);
-	       MadeChanges = TRUE;
-	    }
-	    break;
-	 case 7:
-	    val = InputIntegerValue( 84, 178, -100, 100, SideDefs[ sdlist->objnum].xoff);
+	    val = InputIntegerValue( 84, 148, -100, 100, SideDefs[ sdlist->objnum].xoff);
 	    if (val >= -100)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1455,8 +1694,8 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       MadeChanges = TRUE;
 	    }
 	    break;
-	 case 8:
-	    val = InputIntegerValue( 84, 188, -100, 100, SideDefs[ sdlist->objnum].yoff);
+	 case 5:
+	    val = InputIntegerValue( 84, 158, -100, 100, SideDefs[ sdlist->objnum].yoff);
 	    if (val >= -100)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1465,8 +1704,8 @@ void EditObjectInfo( int objtype, SelPtr obj)
 	       MadeChanges = TRUE;
 	    }
 	    break;
-	 case 9:
-	    val = InputObjectXRef( 84, 198, OBJ_SECTORS, FALSE, SideDefs[ sdlist->objnum].sector);
+	 case 6:
+	    val = InputObjectXRef( 84, 168, OBJ_SECTORS, FALSE, SideDefs[ sdlist->objnum].sector);
 	    if (val >= 0)
 	    {
 	       for (cur = sdlist; cur; cur = cur->next)
@@ -1772,7 +2011,7 @@ void ShowSeg( SEPtr seg, int color)
    int n, m;
 
    setwritemode( XOR_PUT);
-   setcolor( color);
+   SetColor( color);
    n = (Vertexes[ seg->start].x + Vertexes[ seg->end].x) / 2;
    m = (Vertexes[ seg->start].y + Vertexes[ seg->end].y) / 2;
    DrawMapLine( n, m, n + (Vertexes[ seg->end].y - Vertexes[ seg->start].y) / 2, m + (Vertexes[ seg->start].x - Vertexes[ seg->end].x) / 2);

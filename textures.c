@@ -18,14 +18,14 @@
    load one "playpal" palette and change all palette colours
 */
 
-void SetDoomPalette(int playpalnum)
+void SetDoomPalette( int playpalnum)
 {
    MDirPtr             dir;
    unsigned char huge *dpal;
    int                 n;
 
    if (playpalnum < 0 && playpalnum > 13)
-	  return;
+      return;
    dir = FindMasterDir( MasterDir, "PLAYPAL");
    if (dir)
    {
@@ -46,6 +46,53 @@ void SetDoomPalette(int playpalnum)
 
 
 /*
+   translate a standard color to Doom palette 7 (approx.)
+*/
+
+int TranslateToDoomColor( int color)
+{
+   if (GfxMode < 0)
+      switch (color)
+      {
+      case BLACK:
+	 return 0;
+      case BLUE:
+	 return 202;
+      case GREEN:
+	 return 118;
+      case CYAN:
+	 return 194;
+      case RED:
+	 return 183;
+      case MAGENTA:
+	 return 253;
+      case BROWN:
+	 return 144;
+      case LIGHTGRAY:
+	 return 88;
+      case DARKGRAY:
+	 return 96;
+      case LIGHTBLUE:
+	 return 197;
+      case LIGHTGREEN:
+	 return 112;
+      case LIGHTCYAN:
+	 return 193;
+      case LIGHTRED:
+	 return 176;
+      case LIGHTMAGENTA:
+	 return 250;
+      case YELLOW:
+	 return 231;
+      case WHITE:
+	 return 4;
+      }
+   return color;
+}
+
+
+
+/*
    display a floor or ceiling texture at coords x0, y0
 */
 
@@ -58,7 +105,7 @@ void DisplayFloorTexture( int x0, int y0, char *texname)
    dir = FindMasterDir( MasterDir, texname);
    if (dir == NULL)
    {
-      setcolor( DARKGRAY2);
+      SetColor( DARKGRAY);
       DrawScreenLine( x0, y0, x0 + 63, y0 + 63);
       DrawScreenLine( x0, y0 + 63, x0 + 63, y0);
       return;
@@ -66,8 +113,18 @@ void DisplayFloorTexture( int x0, int y0, char *texname)
    BasicWadSeek( dir->wadfile, dir->dir.start);
    pixels = GetFarMemory( 4100 * sizeof( char));
    BasicWadRead( dir->wadfile, &(pixels[ 4]), 4096L);
-   ((unsigned int huge *)pixels)[ 0] = 64;
-   ((unsigned int huge *)pixels)[ 1] = 64;
+   if (GfxMode < -1)
+   {
+      /* Probably a bug in the VESA driver...    */
+      /* It requires "size-1" instead of "size"! */
+      ((unsigned int huge *)pixels)[ 0] = 63;
+      ((unsigned int huge *)pixels)[ 1] = 63;
+   }
+   else
+   {
+      ((unsigned int huge *)pixels)[ 0] = 64;
+      ((unsigned int huge *)pixels)[ 1] = 64;
+   }
    putimage( x0, y0, pixels, COPY_PUT);
    farfree( pixels);
 }
@@ -85,11 +142,16 @@ void DisplayPic( int x0, int y0, char *picname)
    int                 x, y;
    long                offset;
    unsigned char       srow, rowlen, pixel;
+#ifndef OLD_PIX
+   unsigned char huge *pixels;
+   long                l;
+   long huge          *offsets;
+#endif
 
    dir = FindMasterDir( MasterDir, picname);
    if (dir == NULL)
    {
-      setcolor( DARKGRAY2);
+      SetColor( DARKGRAY);
       DrawScreenLine( x0, y0, x0 + 63, y0 + 63);
       DrawScreenLine( x0, y0 + 63, x0 + 63, y0);
       return;
@@ -102,6 +164,7 @@ void DisplayPic( int x0, int y0, char *picname)
    /* ignore the picture offsets */
    xofs = 0;
    yofs = 0;
+#ifdef OLD_PIX
    for (x = 0; x < xsize && !bioskey( 1); x++)
    {
       /* Seek to point of next pointer. */
@@ -129,6 +192,54 @@ void DisplayPic( int x0, int y0, char *picname)
 	 BasicWadRead( dir->wadfile, &srow, 1L);
       }
    }
+#else
+   pixels = GetFarMemory( (xsize * ysize + 4) * sizeof( char));
+   for (l = 0; l < xsize * ysize; l++)
+      pixels[ 4 + l] = 0;
+   offsets = GetFarMemory( xsize * sizeof( long));
+   BasicWadRead( dir->wadfile, offsets, (long) xsize * 4L);
+   for (x = 0; x < xsize && !bioskey( 1); x++)
+   {
+      /* Seek to start of column data. */
+      BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ x]);
+      /* Read starting row. */
+      BasicWadRead( dir->wadfile, &srow, 1L);
+      while (srow != 255)
+      {
+	 /* Read length of row. */
+	 BasicWadRead( dir->wadfile, &rowlen, 1L);
+	 /* Read excess 0. */
+	 BasicWadRead( dir->wadfile, &pixel, 1L);
+	 for (y = 0; y < rowlen; y++)
+	 {
+	    /* Read next pixel colour. */
+	    BasicWadRead( dir->wadfile, &pixel, 1L);
+	    l = (long) xofs + (long) x + (long) (yofs + srow + y) * (long) xsize;
+	    if (l < (long) xsize * (long) ysize)
+	       pixels[ 4L + l] = pixel;
+	 }
+	 /* Read excess 0. */
+	 BasicWadRead( dir->wadfile, &pixel, 1L);
+	 /* Read next starting row. */
+	 BasicWadRead( dir->wadfile, &srow, 1L);
+      }
+   }
+   farfree( offsets);
+   if (GfxMode < -1)
+   {
+      /* Probably a bug in the VESA driver...    */
+      /* It requires "size-1" instead of "size"! */
+      ((unsigned int huge *)pixels)[ 0] = xsize - 1;
+      ((unsigned int huge *)pixels)[ 1] = ysize - 1;
+   }
+   else
+   {
+      ((unsigned int huge *)pixels)[ 0] = xsize;
+      ((unsigned int huge *)pixels)[ 1] = ysize;
+   }
+   putimage( x0, y0, pixels, COPY_PUT);
+   farfree( pixels);
+#endif
 }
 
 
@@ -222,11 +333,13 @@ void ChooseFloorTexture( int x0, int y0, char *prompt, int listsize, char **list
    if (UseMouse)
       HideMousePointer();
    SwitchToVGA256();
-   SetDoomPalette( 7);
    /* if we only have a 320x200x256 VGA driver, we must change x0 and y0.  Yuck! */
-   x0 = -1;
-   y0 = -1;
-   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, name, 64, 64, DisplayFloorTexture);
+   if (GfxMode > -2)
+   {
+      x0 = -1;
+      y0 = -1;
+   }
+   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, 5, name, 64, 64, DisplayFloorTexture);
    SwitchToVGA16();
    if (UseMouse)
       ShowMousePointer();
@@ -243,11 +356,13 @@ void ChooseWallTexture( int x0, int y0, char *prompt, int listsize, char **list,
    if (UseMouse)
       HideMousePointer();
    SwitchToVGA256();
-   SetDoomPalette( 7);
    /* if we only have a 320x200x256 VGA driver, we must change x0 and y0.  Yuck! */
-   x0 = 0;
-   y0 = -1;
-   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, name, 256, 128, DisplayWallTexture);
+   if (GfxMode > -2)
+   {
+      x0 = 0;
+      y0 = -1;
+   }
+   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, 11, name, 256, 128, DisplayWallTexture);
    SwitchToVGA16();
    if (UseMouse)
       ShowMousePointer();
@@ -302,11 +417,13 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
    if (UseMouse)
       HideMousePointer();
    SwitchToVGA256();
-   SetDoomPalette( 7);
    /* if we only have a 320x200x256 VGA driver, we must change x0 and y0.  Yuck! */
-   x0 = 0;
-   y0 = -1;
-   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, name, 256, 128, DisplayPic);
+   if (GfxMode > -2)
+   {
+      x0 = 0;
+      y0 = -1;
+   }
+   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, 11, name, 256, 128, DisplayPic);
    SwitchToVGA16();
    if (UseMouse)
       ShowMousePointer();

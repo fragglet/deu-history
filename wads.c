@@ -537,4 +537,50 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
 
 
 
+/*
+   save a directory entry to disk
+*/
+
+void SaveDirectoryEntry( FILE *file, char *entryname)
+{
+   MDirPtr entry;
+   long    counter;
+   long    size;
+   void   *data;
+
+   for (entry = MasterDir; entry; entry = entry->next)
+      if (!strnicmp( entry->dir.name, entryname, 8))
+	 break;
+   if (entry)
+   {
+      WriteBytes( file, "PWAD", 4L);     /* PWAD file */
+      counter = 1L;
+      WriteBytes( file, &counter, 4L);   /* 1 entry */
+      counter = 12L;
+      WriteBytes( file, &counter, 4L);
+      counter = 28L;
+      WriteBytes( file, &counter, 4L);
+      size = entry->dir.size;
+      WriteBytes( file, &size, 4L);
+      WriteBytes( file, &(entry->dir.name), 8L);
+      data = GetMemory( 0x8000 + 2);
+      BasicWadSeek( entry->wadfile, entry->dir.start);
+      while (size > 0x8000)
+      {
+	 BasicWadRead( entry->wadfile, data, 0x8000);
+	 WriteBytes( file, data, 0x8000);
+	 size -= 0x8000;
+      }
+      BasicWadRead( entry->wadfile, data, size);
+      WriteBytes( file, data, size);
+   }
+   else
+   {
+      printf( "[Entry not in master directory]\n");
+      return;
+   }
+}
+
+
+
 /* end of file */

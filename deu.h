@@ -22,7 +22,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.00 BETA"	/* the version number */
+#define DEU_VERSION	"5.00 BETA4"	/* the version number */
 
 
 
@@ -148,11 +148,6 @@ typedef struct
 /* half the size of an object (Thing or Vertex) in map coords */
 #define OBJSIZE			15
 
-/* colour constants for VGA256 with Doom palette 7 */
-#define WHITE2			4
-#define LIGHTGRAY2		88
-#define DARKGRAY2		96
-
 
 /*
    the interfile global variables
@@ -164,6 +159,9 @@ extern Bool Debug;		/* are we debugging? */
 extern Bool SwapButtons;	/* swap right and middle mouse buttons */
 extern Bool Quiet;		/* don't play a sound when an object is selected */
 extern Bool Expert;		/* don't ask for confirmation for some operations */
+extern int  InitialScale;	/* initial zoom factor for map */
+extern int  VideoMode;		/* default video mode for VESA cards */
+extern char *BGIDriver;		/* default extended BGI driver */
 
 /* from wads.c */
 extern WadPtr  WadFileList;	/* list of wad files */
@@ -174,6 +172,7 @@ extern int NumWTexture;		/* number of wall textures */
 extern char **WTexture;		/* wall texture names */
 extern int NumFTexture;		/* number of floor/ceiling textures */
 extern char **FTexture;		/* floor/ceiling texture names */
+extern Bool InfoShown;          /* is the bottom line displayed? */
 
 /* from gfx.c */
 extern int GfxMode;		/* current graphics mode, or 0 for text */
@@ -221,9 +220,10 @@ void BuildNewMainWad( char *);
 void WriteBytes( FILE *, void huge *, long);
 int Exists( char *);
 void DumpDirectoryEntry( FILE *, char *);
+void SaveDirectoryEntry( FILE *, char *);
 
 /* from edit.c */
-void EditLevel( int, int);
+void EditLevel( int, int, Bool);
 void SelectLevel( int *, int *);
 void ReadLevelData( int, int);
 void ForgetLevelData( void);
@@ -246,16 +246,20 @@ Bool SwitchToVGA256( void);
 Bool SwitchToVGA16( void);
 void TermGfx( void);
 void ClearScreen( void);
+void SetColor( int);
 void DrawMapLine( int, int, int, int);
 void DrawMapVector( int, int, int, int);
-void DrawMapArrow( int, int, int);
+void DrawMapArrow( int, int, unsigned);
 void DrawScreenLine( int, int, int, int);
 void DrawScreenBox( int, int, int, int);
 void DrawScreenBox3D( int, int, int, int);
+void DrawScreenBoxHollow( int, int, int, int);
+void DrawScreenMeter( int, int, int, int, float);
 void DrawScreenText( int, int, char *, ...);
 void DrawPointer( void);
-unsigned int ComputeAngle( int, int);
-unsigned int ComputeDist( int, int);
+unsigned ComputeAngle( int, int);
+unsigned ComputeDist( int, int);
+void InsertPolygonVertices( int, int, int, int);
 
 /* from things.c */
 int GetThingColour( int);
@@ -277,7 +281,7 @@ int DisplayMenuArray( int, int, char *, int, char *[ 30]);
 int DisplayMenu( int, int, char *, ...);
 int InputInteger( int, int, int *, int, int);
 int InputIntegerValue( int, int, int, int, int);
-void InputNameFromListWithFunc( int, int, char *, int, char **, char *, int, int, void (*hookfunc)(int, int, char *));
+void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, char *));
 void InputNameFromList( int, int, char *, int, char **, char *);
 void InputFileName( int, int, char *, int, char *);
 Bool Confirm( int, int, char *, char *);
@@ -290,6 +294,7 @@ void HighlightObject( int, int, int);
 void DisplayObjectInfo( int, int);
 void DeleteObject( int, int);
 void InsertObject( int, int, int, int);
+void InsertStandardObject( int, int);
 int DisplayThingsMenu( int, int, char *, ...);
 int DisplayLineDefTypeMenu( int, int, char *, ...);
 int InputObjectNumber( int, int, int, int);
@@ -311,6 +316,8 @@ char *GetSectorTypeName( int);
 char *GetSectorTypeLongName( int);
 
 /* from textures.c */
+void SetDoomPalette( int);
+int TranslateToDoomColor( int);
 void ChooseFloorTexture( int, int, char *, int, char **, char *);
 void ChooseWallTexture( int, int, char *, int, char **, char *);
 void ChooseSprite( int, int, char *, char *);

@@ -22,6 +22,10 @@ Bool Debug = FALSE;		/* are we debugging? */
 Bool SwapButtons = FALSE;	/* swap right and middle mouse buttons */
 Bool Quiet = FALSE;		/* don't play a sound when an object is selected */
 Bool Expert = FALSE;		/* don't ask for confirmation for some operations */
+char *CfgFile = DEU_CONFIG_FILE;/* name of the configuration file */
+int  InitialScale = 10;		/* initial zoom factor for map */
+int  VideoMode = 2;		/* default video mode for VESA/SuperVGA */
+char *BGIDriver = "VESA";	/* default extended BGI driver */
 char *MainWad = "DOOM.WAD";	/* name of the main wad file */
 char **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
@@ -33,8 +37,13 @@ OptDesc options[] =		/* description of the command line options */
    { "w", "main", OPT_STRING, "Main WAD file", NULL, &MainWad },
    { NULL, "file", OPT_STRINGLIST, "Patch WAD file", NULL, &PatchWads },
    { "pw", "pwad", OPT_STRINGACC, "Patch WAD file", NULL, &PatchWads },
+   { NULL, "config", OPT_STRING, "Config file", NULL, &CfgFile },
+   { "z", "zoom", OPT_INTEGER, "Initial zoom factor", NULL, &InitialScale },
+   { "v", "video", OPT_INTEGER, "Default video mode", NULL, &VideoMode },
+   { NULL, "bgi", OPT_STRING, "Default video driver", NULL, &BGIDriver },
    { NULL, NULL, OPT_NONE, NULL, NULL, NULL }
 };
+
 
 
 /*
@@ -43,11 +52,20 @@ OptDesc options[] =		/* description of the command line options */
 
 int main( int argc, char *argv[])
 {
+   int i;
+
    Credits( stdout);
    argv++;
    argc--;
+   /* quick and dirty check for a "-config" option */
+   for (i = 0; i < argc - 1; i++)
+      if (!strcmp( argv[ i], "-config"))
+      {
+	 CfgFile = argv[ i + 1];
+	 break;
+      }
    /* read config file and command line options */
-   ParseConfigFileOptions( DEU_CONFIG_FILE);
+   ParseConfigFileOptions( CfgFile);
    ParseCommandLineOptions( argc, argv);
    /* load the wad files */
    OpenMainWad( MainWad);
@@ -321,14 +339,18 @@ void ParseConfigFileOptions( char *filename)
 void Usage( FILE *where)
 {
    fprintf( where, "Usage:\n");
-   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-q] [-e] [-file <pwad_files>...]\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-q] [-e] [-config <ini_file>] [-z <zoom>] [-v <mode>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
    fprintf( where, "   -w    Gives the name of the main wad file. (also -main)  Default is DOOM.WAD\n");
    fprintf( where, "   -d    Enter debug mode. (also -debug)\n");
    fprintf( where, "   -q    Suppresses sounds. (also -quiet)\n");
    fprintf( where, "   -e    Stops prompts for confirmation. (also -expert)\n");
+   fprintf( where, "   -z    Set the initial zoom factor for the editors. (also -zoom)\n");
+   fprintf( where, "   -v    Set the default video mode number (also -video)\n");
+   fprintf( where, "   -bgi  Set the default video driver (*.BGI file)\n");
    fprintf( where, "   -sb   Swaps the mouse buttons. (also -swapbuttons)\n");
    fprintf( where, "   -pw   To add one patch wad file to be loaded (may be repeated). (also -pwad)\n");
    fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
+   fprintf( where, "   -config Gives the name of the config file.\n");
 }
 
 
@@ -339,14 +361,13 @@ void Usage( FILE *where)
 
 void Credits( FILE *where)
 {
-   fprintf( where, "DEU: Doom Editor Utility, ver %s.\n", DEU_VERSION);
+   fprintf( where, "DEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
    fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n");
    fprintf( where, "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n\n");
 
-   fprintf( where, "*   This is a beta version: please test it and report any bugs to me:   *\n");
-   fprintf( where, "*   quinet@montefiore.ulg.ac.be.  Take a look from time to time on my   *\n");
-   fprintf( where, "*   FTP server (bear.montefiore.ulg.ac.be) for any newer versions.      *\n");
-   fprintf( where, "*   Please do not distribute this temporary version.  Thanks.           *\n\n");
+   fprintf( where, "| This is a temporary version, because I won't have the time |\n");
+   fprintf( where, "| to add all missing options until Monday.  But you can play |\n");
+   fprintf( where, "| with this one and even distribute it...                    |\n\n");
 }
 
 
@@ -477,6 +498,7 @@ void MainLoop()
       {
 	 printf( "?                                 -- to display this text\n");
 	 printf( "B[uild] <WadFile>                 -- to build a new main WAD file\n");
+	 printf( "C[reate] [episode [level]]        -- to create and edit a new (empty) level\n");
 	 printf( "D[ump] <DirEntry> [outfile]       -- to dump a directory entry in hex\n");
 	 printf( "E[dit] [episode [level]]          -- to edit a game level saving results to\n");
 	 printf( "                                          a patch wad file\n");
@@ -484,7 +506,8 @@ void MainLoop()
 	 printf( "M[aster] [outfile]                -- to list the master directory\n");
 	 printf( "Q[uit]                            -- to quit\n");
 	 printf( "R[ead] <WadFile>                  -- to read a new wad patch file\n");
-	 printf( "S[prites] [sname]                 -- to display the sprites\n");
+	 printf( "S[ave] <DirEntry> <WadFile>       -- to save one object to a separate file\n");
+	 printf( "V[iew] [SpriteName]               -- to display the sprites\n");
 	 printf( "W[ads]                            -- to display the open wads\n");
       }
 
@@ -516,7 +539,7 @@ void MainLoop()
       }
 
       /* user asked to edit a level */
-      else if (!strcmp( com, "EDIT") || !strcmp( com, "E"))
+      else if (!strcmp( com, "EDIT") || !strcmp( com, "E") || !strcmp( com, "CREATE") || !strcmp( com, "C"))
       {
 	 episode = 0;
 	 level = 0;
@@ -540,7 +563,8 @@ void MainLoop()
 	       }
 	    }
 	 }
-	 EditLevel( episode, level);
+	 com = strtok( input, " ");
+	 EditLevel( episode, level, !strcmp( com, "CREATE") || !strcmp( com, "C"));
       }
 
       /* user asked to build a new main WAD file */
@@ -655,13 +679,43 @@ void MainLoop()
 	    DumpDirectoryEntry( stdout, com);
       }
 
-      /* user asked to see the sprites */
-      else if (!strcmp( com, "SPRITES") || !strcmp( com, "S"))
+      /* user asked to view the sprites */
+      else if (!strcmp( com, "VIEW") || !strcmp( com, "V"))
       {
 	 InitGfx();
 	 com = strtok( NULL, " ");
 	 ChooseSprite( -1, -1, "Sprite viewer", com);
 	 TermGfx();
+      }
+
+      /* user asked to save an object to a separate PWAD file */
+      else if (!strcmp( com, "SAVE") || !strcmp( com, "S"))
+      {
+	 com = strtok( NULL, " ");
+	 if (com == NULL)
+	 {
+	    printf( "[Object name argument missing.]\n");
+	    continue;
+	 }
+	 out = strtok( NULL, " ");
+	 if (out == NULL)
+	 {
+	    printf( "[Wad file name argument missing.]\n");
+	    continue;
+	 }
+	 for (wad = WadFileList; wad; wad = wad->next)
+	    if (!stricmp( out, wad->filename))
+	       break;
+	 if (wad)
+	 {
+	    printf( "[This Wad file is already in use.  You may not overwrite it.]\n");
+	    continue;
+	 }
+	 printf( "Saving directory entry data to \"%s\".\n", out);
+	 if ((file = fopen( out, "wb")) == NULL)
+	    ProgError( "error opening output file \"%s\"", out);
+	 SaveDirectoryEntry( file, com);
+	 fclose( file);
       }
 
       /* unknown command */

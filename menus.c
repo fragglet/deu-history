@@ -5,7 +5,7 @@
    please make it clear that you borrowed it from here...
    Put a credit notice somewhere with my name on it.  Thanks!  ;-)
 
-   MENUS.C - Simple menus for DEU.
+   MENUS.C - Simple menus for DEU (or other programs).
 */
 
 /* the includes */
@@ -21,9 +21,9 @@ void DisplayMenuText( int x0, int y0, int line, char *text)
    if (UseMouse)
       HideMousePointer();
    if (line < 9)
-     DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
+      DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
    else
-     DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
+      DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
    if (UseMouse)
       ShowMousePointer();
 }
@@ -53,13 +53,17 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
    /* display the menu */
    if (UseMouse)
       HideMousePointer();
+   if (x0 < 0)
+      x0 = (getmaxx() - maxlen * 8 - 53) / 2;
+   if (y0 < 0)
+      y0 = (getmaxy() - numitems * 10 - (menutitle ? 28 : 12)) / 2;
    DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + 53, y0 + numitems * 10 + (menutitle ? 28 : 12));
-   setcolor( YELLOW);
+   SetColor( YELLOW);
    if (menutitle)
       DrawScreenText( x0 + 10, y0 + 8, menutitle);
    if (UseMouse)
       ShowMousePointer();
-   setcolor( BLACK);
+   SetColor( BLACK);
    for (line = 0; line < numitems; line++)
       DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line]);
 
@@ -76,15 +80,15 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	 /* right button = cancel */
 	 if ((buttons & 0x0002) == 0x0002)
 	 {
-	   line = -1;
-	   ok = TRUE;
+	    line = -1;
+	    ok = TRUE;
 	 }
 	 /* left button = select */
 	 else if (buttons == 0x0001 && PointerX >= x0 && PointerX <= x0 + maxlen * 8 + 53)
-	   line = (PointerY - y0 - 24) / 10;
+	    line = (PointerY - y0 - (menutitle ? 24 : 8)) / 10;
 	 /* release left button = accept selection */
 	 else if (buttons == 0x0000 && oldbuttons == 0x0001)
-	   ok = TRUE;
+	    ok = TRUE;
 	 oldbuttons = buttons;
       }
       if (bioskey( 1))
@@ -97,31 +101,41 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	 /* escape key = cancel */
 	 else if ((key & 0x00FF) == 0x001B)
 	 {
-	   line = -1;
-	   ok = TRUE;
+	    line = -1;
+	    ok = TRUE;
 	 }
 	 /* number or alphabetic key = enter selection */
 	 else if ((key & 0x00FF) >= '1' && (key & 0x00FF) <= '9' && ((key & 0x00FF) - '1') < numitems)
 	 {
-	   line = (key & 0x00FF) - '1';
-	   ok = TRUE;
+	    line = (key & 0x00FF) - '1';
+	    ok = TRUE;
 	 }
 	 else if ((key & 0x00FF) >= 'A' && (key & 0x00FF) <= 'Z' && ((key & 0x00FF) - 'A' + 9) < numitems)
 	 {
-	   line = (key & 0x00FF) - 'A' + 9;
-	   ok = TRUE;
+	    line = (key & 0x00FF) - 'A' + 9;
+	    ok = TRUE;
 	 }
 	 else if ((key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z' && ((key & 0x00FF) - 'a' + 9) < numitems)
 	 {
-	   line = (key & 0x00FF) - 'a' + 9;
-	   ok = TRUE;
+	    line = (key & 0x00FF) - 'a' + 9;
+	    ok = TRUE;
+	 }
+	 /* up arrow = select previous line */
+	 else if ((key & 0xFF00) == 0x4800)
+	 {
+	    if (line > 0)
+	       line--;
+	    else
+	       line = numitems - 1;
 	 }
 	 /* down arrow = select next line */
-	 else if ((key & 0xFF00) == 0x4800 && (line > 0))
-	    line--;
-	 /* up arrow = select previous line */
-	 else if ((key & 0xFF00) == 0x5000 && (line < numitems - 1))
-	    line++;
+	 else if ((key & 0xFF00) == 0x5000)
+	 {
+	    if (line < numitems - 1)
+	       line++;
+	    else
+	       line = 0;
+	 }
 	 /* other key */
 	 else
 	    Beep();
@@ -130,12 +144,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
       {
 	 if (oldline >= 0 && oldline < numitems)
 	 {
-	    setcolor( BLACK);
+	    SetColor( BLACK);
 	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[oldline]);
 	 }
 	 if (line >= 0 && line < numitems)
 	 {
-	    setcolor( WHITE);
+	    SetColor( WHITE);
 	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[line]);
 	 }
 	 oldline = line;
@@ -181,22 +195,19 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
    int  key, val;
    Bool neg, ok, firstkey;
 
-   setcolor( WHITE);
-   DrawScreenBox( x0 + 1, y0 + 1, x0 + 61, y0 + 13);
-   setcolor( DARKGRAY);
-   DrawScreenBox( x0, y0, x0 + 60, y0 + 12);
+   DrawScreenBoxHollow( x0, y0, x0 + 61, y0 + 13);
    neg = (*valp < 0);
    val = neg ? -(*valp) : *valp;
    firstkey = TRUE;
    for (;;)
    {
       ok = (neg ? -val : val) >= minv && (neg ? -val : val) <= maxv;
-      setcolor( BLACK);
+      SetColor( BLACK);
       DrawScreenBox( x0 + 1, y0 + 1, x0 + 60, y0 + 12);
       if (ok)
-	 setcolor( WHITE);
+	 SetColor( WHITE);
       else
-	 setcolor( LIGHTGRAY);
+	 SetColor( LIGHTGRAY);
       if (neg)
 	 DrawScreenText( x0 + 3, y0 + 3, "-%d", val);
       else
@@ -252,11 +263,11 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
       HideMousePointer();
    sprintf( prompt, "Enter a decimal number between %d and %d:", minv, maxv);
    if (x0 < 0)
-      x0 = 307 - 4 * strlen( prompt);
+      x0 = (getmaxx() - 25 - 8 * strlen( prompt)) / 2;
    if (y0 < 0)
-      y0 = 212;
+      y0 = (getmaxy() - 55) / 2;
    DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
-   setcolor( WHITE);
+   SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
    val = defv;
    while (((key = InputInteger( x0 + 10, y0 + 28, &val, minv, maxv)) & 0x00FF) != 0x000D && (key & 0x00FF) != 0x001B)
@@ -272,7 +283,7 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
    ask for a name in a given list and call a function (for displaying objects, etc.)
 */
 
-void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, char *name, int width, int height, void (*hookfunc)(int x1, int y1, char *name))
+void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, int listdisp, char *name, int width, int height, void (*hookfunc)(int x1, int y1, char *name))
 {
    int  key, n, l;
    int  x1, y1, x2, y2;
@@ -315,15 +326,14 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
       y2 = getmaxy();
    /* draw the dialog box */
    DrawScreenBox3D( x0, y0, x0 + l, y0 + n);
-   setcolor( (GfxMode < 0) ? WHITE2 : WHITE);
+   DrawScreenBoxHollow( x0 + 10, y0 + 28, x0 + 101, y0 + 41);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
-   DrawScreenBox( x0 + 11, y0 + 29, x0 + 101, y0 + 41);
    if (width > 0)
+   {
       DrawScreenBox( x1, y1, x2 + 1, y2 + 1);
-   setcolor( (GfxMode < 0) ? DARKGRAY2 : DARKGRAY);
-   DrawScreenBox( x0 + 10, y0 + 28, x0 + 100, y0 + 40);
-   if (width > 0)
+      SetColor( DARKGRAY);
       DrawScreenBox( x1 - 1, y1 - 1, x2, y2);
+   }
    firstkey = TRUE;
    for (;;)
    {
@@ -334,18 +344,18 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
       ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
       if (n > listsize - 1)
 	 n = listsize - 1;
-      /* display the five next items in the list */
-      setcolor( (GfxMode < 0) ? LIGHTGRAY2 : LIGHTGRAY);
-      DrawScreenBox( x0 + 110, y0 + 30, x0 + 110 + 8 * maxlen, y0 + 80);
-      setcolor( BLACK);
-      for (l = 0; l < 5 && n + l < listsize; l++)
+      /* display the "listdisp" next items in the list */
+      SetColor( LIGHTGRAY);
+      DrawScreenBox( x0 + 110, y0 + 30, x0 + 110 + 8 * maxlen, y0 + 30 + 10 * listdisp);
+      SetColor( BLACK);
+      for (l = 0; l < listdisp && n + l < listsize; l++)
 	 DrawScreenText( x0 + 110, y0 + 30 + l * 10, list[ n + l]);
       l = strlen( name);
       DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
       if (ok)
-	 setcolor( (GfxMode < 0) ? WHITE2 : WHITE);
+	 SetColor( WHITE);
       else
-	 setcolor( (GfxMode < 0) ? LIGHTGRAY2 : LIGHTGRAY);
+	 SetColor( LIGHTGRAY);
       DrawScreenText( x0 + 13, y0 + 31, name);
       if (hookfunc)
       {
@@ -378,12 +388,12 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
 	 strcpy(name, list[ n + 1]);
       else if (n > 0 && (key & 0xFF00) == 0x4800)
 	 strcpy(name, list[ n - 1]);
-      else if (n < listsize - 5 && (key & 0xFF00) == 0x5100)
-	 strcpy(name, list[ n + 5]);
+      else if (n < listsize - listdisp && (key & 0xFF00) == 0x5100)
+	 strcpy(name, list[ n + listdisp]);
       else if (n > 0 && (key & 0xFF00) == 0x4900)
       {
-	 if (n > 5)
-	    strcpy(name, list[ n - 5]);
+	 if (n > listdisp)
+	    strcpy(name, list[ n - listdisp]);
 	 else
 	    strcpy(name, list[ 0]);
       }
@@ -415,7 +425,7 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
 {
    if (UseMouse)
       HideMousePointer();
-   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, name, 0, 0, NULL);
+   InputNameFromListWithFunc( x0, y0, prompt, listsize, list, 5, name, 0, 0, NULL);
    if (UseMouse)
       ShowMousePointer();
 }
@@ -447,16 +457,13 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
    else
       l = boxlen;
    if (x0 < 0)
-      x0 = 306 - 4 * l;
+      x0 = (getmaxx() - 26 - 8 * l) / 2;
    if (y0 < 0)
-      y0 = 214;
+      y0 = (getmaxy() - 50) / 2;
    /* draw the dialog box */
    DrawScreenBox3D( x0, y0, x0 + 26 + 8 * l, y0 + 50);
-   setcolor( WHITE);
+   DrawScreenBoxHollow( x0 + 10, y0 + 28, x0 + 15 + 8 * boxlen, y0 + 41);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
-   DrawScreenBox( x0 + 11, y0 + 29, x0 + 15 + 8 * boxlen, y0 + 41);
-   setcolor( DARKGRAY);
-   DrawScreenBox( x0 + 10, y0 + 28, x0 + 14 + 8 * boxlen, y0 + 40);
    firstkey = TRUE;
    for (;;)
    {
@@ -482,12 +489,12 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
       }
 
       l = strlen( filename);
-      setcolor( BLACK);
+      SetColor( BLACK);
       DrawScreenBox( x0 + 11, y0 + 29, x0 + 14 + 8 * boxlen, y0 + 40);
       if (ok)
-	 setcolor( WHITE);
+	 SetColor( WHITE);
       else
-	 setcolor( LIGHTGRAY);
+	 SetColor( LIGHTGRAY);
       if (l > boxlen)
       {
 	 DrawScreenText( x0 + 11, y0 + 31, "<");
@@ -546,15 +553,15 @@ Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
    if (prompt2 != NULL && strlen( prompt2) > maxlen)
       maxlen = strlen( prompt2);
    if (x0 < 0)
-      x0 = 308 - 4 * maxlen;
+      x0 = (getmaxx() - 22 - 8 * maxlen) / 2;
    if (y0 < 0)
-      y0 = prompt2 ? 213 : 218;
+      y0 = (getmaxy() - (prompt2 ? 53 : 43)) / 2;
    DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 53 : 43));
-   setcolor( WHITE);
+   SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt1);
    if (prompt2 != NULL)
       DrawScreenText( x0 + 10, y0 + 18, prompt2);
-   setcolor( YELLOW);
+   SetColor( YELLOW);
    DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press Y to confirm, or any other key to cancel");
    key = bioskey( 0);
    if (UseMouse)
@@ -580,9 +587,9 @@ void DisplayMessage( int x0, int y0, char *msg, ...)
       HideMousePointer();
    ClearScreen();
    if (x0 < 0)
-      x0 = 299 - 4 * strlen( prompt);
+      x0 = (getmaxx() - 40 - 8 * strlen( prompt)) / 2;
    if (y0 < 0)
-      y0 = 219;
+      y0 = (getmaxy() - 40) / 2;
    DrawScreenBox3D( x0, y0, x0 + 40 + 8 * strlen( prompt), y0 + 40);
    DrawScreenText( x0 + 20, y0 + 17, prompt);
    if (UseMouse)
@@ -599,9 +606,9 @@ void NotImplemented()
    if (UseMouse)
       HideMousePointer();
    DrawScreenBox3D( 140, 220, 500, 260);
-   setcolor( RED);
+   SetColor( RED);
    DrawScreenText( 150, 230, "This function is not implemented... Yet!");
-   setcolor( YELLOW);
+   SetColor( YELLOW);
    DrawScreenText( 150, 245, "Press any key to return to the editor...");
    Beep();
    bioskey( 0);
