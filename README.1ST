@@ -3,7 +3,7 @@
 
                 DOOM EDITOR UTILITIES
 
-                     Version 5.2
+                     Version 5.21
                =======================
 
 CONTENTS
@@ -44,12 +44,12 @@ DEU is a WAD file editor.  Use it to edit one level, then save it in a
 patch WAD file (PWAD), or in the main WAD file.
 
 You may use it with both the registered and the shareware versions of 
-DOOM, but you won't be allowed to save your changes if you are using the
-shareware version (this is ID's will, since it might otherwise discourage
+DOOM, but you won't be allowed to save your changes if you are using the 
+shareware version (this is ID's will, since it might otherwise discourage 
 people from registering).
 
-You can do almost anything to any level: move, add or remove monsters and
-powerups, change the wall colours and positions, create new lifts, doors,
+You can do almost anything to any level: move, add or remove monsters and 
+powerups, change the wall colours and positions, create new lifts, doors, 
 acid pools, crushing ceilings... or even create a new level from scratch!
 If other Doom editors won't let you do it, then DEU it!
 
@@ -71,17 +71,17 @@ For other countries:
 You will probably also find it on other FTP sites, such as ftp.uwp.edu,
 wuarchive.wustl.edu, hope.cit.hope.edu...
 
-If you cannot use FTP (because you have no direct Internet access), you
-can get the files using FTPmail.  Send E-mail to: ftpmail@decwrl.dec.com,
-with "HELP" as the only word in the message (no subject, no signature).
-When you are familiar with FTPmail, you can use it to retreive the files
+If you cannot use FTP (because you have no direct Internet access), you 
+can get the files using FTPmail.  Send E-mail to: ftpmail@decwrl.dec.com, 
+with "HELP" as the only word in the message (no subject, no signature).  
+When you are familiar with FTPmail, you can use it to retreive the files 
 from one of the Doom FTP servers.
 
-Note: starting from DEU 5.2, and until 6.0, there will be a separate
-package for the GCC port of DEU.  This version is faster, uses all
-available memory (with the GO32 DOS extender) and has a better mouse
-support.  But it won't work under OS/2 or Windows.  You can get this
-version from the same sources as the normal version.  Look for a file
+Note: starting from DEU 5.2, and until 6.0, there will be a separate 
+package for the GCC port of DEU.  This version is faster, uses all 
+available memory (with the GO32 DOS extender) and has a better mouse 
+support.  But it won't work under OS/2 or Windows.  You can get this 
+version from the same sources as the normal version.  Look for a file 
 called "deu??gcc.zip".
 
 
@@ -163,9 +163,9 @@ Installation:
 ~~~~~~~~~~~~~
 Unzip it into any directory on your hard drive using commands like:
 
-      mkdir \games\doom\deu                  [create a directory for it.]
+      mkdir \games\doom\deu                   [create a directory for it.]
 
-      pkunzip -d a:deu52.zip \games\doom\deu  [unzip from your a: drive.]
+      pkunzip -d a:deu521.zip \games\doom\deu  [unzip from your a: drive.]
 
 Quickstart:
 ~~~~~~~~~~~
@@ -212,6 +212,10 @@ REVISION HISTORY
 ================
 
 By Rapha‰l Quinet:
+
+5.21   21 May 94
+       Bugfix release.  The previous version was compiled without
+       floating-point emulation.  This is fixed now, thanks to Tom Neff.
 
 5.20   20 May 94
        GCC port of DEU released in a separate zip file (by Per Allanson).
@@ -404,7 +408,7 @@ CONTACTING THE AUTHORS
 
 
 Note: Please do not send a message asking when the next version will be
-      released.  The only thing you will do is slow down the DEU
+      released.  The only thing you will do is slow down the DEU 
       development.  And please read the following paragraphs before
       sending anything by E-mail...  Thanks.
 
@@ -593,9 +597,9 @@ say that these people did great things for DOOM or DEU:
      Texture alignment (X offset).
 
 * Per Allanson                    (c91peral@und.ida.liu.se)
-     Ported DEU 5.x to GCC + GO32 (DJGPP).  GCC has a far better
+     Ported DEU 5.x to GCC + GO32 (DGJPP).  GCC has a far better
      memory management than Borland C.  It is also faster.
-     The DJGPP package is available on many FTP servers, including
+     The DGJPP package is available on many FTP servers, including
      wuarchive.wustl.edu, nic.funet.fi, and all of their mirrors.
 
 * Per Kofod                       (per@ollie.dnk.hp.com)
@@ -616,7 +620,7 @@ say that these people did great things for DOOM or DEU:
      Author of the DOOM FAQ.  Publisher of Matt's Unofficial DOOM Specs.
      He was (and still is) one of the best promoters of DOOM on the net.
 
-We certainly forgot one or two heroes of the DEU quest...  Apologies if
+We certainly forgot one or two heroes of the DEU quest...  Apologies if 
 your name is not here and you deserve it.  Just drop us a note and we will
 change that for the next release.
 

@@ -2,13 +2,13 @@
 What's this?
 ============
 
- The source to the DJGPP/GO32 port of DEU 5.2
+ The source to the DJGPP/GO32 port of DEU 5.21
 
 
  Now you should read the file 'COPYLEFT', which contains information
  about Copyrights and where to get things.
 
-
+    
 
 What do you need?
 =================
@@ -21,8 +21,6 @@ What do you need?
 
 What has been changed?
 ======================
-
-    (new) means - not present in BCC/TC version...
 
   - almost all int's has been changed to short int (typedef:ed) [ *.C *.H ]
   - farmalloc,farrealloc... -> malloc,realloc...                [ DEU-GO32.H ]
@@ -50,6 +48,7 @@ What has been changed?
  specific things have been moved inside #if defined(...) and such...
 
   - swapmem.c, memory.c removed completely
+    (you must have them to compile with BCC/TC, get the original source)
 
   - the stuff for the CIRRUS hardware cursor has not been included as the
     grx librarie handles all mouse functions for the GCC port. If you

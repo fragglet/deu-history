@@ -1,4 +1,4 @@
-/*
+/*         
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
    You are allowed to use any parts of this code in another program, as
@@ -21,6 +21,7 @@
                      deu/16. (and removed -x switch)
                    - also changed handling of colors to remove
                      the annoying white spots.
+                     (which are present in the borland-version, he-he...)
 
 
            940508: (from Per Kofod)
@@ -63,6 +64,10 @@
                      - fixed "you-have-always-unclosed-sectors" bug
 
                        (learn: be careful with copy/paste ....)
+
+           940523: - updated to DEU 5.21, the version that should not be.
+                     (and it wouldn't if not the borlandversion had been
+                      compiled with 387 emulation OFF ...)
 
 */
 

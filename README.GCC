@@ -3,7 +3,7 @@
 
                 DOOM EDITOR UTILITIES
 
-                     Version 5.2
+                     Version 5.21
 
                  DJGPP/GO32  version
 
@@ -20,11 +20,11 @@ A FIRST WORD
 
 
 
-WHAT IS DEU 5.2 - DJGPP/GO32?
+WHAT IS DEU 5.21 - DJGPP/GO32?
 =============================
 
 
- A 32-bit version of Deu 5.2.
+ A 32-bit version of Deu 5.21.
 
 
 
@@ -68,8 +68,8 @@ WHAT'S DIFFERENT FROM THE "ORIGINAL" 5.2 ?
 
 
 
-RUNNING DEU 5.2 DJGPP/GO32
-==========================
+RUNNING DEU 5.21 DJGPP/GO32
+===========================
 
  Requirements:
  ~~~~~~~~~~~~~
@@ -150,12 +150,12 @@ DOCUMENTATION
 
  For European users:
      bear.montefiore.ulg.ac.be (139.165.8.25)
-     /pub/doom/deu/deu52.zip     ("original" version, docs, examples, source)
-     /pub/doom/deu/deu52gcc.zip  (djgpp/go32 version, source, NO docs/ex:s)
+     /pub/doom/deu/deu521.zip     ("original" version, docs, examples, source)
+     /pub/doom/deu/deu521gc.zip  (djgpp/go32 version, source, NO docs/ex:s)
 
  For other countries:
      infant2.sphs.indiana.edu (129.79.234.115)
-     /pub/doom/deu/deu52{gcc}.zip
+     /pub/doom/deu/deu521{gc}.zip
 
 
  You will probably also find it on other FTP sites, such as ftp.uwp.edu,

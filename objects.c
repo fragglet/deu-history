@@ -39,8 +39,6 @@ Bool IsSelected( SelPtr list, BCINT objnum)
 {
    SelPtr cur;
 
-   if (list == NULL)
-      return FALSE;
    for (cur = list; cur; cur = cur->next)
       if (cur->objnum == objnum)
 	 return TRUE;
@@ -91,7 +89,7 @@ void UnSelectObject( SelPtr *list, BCINT objnum)
 	 if (prev)
 	    cur = prev->next;
 	 else
-	    cur = *list;
+	    cur = NULL;
       }
       else
       {
@@ -2349,93 +2347,277 @@ void AlignTexturesY( SelPtr *sdlist) /* SWAP! */
 
 
 /*
-   Function is to align all highlighted textures in the X-axis
+	Function is to align all highlighted textures in the X-axis
 
-   Note from RJH:
-      LineDefs highlighted are read off in reverse order of highlighting.
-      The '*sdlist' is in the reverse order of the above mentioned LineDefs
-      i.e. the first LineDef SideDef you highlighted will be processed first.
+	Note from RJH:
+		LineDefs highlighted are read off in reverse order of highlighting.
+		The '*sdlist' is in the reverse order of the above mentioned LineDefs
+		i.e. the first LineDef SideDefs you highlighted will be processed first.
 
-   Note from RQ:
-      See also the note for the previous function.
+	Note from RQ:
+		See also the note for the previous function.
+
+	Note from RJH:
+		For the menu for aligning textures 'X' NOW operates upon the fact that
+		ALL the SIDEDEFS from the selected LINEDEFS are in the *SDLIST, 2nd
+		SideDef is first, 1st SideDef is 2nd). Aligning textures X now does
+		SIDEDEF 1's and SIDEDEF 2's.  If the selection process is changed,
+		the following needs to be altered radically.
 */
 
-void AlignTexturesX( SelPtr *sdlist) /* SWAP! */
+void AlignTexturesX(SelPtr *sdlist) /* SWAP! */
 {
-   char texname[ 9];    /* last texture name used in the highlited objects */
-   BCINT ldef;				/* linedef number */
-   BCINT sd1;         	/* side one and side two of linedef */
-   BCINT vert1, vert2;	/* vertex 1 and 2 for the linedef under scrutiny */
-   BCINT xoffset;			/* xoffset accumulator */
-   BCINT texlength;     /* the length of texture to format to */
-   BCINT length;		   /* length of linedef under scrutiny */
-   char  errormessage[ 80];	/* area to hold the error messages produced */
-   BCINT dummy;			/* holds useless data */
+	char texname[9];       	/* FIRST texture name used in the highlited objects */
+	char errormessage[80];	/* area to hold the error messages produced */
+	BCINT  ldef;	 	/* linedef number */
+	BCINT  sd1;         	/* current SideDef in *sdlist */
+	BCINT  vert1, vert2;	/* vertex 1 and 2 for the linedef under scrutiny */
+	BCINT  xoffset;	 	/* xoffset accumulator */
+	BCINT  useroffset;      /* user input offset for first input */
+	BCINT  texlength;    	/* the length of texture to format to */
+	BCINT  length;	     	/* length of linedef under scrutiny */
+	BCINT  dummy;	     	/* holds useless data */
+	BCINT  type_off;        /* do we have an initial offset to use */
+	BCINT  type_tex;        /* do we check for same textures */
+	BCINT  type_sd;	     	/* do we align SideDef 1 or SideDef2 */
 
-   vert1 = -1;
-   vert2 = -1;		/* first time round the while loop the -1 value is needed */
-   texlength = 0;
-   xoffset = 0;
+	type_sd  = 0;     /* which SideDef to align, 1 = SideDef1, 2 = SideDef2 */
+	type_tex = 0;     /* do we test for similar textures, 0 = inactive, 1 = active */
+	type_off = 0;     /* do we have an inital offset, 0 = inactive, 1 = active */
 
-   ObjectsNeeded( OBJ_SIDEDEFS, 0);
-   strncpy( texname, SideDefs[ (*sdlist)->objnum].tex3, 8);
+	vert1   = -1;
+	vert2   = -1;		/* first time round the while loop the -1 value is needed */
+	texlength  = 0;
+	xoffset    = 0;
+	useroffset = 0;
 
-   /* test if there is a texture there */
-   if (texname[0] == '-')
-   {
-      Beep();
-      sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
-      Notify( -1, -1, errormessage, NULL);
-      return;
-   }
+	switch(DisplayMenu( 250, 110, "Aligning textures 'X' menu:",
 
-   GetWallTextureSize( &texlength, &dummy, texname); /* clunky, but it works */
+			  " SideDef 1,  Check for identical textures.     ",
+			  " SideDef 1,  As above, but with inital offset. ",
+			  " SideDef 1,  No texture checking.              ",
+			  " SideDef 1,  As above, but with inital offset. ",
 
-   while (*sdlist != NULL)
-   {
-      /* test if there is a texture there */
-      ObjectsNeeded( OBJ_SIDEDEFS, 0);
-      if (strncmp( SideDefs[ (*sdlist)->objnum].tex3, texname,8))
-      {
-	 Beep();
-	 sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
-	 Notify( -1, -1, errormessage, NULL);
-	 return;
-      }
+			  " SideDef 2, Check for identical textures.     ",
+			  " SideDef 2, As above, but with inital offset. ",
+			  " SideDef 2, No texture checking.              ",
+			  " SideDef 2, As above, but with inital offset. ",
+			  NULL))
+		{
+		 case 1: 		/* SideDef 1 with checking for same textures   */
+			type_sd = 1; type_tex = 1; type_off = 0;
+			break;
 
-      sd1 = (*sdlist)->objnum;
-      ldef = 0;
+		 case 2: 		/* SideDef 1 as above, but with inital offset  */
+			type_sd = 1; type_tex = 1; type_off = 1;
+			break;
 
-      ObjectsNeeded(OBJ_LINEDEFS,0);
-      /* find out which LineDef holds that SideDef */
-      while (LineDefs[ ldef].sidedef1 != sd1 && ldef < NumLineDefs)
-	 ldef++;
+		 case 3: 		/* SideDef 1 regardless of same textures       */
+			type_sd = 1; type_tex = 0; type_off = 0;
+			break;
 
-      vert1 = LineDefs[ ldef].start;
-      /* test for linedef highlight continuity */
-      if (vert1 != vert2 && vert2 != -1)
-      {
-	 Beep();
-	 sprintf( errormessage, "LineDef #%d is not contiguous with the rest, please reselect.", (*sdlist)->objnum);
-	 Notify( -1, -1, errormessage, NULL);
-	 return;
-      }
+		 case 4: 		/* SideDef 1 as above, but with inital offset  */
+			type_sd = 1; type_tex = 0; type_off = 1;
+			break;
 
-      /* put new xoffset into the SideDef */
-      SideDefs[ sd1].xoff = xoffset;
+		 case 5: 		/* SideDef 2 with checking for same textures   */
+			type_sd = 2; type_tex = 1; type_off = 0;
+			break;
 
-      /* calculate length of LineDef */
-      vert2 = LineDefs[ ldef].end;
-      ObjectsNeeded( OBJ_VERTEXES, 0);
-      length = ComputeDist( Vertexes[ vert2].x - Vertexes[ vert1].x, Vertexes[ vert2].y - Vertexes[ vert1].y);
+		 case 6: 		/* SideDef 2 as above, but with initial offset */
+			type_sd = 2; type_tex = 1; type_off = 1;
+			break;
 
-      xoffset += length;
-      /* remove multiples of texlength from xoffset */
-      xoffset = xoffset % texlength;
-      /* move to next object in selected list */
-      UnSelectObject( sdlist, (*sdlist)->objnum);
-   }
-   MadeChanges = TRUE;
+		 case 7: 		/* SideDef 2 regardless of same textures       */
+			type_sd = 2; type_tex = 0; type_off = 0;
+			break;
+
+		 case 8: /* SideDef 2 as above, but with initial offset       */
+			type_sd = 2; type_tex = 0; type_off = 1;
+			break;
+		}
+
+	ldef = 0;
+	sd1 = (*sdlist) ->objnum;
+
+	if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
+	{
+		while((*sdlist)!=NULL && LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
+		{
+			ldef++;
+			if(LineDefs[ldef].sidedef2 == sd1)
+			{
+				UnSelectObject(sdlist, (*sdlist)->objnum);
+				sd1 = (*sdlist) ->objnum;
+				ldef = 0;
+				if((*sdlist)==NULL)
+					return;
+			}
+		}
+	}
+
+	if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
+	{
+		while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
+		{
+			ldef++;
+			if(LineDefs[ldef].sidedef1 == sd1)
+			{
+				UnSelectObject(sdlist, (*sdlist)->objnum);
+				sd1 = (*sdlist) ->objnum;
+				ldef = 0;
+				if((*sdlist) == NULL)
+					return;
+			}
+		}
+	}
+
+	ObjectsNeeded( OBJ_SIDEDEFS, 0);
+
+	/* get texture name of the SideDef in the *sdlist) */
+	strncpy( texname, SideDefs[ (*sdlist)->objnum].tex3, 8);
+
+	/* test if there is a texture there */
+	if (texname[0] == '-')
+	{
+		Beep();
+		sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
+		Notify( -1, -1, errormessage, NULL);
+		return;
+	}
+
+	GetWallTextureSize( &texlength, &dummy, texname); /* clunky, but it works */
+
+	/* get initial offset to use (if requrired) */
+	if(type_off == 1)    /* source taken from InputObjectNumber */
+	{
+		BCINT  x0;        /* left hand (x) window start     */
+		BCINT  y0;	  /* top (y) window start           */
+		BCINT  key;	  /* holds value returned by InputInteger */
+		char prompt[80];  /* prompt for inital offset input */
+
+		if(UseMouse)
+			HideMousePointer();
+
+		sprintf(prompt, "Enter initial offset between 0 and %d:", texlength);
+
+		x0 = (ScrMaxX - 25 - 8 * strlen(prompt)) / 2;
+		y0 = (ScrMaxY - 55) / 2;
+
+		DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
+		SetColor( WHITE);
+		DrawScreenText( x0 + 10, y0 + 8, prompt);
+
+		while ( ((key=InputInteger(x0+10, y0+28, &useroffset, 0, texlength))&0x00FF)!=0x000D
+					&& (key & 0x00FF) != 0x001B)
+			Beep();
+
+		if (UseMouse)
+			ShowMousePointer();
+	}
+
+	while (*sdlist != NULL)  /* main processing loop */
+	{
+		ldef = 0;
+		sd1 = (*sdlist)->objnum;
+
+		if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
+		{
+			while(LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
+			{
+				ldef++;
+				if(LineDefs[ldef].sidedef2 == sd1)
+				{
+			 		UnSelectObject(sdlist, (*sdlist)->objnum);
+					sd1 = (*sdlist) ->objnum;
+					ldef = 0;
+					if((*sdlist) == NULL)
+						return;
+				}
+			}
+		}
+
+		if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
+		{
+			while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
+			{
+				ldef++;
+				if(LineDefs[ldef].sidedef1 == sd1)
+				{
+					UnSelectObject(sdlist, (*sdlist)->objnum);
+					sd1 = (*sdlist) ->objnum;
+					ldef = 0;
+					if((*sdlist) == NULL)
+				   		return;
+				}
+			}
+		}
+
+		if(type_tex == 1) /* do we test for same textures for the SideDef in question?? */
+
+		{
+			ObjectsNeeded( OBJ_SIDEDEFS, 0);
+			if (strncmp( SideDefs[ (*sdlist)->objnum].tex3, texname,8))
+			{
+				Beep();
+				sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
+				Notify( -1, -1, errormessage, NULL);
+				return;
+			}
+		}
+
+		sd1 = (*sdlist)->objnum;
+		ldef = 0;
+
+		ObjectsNeeded(OBJ_LINEDEFS,0);
+
+		/* find out which LineDef holds that SideDef */
+		if(type_sd == 1)
+		{
+			while (LineDefs[ ldef].sidedef1 != sd1 && ldef < NumLineDefs)
+				ldef++;
+		}
+		else
+		{
+			while (LineDefs[ ldef].sidedef2 != sd1 && ldef < NumLineDefs)
+				ldef++;
+		}
+
+		vert1 = LineDefs[ ldef].start;
+		/* test for linedef highlight continuity */
+		if (vert1 != vert2 && vert2 != -1)
+		{
+			Beep();
+			sprintf( errormessage, "LineDef #%d is not contiguous with the previous LineDef, please reselect.", (*sdlist)->objnum);
+			Notify( -1, -1, errormessage, NULL);
+			return;
+		}
+		/* is this the first time round here */
+	      	if(vert1 != vert2)
+	      	{
+	      		if(type_off == 1)  /* do we have an initial offset ? */
+	      		{
+	      			SideDefs[sd1].xoff = useroffset;
+	      			xoffset = useroffset;
+	      		}
+	      		else
+	      			SideDefs[sd1].xoff = 0;
+	      	}
+	      	else		/* put new xoffset into the SideDef */
+	      		SideDefs[sd1].xoff = xoffset;
+
+	      	/* calculate length of LineDef */
+	      	vert2 = LineDefs[ldef].end;
+	      	ObjectsNeeded( OBJ_VERTEXES, 0);
+	      	length = ComputeDist( Vertexes[vert2].x - Vertexes[vert1].x, Vertexes[vert2].y - Vertexes[vert1].y);
+
+	      	xoffset += length;
+	      	/* remove multiples of texlength from xoffset */
+	      	xoffset = xoffset % texlength;
+	      	/* move to next object in selected list */
+	      	UnSelectObject( sdlist, (*sdlist)->objnum);
+	}
+	MadeChanges = TRUE;
 }
 
 
@@ -2499,4 +2681,4 @@ void DistributeSectorCeilings( SelPtr obj) /* SWAP! */
 
 
 /* end of file */
-
+                                  

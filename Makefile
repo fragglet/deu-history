@@ -1,7 +1,7 @@
 # gnuish Makefile
 
 #OPTIONS = -g -Wall
-OPTIONS = -O2 -pedantic -Wall
+OPTIONS = -O2 -Wall
 
 SRCS =  deu.c gfx.c menus.c nodes.c textures.c edit.c levels.c mouse.c \
 	objects.c things.c editobj.c names.c wads.c
@@ -22,4 +22,3 @@ deu.exe: deu
 	strip deu
 	coff2exe deu
         	
-

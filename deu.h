@@ -24,14 +24,14 @@
 #include <alloc.h>
 #include <dos.h>
 #include <bios.h>
-#define DEU_VERSION	"5.2"	/* the version number */
+#define DEU_VERSION	"5.21"	/* the version number */
 typedef int            BCINT;
 typedef unsigned int   UBCINT;
 
 #elif defined(__GNUC__)
 
 #include "deu-go32.h"
-#define DEU_VERSION     "5.2 - DJGPP/GO32 version"
+#define DEU_VERSION     "5.21 - DJGPP/GO32 version"
 typedef short int            BCINT;
 typedef unsigned short int   UBCINT;
 
