@@ -1,5 +1,7 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
+
+   Doom II code by Adrian Cable.
 
    If you use any part of this code in one of your programs,
    please make it clear that you borrowed it from here...
@@ -181,7 +183,7 @@ char *GetLineDefTypeName( int type)
    case 49:
       return "S1 Lower ceil. >";
    case 50:
-      return "S1 Open door (O)";
+      return "S1 Close door";
    case 51:
       return "S- Secret level";
    case 52:
@@ -234,9 +236,10 @@ char *GetLineDefTypeName( int type)
       return "WR Close door 30";
    case 77:
       return "WR Fast crushing";
-   /* 78 */
+   case 78:
+      return "WR Lights min. N";
    case 79:
-      return "WR Lights out!";
+      return "WR Lights off!";
    case 80:
       return "WR Lights max. N";
    case 81:
@@ -247,7 +250,8 @@ char *GetLineDefTypeName( int type)
       return "WR Lower fl.maxN";
    case 84:
       return "WR Lower fl.minN";
-   /* 85 */
+   case 85:
+      return "WR Lwr fl & R. cl";
    case 86:
       return "WR Open door (O)";
    case 87:
@@ -274,7 +278,10 @@ char *GetLineDefTypeName( int type)
       return "WR Teleport";
    case 98:
       return "WR Lower floor >";
-   /* 99 100 */
+   case 99:
+      return "SR Turbo Blue obj";
+   case 100:
+      return "W1 Turbo stairs16";
    case 101:
       return "S1 Raise floor C";
    case 102:
@@ -283,6 +290,80 @@ char *GetLineDefTypeName( int type)
       return "S1 Open Door (O)";
    case 104:
       return "W1 Lights down N";
+   case 105:
+      return "WR Turbo door";
+   case 106:
+      return "WR Turbo door (O)";
+   case 107:
+      return "WR Turbo shut dr.";
+   case 108:
+      return "W1 Turbo door";
+   case 109:
+      return "W1 Turbo door (O)";
+   case 110:
+      return "W1 Turbo shut dr.";
+   case 111:
+      return "S1 Turbo door";
+   case 112:
+      return "S1 Turbo door (O)";
+   case 113:
+      return "S1 Turbo shut dr.";
+   case 114:
+      return "SR Turbo door";
+   case 115:
+      return "SR Turbo door (O)";
+   case 116:
+      return "SR Turbo shut dr.";
+   case 117:
+      return "DR Turbo door";
+   case 118:
+      return "D1 Turbo door (O)";
+   case 119:
+      return "W1 Raise floor N";
+   case 120:
+      return "WR Turbo lwr. lft";
+   case 121:
+      return "W1 Turbo lwr. lft";
+   case 122:
+      return "S1 Turbo lwr. lft";
+   case 123:
+      return "SR Turbo lwr. lft";
+   case 124:
+      return "W- Secret";
+   case 125:
+      return "W1 T.port monster";
+   case 126:
+      return "WR T.port monster";
+   case 127:
+      return "S1 Turbo stairs16";
+   case 128:
+      return "WR Raise floor N";
+   case 129:
+      return "WR Fast R.floor C";
+   case 130:
+      return "W1 Fast R.floor C";
+   case 131:
+      return "S1 Fast R.floor C";
+   case 132:
+      return "SR Fast R.floor C";
+   case 133:
+      return "S1 Turbo Blue obj";
+   case 134:
+      return "SR Turbo Red obj.";
+   case 135:
+      return "S1 Turbo Red obj.";
+   case 136:
+      return "SR Turbo Yel. obj";
+   case 137:
+      return "S1 Turbo Yel. obj";
+   case 138:
+      return "SR Lights on!";
+   case 139:
+      return "SR Lights off!";
+   case 140:
+      return "S1 Raise floor512";
+   case 141:
+      return "W1 Start moving C";
    }
    return "?? UNKNOWN";
 }
@@ -398,7 +479,7 @@ char *GetLineDefTypeLongName( int type)
    case 49:
       return "S1 Lower ceiling to 8 above floor";
    case 50:
-      return "S1 Open door (stays open) ?";
+      return "S1 Close door";
    case 51:
       return "S- End level, go to secret level";
    case 52:
@@ -453,7 +534,8 @@ char *GetLineDefTypeLongName( int type)
       return "WR Close door for 30 seconds";
    case 77:
       return "WR Start crushing ceiling (Fast)";
-   /* 78 */
+   case 78:
+      return "WR Light level goes to minimum Ne. light level";
    case 79:
       return "WR Light level goes to 0";
    case 80:
@@ -466,7 +548,8 @@ char *GetLineDefTypeLongName( int type)
       return "WR Lower floor to match Ne. floor ?";
    case 84:
       return "WR Lower floor to match lowest Ne. floor ?";
-   /* 85 */
+   case 85:
+      return "WR Lower floor and raise ceiling";
    case 86:
       return "WR Open door (stays open)";
    case 87:
@@ -493,15 +576,92 @@ char *GetLineDefTypeLongName( int type)
       return "WR Teleport to another sector";
    case 98:
       return "WR Lower floor to 8 above Ne. floor";
-   /* 99 100 */
+   case 99:
+      return "SR Turbo open object (stays open), Blue key";
+   case 100:
+      return "W1 Turbo raise stairs";
    case 101:
       return "S1 Raise floor to match Ne. ceiling";
    case 102:
       return "S? Lower floor to match Ne. floor";
    case 103:
-      return "S1 Open door (stays open) ?";
+      return "S1 Open door (stays open)";
    case 104:
       return "W1 Light level goes to minimum Ne. light level";
+   case 105:
+      return "WR Turbo open door (closes after 6 seconds)";
+   case 106:
+      return "WR Turbo open door (stays open)";
+   case 107:
+      return "WR Turbo close door";
+   case 108:
+      return "W1 Turbo open door (closes after 6 seconds)";
+   case 109:
+      return "W1 Turbo open door (stays open)";
+   case 110:
+      return "W1 Turbo close door";
+   case 111:
+      return "S1 Turbo open door (closes after 6 seconds)";
+   case 112:
+      return "S1 Turbo open door (stays open)";
+   case 113:
+      return "S1 Turbo close door";
+   case 114:
+      return "SR Turbo open door (closes after 6 seconds)";
+   case 115:
+      return "SR Turbo open door (stays open)";
+   case 116:
+      return "SR Turbo close door";
+   case 117:
+      return "DR Turbo open door (closes after 6 seconds)";
+   case 118:
+      return "D1 Turbo open door (stays open)";
+   case 119:
+      return "W1 Raise floor to Ne. floor";
+   case 120:
+      return "WR Turbo lower lift (rises after 3 sec)";
+   case 121:
+      return "W1 Turbo lower lift (rises after 3 sec)";
+   case 122:
+      return "S1 Turbo lower lift (rises after 3 sec)";
+   case 123:
+      return "SR Turbo lower lift (rises after 3 sec)";
+   case 124:
+      return "W- End level, go to secret level";
+   case 125:
+      return "W1 Teleport monster only to another sector";
+   case 126:
+      return "WR Teleport monster only to another sector";
+   case 127:
+      return "S1 Turbo raise stairs, each stair 16 high";
+   case 128:
+      return "WR Raise floor to Ne. floor";
+   case 129:
+      return "WR Turbo raise floor to match Ne. ceiling";
+   case 130:
+      return "W1 Turbo raise floor to match Ne. ceiling";
+   case 131:
+      return "S1 Turbo raise floor to match Ne. ceiling";
+   case 132:
+      return "SR Turbo raise floor to match Ne. ceiling";
+   case 133:
+      return "S1 Turbo open object (stays open), Blue key";
+   case 134:
+      return "SR Turbo open object (stays open), Red key";
+   case 135:
+      return "S1 Turbo open object (stays open), Red key";
+   case 136:
+      return "SR Turbo open object (stays open), Yellow key";
+   case 137:
+      return "S1 Turbo open object (stays open), Yellow key";
+   case 138:
+      return "SR Light level goes to 255";
+   case 139:
+      return "SR Light level goes to 0";
+   case 140:
+      return "S1 Raise floor to 512";
+   case 141:
+      return "W1 Start silent moving ceiling (up/down)";
    }
    return "?? UNKNOWN ?";
 }
@@ -618,7 +778,7 @@ char *GetSectorTypeName( int type)
    case 9:
       return "Secret";
    case 10:
-      return "Unknown ???";
+      return "Shut door 30sc";
    case 11:
       return "-20% & end lev";
    case 12:
@@ -626,9 +786,11 @@ char *GetSectorTypeName( int type)
    case 13:
       return "Blinks .25 sec";
    case 14:
-      return "Unknown ???";
+      return "Open door 5min";
    case 16:
       return "-20% health";
+   case 17:
+      return "On fire";
    }
    return "DO NOT USE!";
 }
@@ -662,7 +824,7 @@ char *GetSectorTypeLongName( int type)
    case 9:
       return "Secret (credit if discovered)";
    case 10:
-      return "Unknown ??? (ceiling goes down)";
+      return "Door close after 30 seconds";
    case 11:
       return "-10/20% health and end level when health <= 10%";
    case 12:
@@ -670,11 +832,14 @@ char *GetSectorTypeLongName( int type)
    case 13:
       return "Blinks every 0.25 seconds";
    case 14:
-      return "Unknown ???";
+      return "Door raise after 5 minutes";
    case 16:
       return "-10/20% health";
+   case 17:
+      return "Flickering as if on fire";
    }
    return "DO NOT USE!";
 }
 
 /* end of file */
+

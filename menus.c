@@ -8,7 +8,7 @@
 
    This program comes with absolutely no warranty.
 
-   MENUS.C - Simple menus for DEU (or other programs).
+   MENUS.C - Simple menus for ADE (or other programs).
 */
 
 /* the includes */
@@ -30,24 +30,24 @@ void DisplayMenuText( int x0, int y0, int line, char *text, int highlightnum, Bo
       DrawScreenText( x0 + 26, y0 + 8 + line * 10, "- %s", text);
       SetColor( WHITE);
       if (line < 9)
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d", line + 1, text);
+         DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d", line + 1, text);
       else
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c", line + 56, text);
+         DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c", line + 56, text);
    }
    else
    {
       if (highlightnum > 0)
       {
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
-	 SetColor( WHITE);
-	 h[ 0] = text[ highlightnum - 1];
-	 h[ 1] = '\0';
-	 DrawScreenText( x0 + 2 + highlightnum * 8, y0 + 8 + line * 10, h);
+         DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
+         SetColor( WHITE);
+         h[ 0] = text[ highlightnum - 1];
+         h[ 1] = '\0';
+         DrawScreenText( x0 + 2 + highlightnum * 8, y0 + 8 + line * 10, h);
       }
       else
       {
-	 SetColor( DARKGRAY);
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
+         SetColor( DARKGRAY);
+         DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
       }
    }
    if (UseMouse)
@@ -73,7 +73,7 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
       maxlen = 1;
    for (line = 0; line < numitems; line++)
       if (strlen( menustr[ line]) > maxlen)
-	 maxlen = strlen( menustr[ line]);
+         maxlen = strlen( menustr[ line]);
 
    /* display the menu */
    if (UseMouse)
@@ -104,119 +104,119 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
    {
       if (UseMouse)
       {
-	 GetMouseCoords( &PointerX, &PointerY, &buttons);
-	 /* right button = cancel */
-	 if ((buttons & 0x0002) == 0x0002)
-	 {
-	    line = -1;
-	    ok = TRUE;
-	 }
-	 /* left button = select */
-	 else if (buttons == 0x0001 && PointerX >= x0 && PointerX <= x0 + maxlen * 8 + 53)
-	    line = (PointerY - y0 - (menutitle ? 24 : 8)) / 10;
-	 /* release left button = accept selection */
-	 else if (buttons == 0x0000 && oldbuttons == 0x0001)
-	    ok = TRUE;
-	 oldbuttons = buttons;
+         GetMouseCoords( &PointerX, &PointerY, &buttons);
+         /* right button = cancel */
+         if ((buttons & 0x0002) == 0x0002)
+         {
+            line = -1;
+            ok = TRUE;
+         }
+         /* left button = select */
+         else if (buttons == 0x0001 && PointerX >= x0 && PointerX <= x0 + maxlen * 8 + 53)
+            line = (PointerY - y0 - (menutitle ? 24 : 8)) / 10;
+         /* release left button = accept selection */
+         else if (buttons == 0x0000 && oldbuttons == 0x0001)
+            ok = TRUE;
+         oldbuttons = buttons;
       }
       if (bioskey( 1))
       {
-	 key = bioskey( 0);
+         key = bioskey( 0);
 
-	 /* enter key = accept selection */
-	 if ((key & 0x00FF) == 0x000D)
-	    ok = TRUE;
-	 /* escape key = cancel */
-	 else if ((key & 0x00FF) == 0x001B)
-	 {
-	    line = -1;
-	    ok = TRUE;
-	 }
-	 /* up arrow = select previous line */
-	 else if ((key & 0xFF00) == 0x4800)
-	 {
-	    if (line > 0)
-	       line--;
-	    else
-	       line = numitems - 1;
-	 }
-	 /* down arrow = select next line */
-	 else if ((key & 0xFF00) == 0x5000)
-	 {
-	    if (line < numitems - 1)
-	       line++;
-	    else
-	       line = 0;
-	 }
-	 /* home = select first line */
-	 else if ((key & 0xFF00) == 0x4700)
-	    line = 0;
-	 /* end = select last line */
-	 else if ((key & 0xFF00) == 0x4F00)
-	    line = numitems - 1;
-	 /* pgup = select line - 5 */
-	 else if ((key & 0xFF00) == 0x4900)
-	 {
-	    if (line >= 5)
-	       line -= 5;
-	    else
-	       line = 0;
-	 }
-	 /* pgdn = select line + 5 */
-	 else if ((key & 0xFF00) == 0x5100)
-	 {
-	    if (line < numitems - 5)
-	       line += 5;
-	    else
-	       line = numitems - 1;
-	 }
-	 /* number or alphabetic key = enter selection */
-	 else if ((key & 0x00FF) >= '1' && (key & 0x00FF) <= '9' && ((key & 0x00FF) - '1') < numitems)
-	 {
-	    line = (key & 0x00FF) - '1';
-	    ok = TRUE;
-	 }
-	 else if ((key & 0x00FF) >= 'A' && (key & 0x00FF) <= 'Z' && ((key & 0x00FF) - 'A' + 9) < numitems)
-	 {
-	    line = (key & 0x00FF) - 'A' + 9;
-	    ok = TRUE;
-	 }
-	 else if ((key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z' && ((key & 0x00FF) - 'a' + 9) < numitems)
-	 {
-	    line = (key & 0x00FF) - 'a' + 9;
-	    ok = TRUE;
-	 }
-	 /* check the list of "hot keys" */
-	 else if (okkeys)
-	 {
-	    for (line = 0; line < numitems; line++)
-	       if (toupper( key) == okkeys[ line])
-		  break;
-	    if (line < numitems)
-	       ok = TRUE;
-	    else
-	    {
-	       line = oldline;
-	       Beep();
-	    }
-	 }
-	 /* other key */
-	 else
-	    Beep();
+         /* enter key = accept selection */
+         if ((key & 0x00FF) == 0x000D)
+            ok = TRUE;
+         /* escape key = cancel */
+         else if ((key & 0x00FF) == 0x001B)
+         {
+            line = -1;
+            ok = TRUE;
+         }
+         /* up arrow = select previous line */
+         else if ((key & 0xFF00) == 0x4800)
+         {
+            if (line > 0)
+               line--;
+            else
+               line = numitems - 1;
+         }
+         /* down arrow = select next line */
+         else if ((key & 0xFF00) == 0x5000)
+         {
+            if (line < numitems - 1)
+               line++;
+            else
+               line = 0;
+         }
+         /* home = select first line */
+         else if ((key & 0xFF00) == 0x4700)
+            line = 0;
+         /* end = select last line */
+         else if ((key & 0xFF00) == 0x4F00)
+            line = numitems - 1;
+         /* pgup = select line - 5 */
+         else if ((key & 0xFF00) == 0x4900)
+         {
+            if (line >= 5)
+               line -= 5;
+            else
+               line = 0;
+         }
+         /* pgdn = select line + 5 */
+         else if ((key & 0xFF00) == 0x5100)
+         {
+            if (line < numitems - 5)
+               line += 5;
+            else
+               line = numitems - 1;
+         }
+         /* number or alphabetic key = enter selection */
+         else if ((key & 0x00FF) >= '1' && (key & 0x00FF) <= '9' && ((key & 0x00FF) - '1') < numitems)
+         {
+            line = (key & 0x00FF) - '1';
+            ok = TRUE;
+         }
+         else if ((key & 0x00FF) >= 'A' && (key & 0x00FF) <= 'Z' && ((key & 0x00FF) - 'A' + 9) < numitems)
+         {
+            line = (key & 0x00FF) - 'A' + 9;
+            ok = TRUE;
+         }
+         else if ((key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z' && ((key & 0x00FF) - 'a' + 9) < numitems)
+         {
+            line = (key & 0x00FF) - 'a' + 9;
+            ok = TRUE;
+         }
+         /* check the list of "hot keys" */
+         else if (okkeys)
+         {
+            for (line = 0; line < numitems; line++)
+               if (toupper( key) == okkeys[ line])
+                  break;
+            if (line < numitems)
+               ok = TRUE;
+            else
+            {
+               line = oldline;
+               Beep();
+            }
+         }
+         /* other key */
+         else
+            Beep();
       }
       if (line != oldline)
       {
-	 if (oldline >= 0 && oldline < numitems)
-	 {
-	    SetColor( BLACK);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[ oldline], highlight[ oldline], !okkeys);
-	 }
-	 if (line >= 0 && line < numitems)
-	 {
-	    SetColor( WHITE);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], highlight[ line], !okkeys);
-	 }
-	 oldline = line;
+         if (oldline >= 0 && oldline < numitems)
+         {
+            SetColor( BLACK);
+            DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[ oldline], highlight[ oldline], !okkeys);
+         }
+         if (line >= 0 && line < numitems)
+         {
+            SetColor( WHITE);
+            DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], highlight[ line], !okkeys);
+         }
+         oldline = line;
       }
    }
    if (line >= 0 && line < numitems)
@@ -270,11 +270,11 @@ int PullDownMenu( int x0, int y0, ...)
    while ((num < 30) && ((menustr[ num] = va_arg( args, char *)) != NULL))
    {
       if ((retnkeys[ num] = va_arg( args, int)) == NULL)
-	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
+         ProgError( "BUG: PullDownMenu() called with invalid arguments");
       if ((permkeys[ num] = va_arg( args, int)) == NULL)
-	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
+         ProgError( "BUG: PullDownMenu() called with invalid arguments");
       if ((highlight[ num] = va_arg( args, int)) == NULL)
-	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
+         ProgError( "BUG: PullDownMenu() called with invalid arguments");
       num++;
    }
    va_end( args);
@@ -308,42 +308,42 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
       SetColor( BLACK);
       DrawScreenBox( x0 + 1, y0 + 1, x0 + 60, y0 + 12);
       if (ok)
-	 SetColor( WHITE);
+         SetColor( WHITE);
       else
-	 SetColor( LIGHTGRAY);
+         SetColor( LIGHTGRAY);
       if (neg)
-	 DrawScreenText( x0 + 3, y0 + 3, "-%d", val);
+         DrawScreenText( x0 + 3, y0 + 3, "-%d", val);
       else
-	 DrawScreenText( x0 + 3, y0 + 3, "%d", val);
+         DrawScreenText( x0 + 3, y0 + 3, "%d", val);
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {
-	 val = 0;
-	 neg = FALSE;
+         val = 0;
+         neg = FALSE;
       }
       firstkey = FALSE;
       if (val < 3275 && (key & 0x00FF) >= '0' && (key & 0x00FF) <= '9')
-	 val = val * 10 + (key & 0x00FF) - '0';
+         val = val * 10 + (key & 0x00FF) - '0';
       else if (val > 0 && (key & 0x00FF) == 0x0008)
-	 val = val / 10;
+         val = val / 10;
       else if (neg && (key & 0x00FF) == 0x0008)
-	 neg = FALSE;
+         neg = FALSE;
       else if ((key & 0x00FF) == '-')
-	 neg = !neg;
+         neg = !neg;
       else if (ok && (key & 0x00FF) == 0x000D)
-	 break; /* return "val" */
+         break; /* return "val" */
       else if ((key & 0xFF00) == 0x4800 || (key & 0xFF00) == 0x5000 ||
-	       (key & 0xFF00) == 0x4B00 || (key & 0xFF00) == 0x4D00 ||
-	       (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
-	 break; /* return "val", even if not valid */
+               (key & 0xFF00) == 0x4B00 || (key & 0xFF00) == 0x4D00 ||
+               (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
+         break; /* return "val", even if not valid */
       else if ((key & 0x00FF) == 0x001B)
       {
          neg = FALSE;
-	 val = -32767; /* return a value out of range */
-	 break;
+         val = -32767; /* return a value out of range */
+         break;
       }
       else
-	 Beep();
+         Beep();
    }
    if (neg)
       *valp = -val;
@@ -396,8 +396,8 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
       width   : \ width and height of an optional window where a picture
       height  : / can be displayed (used to display textures, sprites, etc.).
       hookfunc: function that should be called to display a picture.
-		(x1, y1, x2, y2 = coordinates of the window in which the
-		 picture must be drawn, name = name of the picture).
+                (x1, y1, x2, y2 = coordinates of the window in which the
+                 picture must be drawn, name = name of the picture).
 */
 
 void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char **list, int listdisp, char *name, int width, int height, void (*hookfunc)(int px1, int py1, int px2, int py2, char *name))
@@ -411,7 +411,7 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
    maxlen = 1;
    for (n = 0; n < listsize; n++)
       if (strlen( list[ n]) > maxlen)
-	 maxlen = strlen( list[ n]);
+         maxlen = strlen( list[ n]);
    for (n = strlen(name) + 1; n <= maxlen; n++)
       name[ n] = '\0';
    /* compute the minimum width of the dialog box */
@@ -456,82 +456,82 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
    {
       /* test if "name" is in the list */
       for (n = 0; n < listsize; n++)
-	 if (strcmp( name, list[ n]) <= 0)
-	    break;
+         if (strcmp( name, list[ n]) <= 0)
+            break;
       ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
       if (n > listsize - 1)
-	 n = listsize - 1;
+         n = listsize - 1;
       /* display the "listdisp" next items in the list */
       SetColor( LIGHTGRAY);
       DrawScreenBox( x0 + 110, y0 + 30, x0 + 110 + 8 * maxlen, y0 + 30 + 10 * listdisp);
       SetColor( BLACK);
       for (l = 0; l < listdisp && n + l < listsize; l++)
-	 DrawScreenText( x0 + 110, y0 + 30 + l * 10, list[ n + l]);
+         DrawScreenText( x0 + 110, y0 + 30 + l * 10, list[ n + l]);
       l = strlen( name);
       DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
       if (ok)
-	 SetColor( WHITE);
+         SetColor( WHITE);
       else
-	 SetColor( LIGHTGRAY);
+         SetColor( LIGHTGRAY);
       DrawScreenText( x0 + 13, y0 + 31, name);
       /* call the function to display the picture, if any */
       if (hookfunc)
       {
-	 /* clear the window */
-	 SetColor( BLACK);
-	 DrawScreenBox( x1, y1, x2, y2);
-	 /* display the picture "name" */
-	 hookfunc( x1, y1, x2, y2, name);
+         /* clear the window */
+         SetColor( BLACK);
+         DrawScreenBox( x1, y1, x2, y2);
+         /* display the picture "name" */
+         hookfunc( x1, y1, x2, y2, name);
       }
       /* process user input */
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {
-	 for (l = 0; l <= maxlen; l++)
-	    name[ l] = '\0';
-	 l = 0;
+         for (l = 0; l <= maxlen; l++)
+            name[ l] = '\0';
+         l = 0;
       }
       firstkey = FALSE;
       if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
       {
-	 name[ l] = key & 0x00FF + 'A' - 'a';
-	 name[ l + 1] = '\0';
+         name[ l] = key & 0x00FF + 'A' - 'a';
+         name[ l + 1] = '\0';
       }
       else if (l < maxlen && (key & 0x00FF) > ' ')
       {
-	 name[ l] = key & 0x00FF;
-	 name[ l + 1] = '\0';
+         name[ l] = key & 0x00FF;
+         name[ l + 1] = '\0';
       }
       else if (l > 0 && (key & 0x00FF) == 0x0008)
-	 name[ l - 1] = '\0';
+         name[ l - 1] = '\0';
       else if (n < listsize - 1 && (key & 0xFF00) == 0x5000)
-	 strcpy(name, list[ n + 1]);
+         strcpy(name, list[ n + 1]);
       else if (n > 0 && (key & 0xFF00) == 0x4800)
-	 strcpy(name, list[ n - 1]);
+         strcpy(name, list[ n - 1]);
       else if (n < listsize - listdisp && (key & 0xFF00) == 0x5100)
-	 strcpy(name, list[ n + listdisp]);
+         strcpy(name, list[ n + listdisp]);
       else if (n > 0 && (key & 0xFF00) == 0x4900)
       {
-	 if (n > listdisp)
-	    strcpy(name, list[ n - listdisp]);
-	 else
-	    strcpy(name, list[ 0]);
+         if (n > listdisp)
+            strcpy(name, list[ n - listdisp]);
+         else
+            strcpy(name, list[ 0]);
       }
       else if ((key & 0xFF00) == 0x4F00)
-	 strcpy(name, list[ listsize - 1]);
+         strcpy(name, list[ listsize - 1]);
       else if ((key & 0xFF00) == 0x4700)
-	 strcpy(name, list[ 0]);
+         strcpy(name, list[ 0]);
       else if ((key & 0x00FF) == 0x0009)
-	 strcpy(name, list[ n]);
+         strcpy(name, list[ n]);
       else if (ok && (key & 0x00FF) == 0x000D)
-	 break; /* return "name" */
+         break; /* return "name" */
       else if ((key & 0x00FF) == 0x001B)
       {
-	 name[ 0] = '\0'; /* return an empty string */
-	 break;
+         name[ 0] = '\0'; /* return an empty string */
+         break;
       }
       else
-	 Beep();
+         Beep();
    }
 }
 
@@ -590,67 +590,67 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
       /* check that "filename" looks like a valid file name */
       ok = TRUE;
       if (filename[ 1] == ':')
-	 p = filename + 2;
+         p = filename + 2;
       else
-	 p = filename;
+         p = filename;
       for (l = 8; *p; p++)
       {
-	 if (*p == '.')
-	    l = 3;
-	 else if (*p == '\\')
-	    l = 8;
-	 else
-	    l--;
-	 if (l < 0)
-	 {
-	    ok = FALSE;
-	    break;
-	 }
+         if (*p == '.')
+            l = 3;
+         else if (*p == '\\')
+            l = 8;
+         else
+            l--;
+         if (l < 0)
+         {
+            ok = FALSE;
+            break;
+         }
       }
 
       l = strlen( filename);
       SetColor( BLACK);
       DrawScreenBox( x0 + 11, y0 + 29, x0 + 14 + 8 * boxlen, y0 + 40);
       if (ok)
-	 SetColor( WHITE);
+         SetColor( WHITE);
       else
-	 SetColor( LIGHTGRAY);
+         SetColor( LIGHTGRAY);
       if (l > boxlen)
       {
-	 DrawScreenText( x0 + 11, y0 + 31, "<");
-	 DrawScreenText( x0 + 13, y0 + 31, "<%s", filename + (l - boxlen + 1));
+         DrawScreenText( x0 + 11, y0 + 31, "<");
+         DrawScreenText( x0 + 13, y0 + 31, "<%s", filename + (l - boxlen + 1));
       }
       else
-	 DrawScreenText( x0 + 13, y0 + 31, filename);
+         DrawScreenText( x0 + 13, y0 + 31, filename);
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
       {
-	 for (l = 0; l <= maxlen; l++)
-	    filename[ l] = '\0';
-	 l = 0;
+         for (l = 0; l <= maxlen; l++)
+            filename[ l] = '\0';
+         l = 0;
       }
       firstkey = FALSE;
       if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
       {
-	 filename[ l] = key & 0x00FF + 'A' - 'a';
-	 filename[ l + 1] = '\0';
+         filename[ l] = key & 0x00FF + 'A' - 'a';
+         filename[ l + 1] = '\0';
       }
       else if (l < maxlen && (key & 0x00FF) > ' ')
       {
-	 filename[ l] = key & 0x00FF;
-	 filename[ l + 1] = '\0';
+         filename[ l] = key & 0x00FF;
+         filename[ l + 1] = '\0';
       }
       else if (l > 0 && (key & 0x00FF) == 0x0008)
-	 filename[ l - 1] = '\0';
+         filename[ l - 1] = '\0';
       else if (ok && (key & 0x00FF) == 0x000D)
-	 break; /* return "filename" */
+         break; /* return "filename" */
       else if ((key & 0x00FF) == 0x001B)
       {
-	 filename[ 0] = '\0'; /* return an empty string */
-	 break;
+         filename[ 0] = '\0'; /* return an empty string */
+         break;
       }
       else
-	 Beep();
+         Beep();
    }
    if (UseMouse)
       ShowMousePointer();
@@ -773,3 +773,4 @@ void NotImplemented()
 
 
 /* end of file */
+

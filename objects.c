@@ -1,5 +1,7 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
+
+   Doom II code by Adrian Cable.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -41,7 +43,7 @@ Bool IsSelected( SelPtr list, int objnum)
 
    for (cur = list; cur; cur = cur->next)
       if (cur->objnum == objnum)
-	 return TRUE;
+         return TRUE;
    return FALSE;
 }
 
@@ -82,20 +84,20 @@ void UnSelectObject( SelPtr *list, int objnum)
    {
       if (cur->objnum == objnum)
       {
-	 if (prev)
-	    prev->next = cur->next;
-	 else
-	    *list = cur->next;
-	 FreeMemory( cur);
-	 if (prev)
-	    cur = prev->next;
-	 else
-	    cur = NULL;
+         if (prev)
+            prev->next = cur->next;
+         else
+            *list = cur->next;
+         FreeMemory( cur);
+         if (prev)
+            cur = prev->next;
+         else
+            cur = NULL;
       }
       else
       {
-	 prev = cur;
-	 cur = cur->next;
+         prev = cur;
+         cur = cur->next;
       }
    }
 }
@@ -177,30 +179,30 @@ int GetCurObject( int objtype, int x0, int y0, int x1, int y1) /* SWAP! */
    case OBJ_THINGS:
       ObjectsNeeded( OBJ_THINGS, 0);
       for (n = 0; n < NumThings; n++)
-	 if (Things[ n].xpos >= x0 && Things[ n].xpos <= x1 && Things[ n].ypos >= y0 && Things[ n].ypos <= y1)
-	 {
-	    cur = n;
-	    break;
-	 }
+         if (Things[ n].xpos >= x0 && Things[ n].xpos <= x1 && Things[ n].ypos >= y0 && Things[ n].ypos <= y1)
+         {
+            cur = n;
+            break;
+         }
       break;
    case OBJ_VERTEXES:
       ObjectsNeeded( OBJ_VERTEXES, 0);
       for (n = 0; n < NumVertexes; n++)
-	 if (Vertexes[ n].x >= x0 && Vertexes[ n].x <= x1 && Vertexes[ n].y >= y0 && Vertexes[ n].y <= y1)
-	 {
-	    cur = n;
-	    break;
-	 }
+         if (Vertexes[ n].x >= x0 && Vertexes[ n].x <= x1 && Vertexes[ n].y >= y0 && Vertexes[ n].y <= y1)
+         {
+            cur = n;
+            break;
+         }
       break;
    case OBJ_LINEDEFS:
       ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
       for (n = 0; n < NumLineDefs; n++)
       {
-	 if (IsLineDefInside( n, x0, y0, x1, y1))
-	 {
-	    cur = n;
-	    break;
-	 }
+         if (IsLineDefInside( n, x0, y0, x1, y1))
+         {
+            cur = n;
+            break;
+         }
       }
       break;
    case OBJ_SECTORS:
@@ -211,36 +213,36 @@ int GetCurObject( int objtype, int x0, int y0, int x1, int y1) /* SWAP! */
       midx = (x0 + x1) / 2;
       midy = (y0 + y1) / 2;
       for (n = 0; n < NumLineDefs; n++)
-	 if ((Vertexes[ LineDefs[ n].start].y > midy) != (Vertexes[ LineDefs[ n].end].y > midy))
-	 {
-	    lx0 = Vertexes[ LineDefs[ n].start].x;
-	    ly0 = Vertexes[ LineDefs[ n].start].y;
-	    lx1 = Vertexes[ LineDefs[ n].end].x;
-	    ly1 = Vertexes[ LineDefs[ n].end].y;
-	    m = lx0 + (int) ((long) (midy - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
-	    if (m >= midx && m < curx)
-	    {
-	       curx = m;
-	       cur = n;
-	    }
-	 }
+         if ((Vertexes[ LineDefs[ n].start].y > midy) != (Vertexes[ LineDefs[ n].end].y > midy))
+         {
+            lx0 = Vertexes[ LineDefs[ n].start].x;
+            ly0 = Vertexes[ LineDefs[ n].start].y;
+            lx1 = Vertexes[ LineDefs[ n].end].x;
+            ly1 = Vertexes[ LineDefs[ n].end].y;
+            m = lx0 + (int) ((long) (midy - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
+            if (m >= midx && m < curx)
+            {
+               curx = m;
+               cur = n;
+            }
+         }
       /* now look if this LineDef has a SideDef bound to one sector */
       if (cur >= 0)
       {
-	 if (Vertexes[ LineDefs[ cur].start].y > Vertexes[ LineDefs[ cur].end].y)
-	    cur = LineDefs[ cur].sidedef1;
-	 else
-	    cur = LineDefs[ cur].sidedef2;
-	 if (cur >= 0)
-	 {
-	    ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	    cur = SideDefs[ cur].sector;
-	 }
-	 else
-	    cur = -1;
+         if (Vertexes[ LineDefs[ cur].start].y > Vertexes[ LineDefs[ cur].end].y)
+            cur = LineDefs[ cur].sidedef1;
+         else
+            cur = LineDefs[ cur].sidedef2;
+         if (cur >= 0)
+         {
+            ObjectsNeeded( OBJ_SIDEDEFS, 0);
+            cur = SideDefs[ cur].sector;
+         }
+         else
+            cur = -1;
       }
       else
-	 cur = -1;
+         cur = -1;
       break;
    }
    return cur;
@@ -276,59 +278,59 @@ SelPtr SelectObjectsInBox( int objtype, int x0, int y0, int x1, int y1) /* SWAP!
    case OBJ_THINGS:
       ObjectsNeeded( OBJ_THINGS, 0);
       for (n = 0; n < NumThings; n++)
-	 if (Things[ n].xpos >= x0 && Things[ n].xpos <= x1 && Things[ n].ypos >= y0 && Things[ n].ypos <= y1)
-	    SelectObject( &list, n);
+         if (Things[ n].xpos >= x0 && Things[ n].xpos <= x1 && Things[ n].ypos >= y0 && Things[ n].ypos <= y1)
+            SelectObject( &list, n);
       break;
    case OBJ_VERTEXES:
       ObjectsNeeded( OBJ_VERTEXES, 0);
       for (n = 0; n < NumVertexes; n++)
-	 if (Vertexes[ n].x >= x0 && Vertexes[ n].x <= x1 && Vertexes[ n].y >= y0 && Vertexes[ n].y <= y1)
-	    SelectObject( &list, n);
+         if (Vertexes[ n].x >= x0 && Vertexes[ n].x <= x1 && Vertexes[ n].y >= y0 && Vertexes[ n].y <= y1)
+            SelectObject( &list, n);
       break;
    case OBJ_LINEDEFS:
       ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
       for (n = 0; n < NumLineDefs; n++)
       {
-	 /* the two ends of the line must be in the box */
-	 m = LineDefs[ n].start;
-	 if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
-	    continue;
-	 m = LineDefs[ n].end;
-	 if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
-	    continue;
-	 SelectObject( &list, n);
+         /* the two ends of the line must be in the box */
+         m = LineDefs[ n].start;
+         if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
+            continue;
+         m = LineDefs[ n].end;
+         if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
+            continue;
+         SelectObject( &list, n);
       }
       break;
    case OBJ_SECTORS:
       /* hack: select all sectors... */
       for (n = 0; n < NumSectors; n++)
-	 SelectObject( &list, n);
+         SelectObject( &list, n);
       /* ... then remove the unwanted ones from the list */
       ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, OBJ_VERTEXES, 0);
       for (n = 0; n < NumLineDefs; n++)
       {
-	 m = LineDefs[ n].start;
-	 if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
-	 {
-	    m = LineDefs[ n].sidedef1;
-	    if (m >= 0 && SideDefs[ m].sector >= 0)
-	       UnSelectObject( &list, SideDefs[ m].sector);
-	    m = LineDefs[ n].sidedef2;
-	    if (m >= 0 && SideDefs[ m].sector >= 0)
-	       UnSelectObject( &list, SideDefs[ m].sector);
-	    continue;
-	 }
-	 m = LineDefs[ n].end;
-	 if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
-	 {
-	    m = LineDefs[ n].sidedef1;
-	    if (m >= 0 && SideDefs[ m].sector >= 0)
-	       UnSelectObject( &list, SideDefs[ m].sector);
-	    m = LineDefs[ n].sidedef2;
-	    if (m >= 0 && SideDefs[ m].sector >= 0)
-	       UnSelectObject( &list, SideDefs[ m].sector);
-	    continue;
-	 }
+         m = LineDefs[ n].start;
+         if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
+         {
+            m = LineDefs[ n].sidedef1;
+            if (m >= 0 && SideDefs[ m].sector >= 0)
+               UnSelectObject( &list, SideDefs[ m].sector);
+            m = LineDefs[ n].sidedef2;
+            if (m >= 0 && SideDefs[ m].sector >= 0)
+               UnSelectObject( &list, SideDefs[ m].sector);
+            continue;
+         }
+         m = LineDefs[ n].end;
+         if (Vertexes[ m].x < x0 || Vertexes[ m].x > x1 || Vertexes[ m].y < y0 || Vertexes[ m].y > y1)
+         {
+            m = LineDefs[ n].sidedef1;
+            if (m >= 0 && SideDefs[ m].sector >= 0)
+               UnSelectObject( &list, SideDefs[ m].sector);
+            m = LineDefs[ n].sidedef2;
+            if (m >= 0 && SideDefs[ m].sector >= 0)
+               UnSelectObject( &list, SideDefs[ m].sector);
+            continue;
+         }
       }
       break;
    }
@@ -366,12 +368,12 @@ void HighlightObject( int objtype, int objnum, int color) /* SWAP! */
       DrawMapLine( n, m, n + (Vertexes[ LineDefs[ objnum].end].y - Vertexes[ LineDefs[ objnum].start].y) / 3, m + (Vertexes[ LineDefs[ objnum].start].x - Vertexes[ LineDefs[ objnum].end].x) / 3);
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       DrawMapVector( Vertexes[ LineDefs[ objnum].start].x, Vertexes[ LineDefs[ objnum].start].y,
-		     Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
+                     Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
       if (color != LIGHTRED && LineDefs[ objnum].tag > 0)
       {
-	 for (m = 0; m < NumSectors; m++)
-	    if (Sectors[ m].tag == LineDefs[ objnum].tag)
-	       HighlightObject( OBJ_SECTORS, m, LIGHTRED);
+         for (m = 0; m < NumSectors; m++)
+            if (Sectors[ m].tag == LineDefs[ objnum].tag)
+               HighlightObject( OBJ_SECTORS, m, LIGHTRED);
       }
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
@@ -386,14 +388,14 @@ void HighlightObject( int objtype, int objnum, int color) /* SWAP! */
       ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, OBJ_VERTEXES, 0);
       setlinestyle(SOLID_LINE, 0, THICK_WIDTH);
       for (n = 0; n < NumLineDefs; n++)
-	 if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum || SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
-	    DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
-			 Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
+         if (SideDefs[ LineDefs[ n].sidedef1].sector == objnum || SideDefs[ LineDefs[ n].sidedef2].sector == objnum)
+            DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+                         Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
       if (color != LIGHTRED && Sectors[ objnum].tag > 0)
       {
-	 for (m = 0; m < NumLineDefs; m++)
-	    if (LineDefs[ m].tag == Sectors[ objnum].tag)
-	       HighlightObject( OBJ_LINEDEFS, m, LIGHTRED);
+         for (m = 0; m < NumLineDefs; m++)
+            if (LineDefs[ m].tag == Sectors[ objnum].tag)
+               HighlightObject( OBJ_LINEDEFS, m, LIGHTRED);
       }
       setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
       break;
@@ -435,166 +437,166 @@ void DeleteObjects( int objtype, SelPtr *list) /* SWAP! */
       ObjectsNeeded( OBJ_THINGS, 0);
       while (*list)
       {
-	 objnum = (*list)->objnum;
-	 /* delete the Thing */
-	 NumThings--;
-	 if (NumThings > 0)
-	 {
-	    for (n = objnum; n < NumThings; n++)
-	       Things[ n] = Things[ n + 1];
-	    Things = ResizeFarMemory( Things, NumThings * sizeof( struct Thing));
-	 }
-	 else
-	 {
-	    FreeFarMemory( Things);
-	    Things = NULL;
-	 }
-	 for (cur = (*list)->next; cur; cur = cur->next)
-	    if (cur->objnum > objnum)
-	       cur->objnum--;
-	 UnSelectObject( list, objnum);
+         objnum = (*list)->objnum;
+         /* delete the Thing */
+         NumThings--;
+         if (NumThings > 0)
+         {
+            for (n = objnum; n < NumThings; n++)
+               Things[ n] = Things[ n + 1];
+            Things = ResizeFarMemory( Things, NumThings * sizeof( struct Thing));
+         }
+         else
+         {
+            FreeFarMemory( Things);
+            Things = NULL;
+         }
+         for (cur = (*list)->next; cur; cur = cur->next)
+            if (cur->objnum > objnum)
+               cur->objnum--;
+         UnSelectObject( list, objnum);
       }
       break;
    case OBJ_VERTEXES:
       while (*list)
       {
-	 objnum = (*list)->objnum;
-	 /* delete the LineDefs bound to this Vertex and change the references */
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 for (n = 0; n < NumLineDefs; n++)
-	 {
-	    if (LineDefs[ n].start == objnum || LineDefs[ n].end == objnum)
-	       DeleteObject( OBJ_LINEDEFS, n--);
-	    else
-	    {
-	       if (LineDefs[ n].start >= objnum)
-		  LineDefs[ n].start--;
-	       if (LineDefs[ n].end >= objnum)
-		  LineDefs[ n].end--;
-	    }
-	 }
-	 /* delete the Vertex */
-	 ObjectsNeeded( OBJ_VERTEXES, 0);
-	 NumVertexes--;
-	 if (NumVertexes > 0)
-	 {
-	    for (n = objnum; n < NumVertexes; n++)
-	       Vertexes[ n] = Vertexes[ n + 1];
-	    Vertexes = ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
-	 }
-	 else
-	 {
-	    FreeFarMemory( Vertexes);
-	    Vertexes = NULL;
-	 }
-	 for (cur = (*list)->next; cur; cur = cur->next)
-	    if (cur->objnum > objnum)
-	       cur->objnum--;
-	 UnSelectObject( list, objnum);
+         objnum = (*list)->objnum;
+         /* delete the LineDefs bound to this Vertex and change the references */
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         for (n = 0; n < NumLineDefs; n++)
+         {
+            if (LineDefs[ n].start == objnum || LineDefs[ n].end == objnum)
+               DeleteObject( OBJ_LINEDEFS, n--);
+            else
+            {
+               if (LineDefs[ n].start >= objnum)
+                  LineDefs[ n].start--;
+               if (LineDefs[ n].end >= objnum)
+                  LineDefs[ n].end--;
+            }
+         }
+         /* delete the Vertex */
+         ObjectsNeeded( OBJ_VERTEXES, 0);
+         NumVertexes--;
+         if (NumVertexes > 0)
+         {
+            for (n = objnum; n < NumVertexes; n++)
+               Vertexes[ n] = Vertexes[ n + 1];
+            Vertexes = ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
+         }
+         else
+         {
+            FreeFarMemory( Vertexes);
+            Vertexes = NULL;
+         }
+         for (cur = (*list)->next; cur; cur = cur->next)
+            if (cur->objnum > objnum)
+               cur->objnum--;
+         UnSelectObject( list, objnum);
       }
       break;
    case OBJ_LINEDEFS:
       while (*list)
       {
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 objnum = (*list)->objnum;
-	 /* delete the two SideDefs bound to this LineDef */
-	 if (LineDefs[ objnum].sidedef1 >= 0)
-	 {
-	    DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef1);
-	    ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 }
-	 if (LineDefs[ objnum].sidedef2 >= 0)
-	 {
-	    DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef2);
-	    ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 }
-	 /* delete the LineDef */
-	 NumLineDefs--;
-	 if (NumLineDefs > 0)
-	 {
-	    for (n = objnum; n < NumLineDefs; n++)
-	       LineDefs[ n] = LineDefs[ n + 1];
-	    LineDefs = ResizeFarMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
-	 }
-	 else
-	 {
-	    FreeFarMemory( LineDefs);
-	    LineDefs = NULL;
-	 }
-	 for (cur = (*list)->next; cur; cur = cur->next)
-	    if (cur->objnum > objnum)
-	       cur->objnum--;
-	 UnSelectObject( list, objnum);
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         objnum = (*list)->objnum;
+         /* delete the two SideDefs bound to this LineDef */
+         if (LineDefs[ objnum].sidedef1 >= 0)
+         {
+            DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef1);
+            ObjectsNeeded( OBJ_LINEDEFS, 0);
+         }
+         if (LineDefs[ objnum].sidedef2 >= 0)
+         {
+            DeleteObject( OBJ_SIDEDEFS, LineDefs[ objnum].sidedef2);
+            ObjectsNeeded( OBJ_LINEDEFS, 0);
+         }
+         /* delete the LineDef */
+         NumLineDefs--;
+         if (NumLineDefs > 0)
+         {
+            for (n = objnum; n < NumLineDefs; n++)
+               LineDefs[ n] = LineDefs[ n + 1];
+            LineDefs = ResizeFarMemory( LineDefs, NumLineDefs * sizeof( struct LineDef));
+         }
+         else
+         {
+            FreeFarMemory( LineDefs);
+            LineDefs = NULL;
+         }
+         for (cur = (*list)->next; cur; cur = cur->next)
+            if (cur->objnum > objnum)
+               cur->objnum--;
+         UnSelectObject( list, objnum);
       }
       break;
    case OBJ_SIDEDEFS:
       while (*list)
       {
-	 objnum = (*list)->objnum;
-	 /* change the LineDefs references */
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 for (n = 0; n < NumLineDefs; n++)
-	 {
-	    if (LineDefs[ n].sidedef1 == objnum)
-	       LineDefs[ n].sidedef1 = -1;
-	    else if (LineDefs[ n].sidedef1 >= objnum)
-	       LineDefs[ n].sidedef1--;
-	    if (LineDefs[ n].sidedef2 == objnum)
-	       LineDefs[ n].sidedef2 = -1;
-	    else if (LineDefs[ n].sidedef2 >= objnum)
-	       LineDefs[ n].sidedef2--;
-	 }
-	 /* delete the SideDef */
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 NumSideDefs--;
-	 if (NumSideDefs > 0)
-	 {
-	    for (n = objnum; n < NumSideDefs; n++)
-	       SideDefs[ n] = SideDefs[ n + 1];
-	    SideDefs = ResizeFarMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
-	 }
-	 else
-	 {
-	    FreeFarMemory( SideDefs);
-	    SideDefs = NULL;
-	 }
-	 for (cur = (*list)->next; cur; cur = cur->next)
-	    if (cur->objnum > objnum)
-	       cur->objnum--;
-	 UnSelectObject( list, objnum);
+         objnum = (*list)->objnum;
+         /* change the LineDefs references */
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         for (n = 0; n < NumLineDefs; n++)
+         {
+            if (LineDefs[ n].sidedef1 == objnum)
+               LineDefs[ n].sidedef1 = -1;
+            else if (LineDefs[ n].sidedef1 >= objnum)
+               LineDefs[ n].sidedef1--;
+            if (LineDefs[ n].sidedef2 == objnum)
+               LineDefs[ n].sidedef2 = -1;
+            else if (LineDefs[ n].sidedef2 >= objnum)
+               LineDefs[ n].sidedef2--;
+         }
+         /* delete the SideDef */
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         NumSideDefs--;
+         if (NumSideDefs > 0)
+         {
+            for (n = objnum; n < NumSideDefs; n++)
+               SideDefs[ n] = SideDefs[ n + 1];
+            SideDefs = ResizeFarMemory( SideDefs, NumSideDefs * sizeof( struct SideDef));
+         }
+         else
+         {
+            FreeFarMemory( SideDefs);
+            SideDefs = NULL;
+         }
+         for (cur = (*list)->next; cur; cur = cur->next)
+            if (cur->objnum > objnum)
+               cur->objnum--;
+         UnSelectObject( list, objnum);
       }
       MadeMapChanges = TRUE;
       break;
    case OBJ_SECTORS:
       while (*list)
       {
-	 objnum = (*list)->objnum;
-	 /* delete the SideDefs bound to this Sector and change the references */
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 for (n = 0; n < NumSideDefs; n++)
-	    if (SideDefs[ n].sector == objnum)
-	       DeleteObject( OBJ_SIDEDEFS, n--);
-	    else if (SideDefs[ n].sector >= objnum)
-	       SideDefs[ n].sector--;
-	 /* delete the Sector */
-	 ObjectsNeeded( OBJ_SECTORS, 0);
-	 NumSectors--;
-	 if (NumSectors > 0)
-	 {
-	    for (n = objnum; n < NumSectors; n++)
-	       Sectors[ n] = Sectors[ n + 1];
-	    Sectors = ResizeFarMemory( Sectors, NumSectors * sizeof( struct Sector));
-	 }
-	 else
-	 {
-	    FreeFarMemory( Sectors);
-	    Sectors = NULL;
-	 }
-	 for (cur = (*list)->next; cur; cur = cur->next)
-	    if (cur->objnum > objnum)
-	       cur->objnum--;
-	 UnSelectObject( list, objnum);
+         objnum = (*list)->objnum;
+         /* delete the SideDefs bound to this Sector and change the references */
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         for (n = 0; n < NumSideDefs; n++)
+            if (SideDefs[ n].sector == objnum)
+               DeleteObject( OBJ_SIDEDEFS, n--);
+            else if (SideDefs[ n].sector >= objnum)
+               SideDefs[ n].sector--;
+         /* delete the Sector */
+         ObjectsNeeded( OBJ_SECTORS, 0);
+         NumSectors--;
+         if (NumSectors > 0)
+         {
+            for (n = objnum; n < NumSectors; n++)
+               Sectors[ n] = Sectors[ n + 1];
+            Sectors = ResizeFarMemory( Sectors, NumSectors * sizeof( struct Sector));
+         }
+         else
+         {
+            FreeFarMemory( Sectors);
+            Sectors = NULL;
+         }
+         for (cur = (*list)->next; cur; cur = cur->next)
+            if (cur->objnum > objnum)
+               cur->objnum--;
+         UnSelectObject( list, objnum);
       }
       break;
    default:
@@ -619,72 +621,72 @@ void InsertObject(int objtype, int copyfrom, int xpos, int ypos) /* SWAP! */
    case OBJ_THINGS:
       last = NumThings++;
       if (last > 0)
-	 Things = ResizeFarMemory( Things, (unsigned long) NumThings * sizeof( struct Thing));
+         Things = ResizeFarMemory( Things, (unsigned long) NumThings * sizeof( struct Thing));
       else
-	 Things = GetFarMemory( sizeof( struct Thing));
+         Things = GetFarMemory( sizeof( struct Thing));
       Things[ last].xpos = xpos;
       Things[ last].ypos = ypos;
       if (copyfrom >= 0)
       {
-	 Things[ last].type  = Things[ copyfrom].type;
-	 Things[ last].angle = Things[ copyfrom].angle;
-	 Things[ last].when  = Things[ copyfrom].when;
+         Things[ last].type  = Things[ copyfrom].type;
+         Things[ last].angle = Things[ copyfrom].angle;
+         Things[ last].when  = Things[ copyfrom].when;
       }
       else
       {
-	 Things[ last].type  = THING_TROOPER;
-	 Things[ last].angle = 0;
-	 Things[ last].when  = 0x07;
+         Things[ last].type  = THING_TROOPER;
+         Things[ last].angle = 0;
+         Things[ last].when  = 0x07;
       }
       break;
    case OBJ_VERTEXES:
       last = NumVertexes++;
       if (last > 0)
-	 Vertexes = ResizeFarMemory( Vertexes, (unsigned long) NumVertexes * sizeof( struct Vertex));
+         Vertexes = ResizeFarMemory( Vertexes, (unsigned long) NumVertexes * sizeof( struct Vertex));
       else
-	 Vertexes = GetFarMemory( sizeof( struct Vertex));
+         Vertexes = GetFarMemory( sizeof( struct Vertex));
       /* kluge: the Nodes builder will put -2 in copyfrom */
       if (copyfrom == -2)
       {
-	 Vertexes[ last].x = xpos;
-	 Vertexes[ last].y = ypos;
+         Vertexes[ last].x = xpos;
+         Vertexes[ last].y = ypos;
       }
       else
       {
-	 Vertexes[ last].x = xpos & ~7;
-	 Vertexes[ last].y = ypos & ~7;
-	 if (Vertexes[ last].x < MapMinX)
-	    MapMinX = Vertexes[ last].x;
-	 if (Vertexes[ last].x > MapMaxX)
-	    MapMaxX = Vertexes[ last].x;
-	 if (Vertexes[ last].y < MapMinY)
-	    MapMinY = Vertexes[ last].y;
-	 if (Vertexes[ last].y > MapMaxY)
-	    MapMaxY = Vertexes[ last].y;
-	 MadeMapChanges = TRUE;
+         Vertexes[ last].x = xpos & ~7;
+         Vertexes[ last].y = ypos & ~7;
+         if (Vertexes[ last].x < MapMinX)
+            MapMinX = Vertexes[ last].x;
+         if (Vertexes[ last].x > MapMaxX)
+            MapMaxX = Vertexes[ last].x;
+         if (Vertexes[ last].y < MapMinY)
+            MapMinY = Vertexes[ last].y;
+         if (Vertexes[ last].y > MapMaxY)
+            MapMaxY = Vertexes[ last].y;
+         MadeMapChanges = TRUE;
       }
       break;
    case OBJ_LINEDEFS:
       last = NumLineDefs++;
       if (last > 0)
-	 LineDefs = ResizeFarMemory( LineDefs, (unsigned long) NumLineDefs * sizeof( struct LineDef));
+         LineDefs = ResizeFarMemory( LineDefs, (unsigned long) NumLineDefs * sizeof( struct LineDef));
       else
-	 LineDefs = GetFarMemory( sizeof( struct LineDef));
+         LineDefs = GetFarMemory( sizeof( struct LineDef));
       if (copyfrom >= 0)
       {
-	 LineDefs[ last].start = LineDefs[ copyfrom].start;
-	 LineDefs[ last].end = LineDefs[ copyfrom].end;
-	 LineDefs[ last].flags = LineDefs[ copyfrom].flags;
-	 LineDefs[ last].type = LineDefs[ copyfrom].type;
-	 LineDefs[ last].tag = LineDefs[ copyfrom].tag;
+         LineDefs[ last].start = LineDefs[ copyfrom].start;
+         LineDefs[ last].end = LineDefs[ copyfrom].end;
+         LineDefs[ last].flags = LineDefs[ copyfrom].flags;
+         LineDefs[ last].type = LineDefs[ copyfrom].type;
+         LineDefs[ last].tag = LineDefs[ copyfrom].tag;
       }
       else
       {
-	 LineDefs[ last].start = 0;
-	 LineDefs[ last].end = NumVertexes - 1;
-	 LineDefs[ last].flags = 1;
-	 LineDefs[ last].type = 0;
-	 LineDefs[ last].tag = 0;
+         LineDefs[ last].start = 0;
+         LineDefs[ last].end = NumVertexes - 1;
+         LineDefs[ last].flags = 1;
+         LineDefs[ last].type = 0;
+         LineDefs[ last].tag = 0;
       }
       LineDefs[ last].sidedef1 = -1;
       LineDefs[ last].sidedef2 = -1;
@@ -693,54 +695,54 @@ void InsertObject(int objtype, int copyfrom, int xpos, int ypos) /* SWAP! */
       /* SideDefs are added from the LineDefs menu, so "copyfrom" should always be -1.  But I test it anyway. */
       last = NumSideDefs++;
       if (last > 0)
-	 SideDefs = ResizeFarMemory( SideDefs, (unsigned long) NumSideDefs * sizeof( struct SideDef));
+         SideDefs = ResizeFarMemory( SideDefs, (unsigned long) NumSideDefs * sizeof( struct SideDef));
       else
-	 SideDefs = GetFarMemory( sizeof( struct SideDef));
+         SideDefs = GetFarMemory( sizeof( struct SideDef));
       if (copyfrom >= 0)
       {
-	 SideDefs[ last].xoff = SideDefs[ copyfrom].xoff;
-	 SideDefs[ last].yoff = SideDefs[ copyfrom].yoff;
-	 strncpy( SideDefs[ last].tex1, SideDefs[ copyfrom].tex1, 8);
-	 strncpy( SideDefs[ last].tex2, SideDefs[ copyfrom].tex2, 8);
-	 strncpy( SideDefs[ last].tex3, SideDefs[ copyfrom].tex3, 8);
-	 SideDefs[ last].sector = SideDefs[ copyfrom].sector;
+         SideDefs[ last].xoff = SideDefs[ copyfrom].xoff;
+         SideDefs[ last].yoff = SideDefs[ copyfrom].yoff;
+         strncpy( SideDefs[ last].tex1, SideDefs[ copyfrom].tex1, 8);
+         strncpy( SideDefs[ last].tex2, SideDefs[ copyfrom].tex2, 8);
+         strncpy( SideDefs[ last].tex3, SideDefs[ copyfrom].tex3, 8);
+         SideDefs[ last].sector = SideDefs[ copyfrom].sector;
       }
       else
       {
-	 SideDefs[ last].xoff = 0;
-	 SideDefs[ last].yoff = 0;
-	 strcpy( SideDefs[ last].tex1, "-");
-	 strcpy( SideDefs[ last].tex2, "-");
-	 strcpy( SideDefs[ last].tex3, DefaultWallTexture);
-	 SideDefs[ last].sector = NumSectors - 1;
+         SideDefs[ last].xoff = 0;
+         SideDefs[ last].yoff = 0;
+         strcpy( SideDefs[ last].tex1, "-");
+         strcpy( SideDefs[ last].tex2, "-");
+         strcpy( SideDefs[ last].tex3, DefaultWallTexture);
+         SideDefs[ last].sector = NumSectors - 1;
       }
       MadeMapChanges = TRUE;
       break;
    case OBJ_SECTORS:
       last = NumSectors++;
       if (last > 0)
-	 Sectors = ResizeFarMemory( Sectors, (unsigned long) NumSectors * sizeof( struct Sector));
+         Sectors = ResizeFarMemory( Sectors, (unsigned long) NumSectors * sizeof( struct Sector));
       else
-	 Sectors = GetFarMemory( sizeof( struct Sector));
+         Sectors = GetFarMemory( sizeof( struct Sector));
       if (copyfrom >= 0)
       {
-	 Sectors[ last].floorh = Sectors[ copyfrom].floorh;
-	 Sectors[ last].ceilh = Sectors[ copyfrom].ceilh;
-	 strncpy( Sectors[ last].floort, Sectors[ copyfrom].floort, 8);
-	 strncpy( Sectors[ last].ceilt, Sectors[ copyfrom].ceilt, 8);
-	 Sectors[ last].light = Sectors[ copyfrom].light;
-	 Sectors[ last].special = Sectors[ copyfrom].special;
-	 Sectors[ last].tag = Sectors[ copyfrom].tag;
+         Sectors[ last].floorh = Sectors[ copyfrom].floorh;
+         Sectors[ last].ceilh = Sectors[ copyfrom].ceilh;
+         strncpy( Sectors[ last].floort, Sectors[ copyfrom].floort, 8);
+         strncpy( Sectors[ last].ceilt, Sectors[ copyfrom].ceilt, 8);
+         Sectors[ last].light = Sectors[ copyfrom].light;
+         Sectors[ last].special = Sectors[ copyfrom].special;
+         Sectors[ last].tag = Sectors[ copyfrom].tag;
       }
       else
       {
-	 Sectors[ last].floorh = DefaultFloorHeight;
-	 Sectors[ last].ceilh = DefaultCeilingHeight;
-	 strncpy( Sectors[ last].floort, DefaultFloorTexture, 8);
-	 strncpy( Sectors[ last].ceilt, DefaultCeilingTexture, 8);
-	 Sectors[ last].light = 255;
-	 Sectors[ last].special = 0;
-	 Sectors[ last].tag = 0;
+         Sectors[ last].floorh = DefaultFloorHeight;
+         Sectors[ last].ceilh = DefaultCeilingHeight;
+         strncpy( Sectors[ last].floort, DefaultFloorTexture, 8);
+         strncpy( Sectors[ last].ceilt, DefaultCeilingTexture, 8);
+         Sectors[ last].light = 255;
+         Sectors[ last].special = 0;
+         Sectors[ last].tag = 0;
       }
       break;
    default:
@@ -771,25 +773,25 @@ Bool IsLineDefInside( int ldnum, int x0, int y0, int x1, int y1) /* SWAP - needs
    {
       i = lx0 + (int) ( (long) (y0 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
       if (i >= x0 && i <= x1)
-	 return TRUE; /* the LineDef crosses the y0 side (left) */
+         return TRUE; /* the LineDef crosses the y0 side (left) */
    }
    if ((ly0 > y1) != (ly1 > y1))
    {
       i = lx0 + (int) ( (long) (y1 - ly0) * (long) (lx1 - lx0) / (long) (ly1 - ly0));
       if (i >= x0 && i <= x1)
-	 return TRUE; /* the LineDef crosses the y1 side (right) */
+         return TRUE; /* the LineDef crosses the y1 side (right) */
    }
    if ((lx0 > x0) != (lx1 > x0))
    {
       i = ly0 + (int) ( (long) (x0 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
       if (i >= y0 && i <= y1)
-	 return TRUE; /* the LineDef crosses the x0 side (down) */
+         return TRUE; /* the LineDef crosses the x0 side (down) */
    }
    if ((lx0 > x1) != (lx1 > x1))
    {
       i = ly0 + (int) ( (long) (x1 - lx0) * (long) (ly1 - ly0) / (long) (lx1 - lx0));
       if (i >= y0 && i <= y1)
-	 return TRUE; /* the LineDef crosses the x1 side (up) */
+         return TRUE; /* the LineDef crosses the x1 side (up) */
    }
    return FALSE;
 }
@@ -836,90 +838,90 @@ int GetOppositeSector( int ld1, Bool firstside) /* SWAP! */
    {
       if (dy1 > 0)
       {
-	 /* get the nearest LineDef in that direction (increasing Y's: North) */
-	 bestdist = 32767;
-	 bestmdist = 32767;
-	 for (ld2 = 0; ld2 < NumLineDefs; ld2++)
-	    if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].x > x1) != (Vertexes[ LineDefs[ ld2].end].x > x1)))
-	    {
-	       x2  = Vertexes[ LineDefs[ ld2].start].x;
-	       y2  = Vertexes[ LineDefs[ ld2].start].y;
-	       dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
-	       dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
-	       dist = y2 + (int) ((long) (x1 - x2) * (long) dy2 / (long) dx2);
-	       if (dist > y1 && (dist < bestdist || (dist == bestdist && (y2 + dy2 / 2) < bestmdist)))
-	       {
-		  bestld = ld2;
-		  bestdist = dist;
-		  bestmdist = y2 + dy2 / 2;
-	       }
-	    }
+         /* get the nearest LineDef in that direction (increasing Y's: North) */
+         bestdist = 32767;
+         bestmdist = 32767;
+         for (ld2 = 0; ld2 < NumLineDefs; ld2++)
+            if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].x > x1) != (Vertexes[ LineDefs[ ld2].end].x > x1)))
+            {
+               x2  = Vertexes[ LineDefs[ ld2].start].x;
+               y2  = Vertexes[ LineDefs[ ld2].start].y;
+               dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
+               dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
+               dist = y2 + (int) ((long) (x1 - x2) * (long) dy2 / (long) dx2);
+               if (dist > y1 && (dist < bestdist || (dist == bestdist && (y2 + dy2 / 2) < bestmdist)))
+               {
+                  bestld = ld2;
+                  bestdist = dist;
+                  bestmdist = y2 + dy2 / 2;
+               }
+            }
       }
       else
       {
-	 /* get the nearest LineDef in that direction (decreasing Y's: South) */
-	 bestdist = -32767;
-	 bestmdist = -32767;
-	 for (ld2 = 0; ld2 < NumLineDefs; ld2++)
-	    if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].x > x1) != (Vertexes[ LineDefs[ ld2].end].x > x1)))
-	    {
-	       x2  = Vertexes[ LineDefs[ ld2].start].x;
-	       y2  = Vertexes[ LineDefs[ ld2].start].y;
-	       dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
-	       dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
-	       dist = y2 + (int) ((long) (x1 - x2) * (long) dy2 / (long) dx2);
-	       if (dist < y1 && (dist > bestdist || (dist == bestdist && (y2 + dy2 / 2) > bestmdist)))
-	       {
-		  bestld = ld2;
-		  bestdist = dist;
-		  bestmdist = y2 + dy2 / 2;
-	       }
-	    }
+         /* get the nearest LineDef in that direction (decreasing Y's: South) */
+         bestdist = -32767;
+         bestmdist = -32767;
+         for (ld2 = 0; ld2 < NumLineDefs; ld2++)
+            if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].x > x1) != (Vertexes[ LineDefs[ ld2].end].x > x1)))
+            {
+               x2  = Vertexes[ LineDefs[ ld2].start].x;
+               y2  = Vertexes[ LineDefs[ ld2].start].y;
+               dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
+               dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
+               dist = y2 + (int) ((long) (x1 - x2) * (long) dy2 / (long) dx2);
+               if (dist < y1 && (dist > bestdist || (dist == bestdist && (y2 + dy2 / 2) > bestmdist)))
+               {
+                  bestld = ld2;
+                  bestdist = dist;
+                  bestmdist = y2 + dy2 / 2;
+               }
+            }
       }
    }
    else
    {
       if (dx1 > 0)
       {
-	 /* get the nearest LineDef in that direction (increasing X's: East) */
-	 bestdist = 32767;
-	 bestmdist = 32767;
-	 for (ld2 = 0; ld2 < NumLineDefs; ld2++)
-	    if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].y > y1) != (Vertexes[ LineDefs[ ld2].end].y > y1)))
-	    {
-	       x2  = Vertexes[ LineDefs[ ld2].start].x;
-	       y2  = Vertexes[ LineDefs[ ld2].start].y;
-	       dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
-	       dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
-	       dist = x2 + (int) ((long) (y1 - y2) * (long) dx2 / (long) dy2);
-	       if (dist > x1 && (dist < bestdist || (dist == bestdist && (x2 + dx2 / 2) < bestmdist)))
-	       {
-		  bestld = ld2;
-		  bestdist = dist;
-		  bestmdist = x2 + dx2 / 2;
-	       }
-	    }
+         /* get the nearest LineDef in that direction (increasing X's: East) */
+         bestdist = 32767;
+         bestmdist = 32767;
+         for (ld2 = 0; ld2 < NumLineDefs; ld2++)
+            if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].y > y1) != (Vertexes[ LineDefs[ ld2].end].y > y1)))
+            {
+               x2  = Vertexes[ LineDefs[ ld2].start].x;
+               y2  = Vertexes[ LineDefs[ ld2].start].y;
+               dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
+               dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
+               dist = x2 + (int) ((long) (y1 - y2) * (long) dx2 / (long) dy2);
+               if (dist > x1 && (dist < bestdist || (dist == bestdist && (x2 + dx2 / 2) < bestmdist)))
+               {
+                  bestld = ld2;
+                  bestdist = dist;
+                  bestmdist = x2 + dx2 / 2;
+               }
+            }
       }
       else
       {
-	 /* get the nearest LineDef in that direction (decreasing X's: West) */
-	 bestdist = -32767;
-	 bestmdist = -32767;
-	 for (ld2 = 0; ld2 < NumLineDefs; ld2++)
-	    if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].y > y1) != (Vertexes[ LineDefs[ ld2].end].y > y1)))
-	    {
-	       x2  = Vertexes[ LineDefs[ ld2].start].x;
-	       y2  = Vertexes[ LineDefs[ ld2].start].y;
-	       dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
-	       dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
-	       dist = x2 + (int) ((long) (y1 - y2) * (long) dx2 / (long) dy2);
-	       if (dist < x1 && (dist > bestdist || (dist == bestdist && (x2 + dx2 / 2) > bestmdist)))
-	       {
-		  bestld = ld2;
-		  bestdist = dist;
-		  bestmdist = x2 + dx2 / 2;
-	       }
-	    }
+         /* get the nearest LineDef in that direction (decreasing X's: West) */
+         bestdist = -32767;
+         bestmdist = -32767;
+         for (ld2 = 0; ld2 < NumLineDefs; ld2++)
+            if (ld2 != ld1 && ((Vertexes[ LineDefs[ ld2].start].y > y1) != (Vertexes[ LineDefs[ ld2].end].y > y1)))
+            {
+               x2  = Vertexes[ LineDefs[ ld2].start].x;
+               y2  = Vertexes[ LineDefs[ ld2].start].y;
+               dx2 = Vertexes[ LineDefs[ ld2].end].x - x2;
+               dy2 = Vertexes[ LineDefs[ ld2].end].y - y2;
+               dist = x2 + (int) ((long) (y1 - y2) * (long) dx2 / (long) dy2);
+               if (dist < x1 && (dist > bestdist || (dist == bestdist && (x2 + dx2 / 2) > bestmdist)))
+               {
+                  bestld = ld2;
+                  bestdist = dist;
+                  bestmdist = x2 + dx2 / 2;
+               }
+            }
       }
    }
 
@@ -931,16 +933,16 @@ int GetOppositeSector( int ld1, Bool firstside) /* SWAP! */
    if (abs( dy1) > abs( dx1))
    {
       if ((Vertexes[ LineDefs[ bestld].start].x < Vertexes[ LineDefs[ bestld].end].x) == (dy1 > 0))
-	 x0 = LineDefs[ bestld].sidedef1;
+         x0 = LineDefs[ bestld].sidedef1;
       else
-	 x0 = LineDefs[ bestld].sidedef2;
+         x0 = LineDefs[ bestld].sidedef2;
    }
    else
    {
       if ((Vertexes[ LineDefs[ bestld].start].y < Vertexes[ LineDefs[ bestld].end].y) != (dx1 > 0))
-	 x0 = LineDefs[ bestld].sidedef1;
+         x0 = LineDefs[ bestld].sidedef1;
       else
-	 x0 = LineDefs[ bestld].sidedef2;
+         x0 = LineDefs[ bestld].sidedef2;
    }
 
    /* there is no SideDef on this side of the LineDef! */
@@ -972,116 +974,116 @@ void CopyObjects( int objtype, SelPtr obj) /* SWAP! */
    switch (objtype)
    {
       case OBJ_THINGS:
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    InsertObject( OBJ_THINGS, cur->objnum, Things[ cur->objnum].xpos, Things[ cur->objnum].ypos);
-	    cur->objnum = NumThings - 1;
-	 }
-	 MadeChanges = TRUE;
-	 break;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            InsertObject( OBJ_THINGS, cur->objnum, Things[ cur->objnum].xpos, Things[ cur->objnum].ypos);
+            cur->objnum = NumThings - 1;
+         }
+         MadeChanges = TRUE;
+         break;
 
       case OBJ_VERTEXES:
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    InsertObject( OBJ_VERTEXES, cur->objnum, Vertexes[ cur->objnum].x, Vertexes[ cur->objnum].y);
-	    cur->objnum = NumVertexes - 1;
-	 }
-	 MadeChanges = TRUE;
-	 MadeMapChanges = TRUE;
-	 break;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            InsertObject( OBJ_VERTEXES, cur->objnum, Vertexes[ cur->objnum].x, Vertexes[ cur->objnum].y);
+            cur->objnum = NumVertexes - 1;
+         }
+         MadeChanges = TRUE;
+         MadeMapChanges = TRUE;
+         break;
 
       case OBJ_LINEDEFS:
-	 list1 = NULL;
-	 list2 = NULL;
-	 /* create the LineDefs */
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    InsertObject( OBJ_LINEDEFS, cur->objnum, 0, 0);
-	    cur->objnum = NumLineDefs - 1;
-	    if (!IsSelected( list1, LineDefs[ cur->objnum].start))
-	    {
-	       SelectObject( &list1, LineDefs[ cur->objnum].start);
-	       SelectObject( &list2, LineDefs[ cur->objnum].start);
-	    }
-	    if (!IsSelected( list1, LineDefs[ cur->objnum].end))
-	    {
-	       SelectObject( &list1, LineDefs[ cur->objnum].end);
-	       SelectObject( &list2, LineDefs[ cur->objnum].end);
-	    }
-	 }
-	 /* create the Vertices */
-	 CopyObjects( OBJ_VERTEXES, list2);
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 /* update the references to the Vertexes */
-	 for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
-	 {
-	    for (cur = obj; cur; cur = cur->next)
-	    {
-	       if (ref1->objnum == LineDefs[ cur->objnum].start)
-		  LineDefs[ cur->objnum].start = ref2->objnum;
-	       if (ref1->objnum == LineDefs[ cur->objnum].end)
-		  LineDefs[ cur->objnum].end = ref2->objnum;
-	    }
-	 }
-	 ForgetSelection( &list1);
-	 ForgetSelection( &list2);
-	 break;
+         list1 = NULL;
+         list2 = NULL;
+         /* create the LineDefs */
+         for (cur = obj; cur; cur = cur->next)
+         {
+            InsertObject( OBJ_LINEDEFS, cur->objnum, 0, 0);
+            cur->objnum = NumLineDefs - 1;
+            if (!IsSelected( list1, LineDefs[ cur->objnum].start))
+            {
+               SelectObject( &list1, LineDefs[ cur->objnum].start);
+               SelectObject( &list2, LineDefs[ cur->objnum].start);
+            }
+            if (!IsSelected( list1, LineDefs[ cur->objnum].end))
+            {
+               SelectObject( &list1, LineDefs[ cur->objnum].end);
+               SelectObject( &list2, LineDefs[ cur->objnum].end);
+            }
+         }
+         /* create the Vertices */
+         CopyObjects( OBJ_VERTEXES, list2);
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         /* update the references to the Vertexes */
+         for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
+         {
+            for (cur = obj; cur; cur = cur->next)
+            {
+               if (ref1->objnum == LineDefs[ cur->objnum].start)
+                  LineDefs[ cur->objnum].start = ref2->objnum;
+               if (ref1->objnum == LineDefs[ cur->objnum].end)
+                  LineDefs[ cur->objnum].end = ref2->objnum;
+            }
+         }
+         ForgetSelection( &list1);
+         ForgetSelection( &list2);
+         break;
 
       case OBJ_SECTORS:
-	 ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-	 list1 = NULL;
-	 list2 = NULL;
-	 /* create the LineDefs (and Vertices) */
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    for (n = 0; n < NumLineDefs; n++)
-	       if ( (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
-		  || ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
-		 && ! IsSelected( list1, n))
-	       {
-		  SelectObject( &list1, n);
-		  SelectObject( &list2, n);
-	       }
-	 }
-	 CopyObjects( OBJ_LINEDEFS, list2);
-	 /* create the SideDefs */
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
-	 {
-	    if ((n = LineDefs[ ref1->objnum].sidedef1) >= 0)
-	    {
-	       InsertObject( OBJ_SIDEDEFS, n, 0, 0);
-	       n = NumSideDefs - 1;
-	       ObjectsNeeded( OBJ_LINEDEFS, 0);
-	       LineDefs[ ref2->objnum].sidedef1 = n;
-	    }
-	    if ((m = LineDefs[ ref1->objnum].sidedef2) >= 0)
-	    {
-	       InsertObject( OBJ_SIDEDEFS, m, 0, 0);
-	       m = NumSideDefs - 1;
-	       ObjectsNeeded( OBJ_LINEDEFS, 0);
-	       LineDefs[ ref2->objnum].sidedef2 = m;
-	    }
-	    ref1->objnum = n;
-	    ref2->objnum = m;
-	 }
-	 /* create the Sectors */
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    InsertObject( OBJ_SECTORS, cur->objnum, 0, 0);
-	    ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	    for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
-	    {
-	       if (ref1->objnum >= 0 && SideDefs[ ref1->objnum].sector == cur->objnum)
-		  SideDefs[ ref1->objnum].sector = NumSectors - 1;
-	       if (ref2->objnum >= 0 && SideDefs[ ref2->objnum].sector == cur->objnum)
-		  SideDefs[ ref2->objnum].sector = NumSectors - 1;
-	    }
-	    cur->objnum = NumSectors - 1;
-	 }
-	 ForgetSelection( &list1);
-	 ForgetSelection( &list2);
-	 break;
+         ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
+         list1 = NULL;
+         list2 = NULL;
+         /* create the LineDefs (and Vertices) */
+         for (cur = obj; cur; cur = cur->next)
+         {
+            for (n = 0; n < NumLineDefs; n++)
+               if ( (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
+                  || ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
+                 && ! IsSelected( list1, n))
+               {
+                  SelectObject( &list1, n);
+                  SelectObject( &list2, n);
+               }
+         }
+         CopyObjects( OBJ_LINEDEFS, list2);
+         /* create the SideDefs */
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
+         {
+            if ((n = LineDefs[ ref1->objnum].sidedef1) >= 0)
+            {
+               InsertObject( OBJ_SIDEDEFS, n, 0, 0);
+               n = NumSideDefs - 1;
+               ObjectsNeeded( OBJ_LINEDEFS, 0);
+               LineDefs[ ref2->objnum].sidedef1 = n;
+            }
+            if ((m = LineDefs[ ref1->objnum].sidedef2) >= 0)
+            {
+               InsertObject( OBJ_SIDEDEFS, m, 0, 0);
+               m = NumSideDefs - 1;
+               ObjectsNeeded( OBJ_LINEDEFS, 0);
+               LineDefs[ ref2->objnum].sidedef2 = m;
+            }
+            ref1->objnum = n;
+            ref2->objnum = m;
+         }
+         /* create the Sectors */
+         for (cur = obj; cur; cur = cur->next)
+         {
+            InsertObject( OBJ_SECTORS, cur->objnum, 0, 0);
+            ObjectsNeeded( OBJ_SIDEDEFS, 0);
+            for (ref1 = list1, ref2 = list2; ref1 && ref2; ref1 = ref1->next, ref2 = ref2->next)
+            {
+               if (ref1->objnum >= 0 && SideDefs[ ref1->objnum].sector == cur->objnum)
+                  SideDefs[ ref1->objnum].sector = NumSectors - 1;
+               if (ref2->objnum >= 0 && SideDefs[ ref2->objnum].sector == cur->objnum)
+                  SideDefs[ ref2->objnum].sector = NumSectors - 1;
+            }
+            cur->objnum = NumSectors - 1;
+         }
+         ForgetSelection( &list1);
+         ForgetSelection( &list2);
+         break;
    }
 }
 
@@ -1124,56 +1126,56 @@ Bool MoveObjectsToCoords( int objtype, SelPtr obj, int newx, int newy, int grid)
    switch (objtype)
    {
       case OBJ_THINGS:
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    Things[ cur->objnum].xpos += dx;
-	    Things[ cur->objnum].ypos += dy;
-	 }
-	 refx = newx;
-	 refy = newy;
-	 MadeChanges = TRUE;
-	 break;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            Things[ cur->objnum].xpos += dx;
+            Things[ cur->objnum].ypos += dy;
+         }
+         refx = newx;
+         refy = newy;
+         MadeChanges = TRUE;
+         break;
       case OBJ_VERTEXES:
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    Vertexes[ cur->objnum].x += dx;
-	    Vertexes[ cur->objnum].y += dy;
-	 }
-	 refx = newx;
-	 refy = newy;
-	 MadeChanges = TRUE;
-	 MadeMapChanges = TRUE;
-	 break;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            Vertexes[ cur->objnum].x += dx;
+            Vertexes[ cur->objnum].y += dy;
+         }
+         refx = newx;
+         refy = newy;
+         MadeChanges = TRUE;
+         MadeMapChanges = TRUE;
+         break;
       case OBJ_LINEDEFS:
-	 vertices = NULL;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    if (!IsSelected( vertices, LineDefs[ cur->objnum].start))
-	       SelectObject( &vertices, LineDefs[ cur->objnum].start);
-	    if (!IsSelected( vertices, LineDefs[ cur->objnum].end))
-	       SelectObject( &vertices, LineDefs[ cur->objnum].end);
-	 }
-	 MoveObjectsToCoords( OBJ_VERTEXES, vertices, newx, newy, grid);
-	 ForgetSelection( &vertices);
-	 break;
+         vertices = NULL;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            if (!IsSelected( vertices, LineDefs[ cur->objnum].start))
+               SelectObject( &vertices, LineDefs[ cur->objnum].start);
+            if (!IsSelected( vertices, LineDefs[ cur->objnum].end))
+               SelectObject( &vertices, LineDefs[ cur->objnum].end);
+         }
+         MoveObjectsToCoords( OBJ_VERTEXES, vertices, newx, newy, grid);
+         ForgetSelection( &vertices);
+         break;
       case OBJ_SECTORS:
-	 ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-	 vertices = NULL;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    for (n = 0; n < NumLineDefs; n++)
-	       if (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
-		|| ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
-	       {
-		  if (!IsSelected( vertices, LineDefs[ n].start))
-		     SelectObject( &vertices, LineDefs[ n].start);
-		  if (!IsSelected( vertices, LineDefs[ n].end))
-		     SelectObject( &vertices, LineDefs[ n].end);
-	       }
-	 }
-	 MoveObjectsToCoords( OBJ_VERTEXES, vertices, newx, newy, grid);
-	 ForgetSelection( &vertices);
-	 break;
+         ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
+         vertices = NULL;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            for (n = 0; n < NumLineDefs; n++)
+               if (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
+                || ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
+               {
+                  if (!IsSelected( vertices, LineDefs[ n].start))
+                     SelectObject( &vertices, LineDefs[ n].start);
+                  if (!IsSelected( vertices, LineDefs[ n].end))
+                     SelectObject( &vertices, LineDefs[ n].end);
+               }
+         }
+         MoveObjectsToCoords( OBJ_VERTEXES, vertices, newx, newy, grid);
+         ForgetSelection( &vertices);
+         break;
    }
    return TRUE;
 }
@@ -1192,72 +1194,72 @@ void GetObjectCoords( int objtype, int objnum, int *xpos, int *ypos) /* SWAP! */
    switch (objtype)
    {
       case OBJ_THINGS:
-	 ObjectsNeeded( OBJ_THINGS, 0);
-	 *xpos = Things[ objnum].xpos;
-	 *ypos = Things[ objnum].ypos;
-	 break;
+         ObjectsNeeded( OBJ_THINGS, 0);
+         *xpos = Things[ objnum].xpos;
+         *ypos = Things[ objnum].ypos;
+         break;
       case OBJ_VERTEXES:
-	 ObjectsNeeded( OBJ_VERTEXES, 0);
-	 *xpos = Vertexes[ objnum].x;
-	 *ypos = Vertexes[ objnum].y;
-	 break;
+         ObjectsNeeded( OBJ_VERTEXES, 0);
+         *xpos = Vertexes[ objnum].x;
+         *ypos = Vertexes[ objnum].y;
+         break;
       case OBJ_LINEDEFS:
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 v1 = LineDefs[ objnum].start;
-	 v2 = LineDefs[ objnum].end;
-	 ObjectsNeeded( OBJ_VERTEXES, 0);
-	 *xpos = (Vertexes[ v1].x + Vertexes[ v2].x) / 2;
-	 *ypos = (Vertexes[ v1].y + Vertexes[ v2].y) / 2;
-	 break;
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         v1 = LineDefs[ objnum].start;
+         v2 = LineDefs[ objnum].end;
+         ObjectsNeeded( OBJ_VERTEXES, 0);
+         *xpos = (Vertexes[ v1].x + Vertexes[ v2].x) / 2;
+         *ypos = (Vertexes[ v1].y + Vertexes[ v2].y) / 2;
+         break;
       case OBJ_SIDEDEFS:
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 for (n = 0; n < NumLineDefs; n++)
-	    if (LineDefs[ n].sidedef1 == objnum || LineDefs[ n].sidedef2 == objnum)
-	    {
-	       v1 = LineDefs[ n].start;
-	       v2 = LineDefs[ n].end;
-	       ObjectsNeeded( OBJ_VERTEXES, 0);
-	       *xpos = (Vertexes[ v1].x + Vertexes[ v2].x) / 2;
-	       *ypos = (Vertexes[ v1].y + Vertexes[ v2].y) / 2;
-	       return;
-	    }
-	 *xpos = (MapMinX + MapMaxX) / 2;
-	 *ypos = (MapMinY + MapMaxY) / 2;
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         for (n = 0; n < NumLineDefs; n++)
+            if (LineDefs[ n].sidedef1 == objnum || LineDefs[ n].sidedef2 == objnum)
+            {
+               v1 = LineDefs[ n].start;
+               v2 = LineDefs[ n].end;
+               ObjectsNeeded( OBJ_VERTEXES, 0);
+               *xpos = (Vertexes[ v1].x + Vertexes[ v2].x) / 2;
+               *ypos = (Vertexes[ v1].y + Vertexes[ v2].y) / 2;
+               return;
+            }
+         *xpos = (MapMinX + MapMaxX) / 2;
+         *ypos = (MapMinY + MapMaxY) / 2;
       case OBJ_SECTORS:
-	 accx = 0L;
-	 accy = 0L;
-	 num = 0L;
-	 for (n = 0; n < NumLineDefs; n++)
-	 {
-	    ObjectsNeeded( OBJ_LINEDEFS, 0);
-	    sd1 = LineDefs[ n].sidedef1;
-	    sd2 = LineDefs[ n].sidedef2;
-	    v1 = LineDefs[ n].start;
-	    v2 = LineDefs[ n].end;
-	    ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	    if ((sd1 >= 0 && SideDefs[ sd1].sector == objnum) || (sd2 >= 0 && SideDefs[ sd2].sector == objnum))
-	    {
-	       ObjectsNeeded( OBJ_VERTEXES, 0);
-	       /* if the Sector is closed, all Vertices will be counted twice */
-	       accx += (long) Vertexes[ v1].x;
-	       accy += (long) Vertexes[ v1].y;
-	       num++;
-	       accx += (long) Vertexes[ v2].x;
-	       accy += (long) Vertexes[ v2].y;
-	       num++;
-	    }
-	 }
-	 if (num > 0)
-	 {
-	    *xpos = (int) ((accx + num / 2L) / num);
-	    *ypos = (int) ((accy + num / 2L) / num);
-	 }
-	 else
-	 {
-	    *xpos = (MapMinX + MapMaxX) / 2;
-	    *ypos = (MapMinY + MapMaxY) / 2;
-	 }
-	 break;
+         accx = 0L;
+         accy = 0L;
+         num = 0L;
+         for (n = 0; n < NumLineDefs; n++)
+         {
+            ObjectsNeeded( OBJ_LINEDEFS, 0);
+            sd1 = LineDefs[ n].sidedef1;
+            sd2 = LineDefs[ n].sidedef2;
+            v1 = LineDefs[ n].start;
+            v2 = LineDefs[ n].end;
+            ObjectsNeeded( OBJ_SIDEDEFS, 0);
+            if ((sd1 >= 0 && SideDefs[ sd1].sector == objnum) || (sd2 >= 0 && SideDefs[ sd2].sector == objnum))
+            {
+               ObjectsNeeded( OBJ_VERTEXES, 0);
+               /* if the Sector is closed, all Vertices will be counted twice */
+               accx += (long) Vertexes[ v1].x;
+               accy += (long) Vertexes[ v1].y;
+               num++;
+               accx += (long) Vertexes[ v2].x;
+               accy += (long) Vertexes[ v2].y;
+               num++;
+            }
+         }
+         if (num > 0)
+         {
+            *xpos = (int) ((accx + num / 2L) / num);
+            *ypos = (int) ((accy + num / 2L) / num);
+         }
+         else
+         {
+            *xpos = (MapMinX + MapMaxX) / 2;
+            *ypos = (MapMinY + MapMaxY) / 2;
+         }
+         break;
    }
 }
 
@@ -1282,80 +1284,80 @@ void RotateAndScaleObjects( int objtype, SelPtr obj, double angle, double scale)
    switch (objtype)
    {
       case OBJ_THINGS:
-	 accx = 0L;
-	 accy = 0L;
-	 num = 0L;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    accx += (long) Things[ cur->objnum].xpos;
-	    accy += (long) Things[ cur->objnum].ypos;
-	    num++;
-	 }
-	 centerx = (int) ((accx + num / 2L) / num);
-	 centery = (int) ((accy + num / 2L) / num);
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    dx = Things[ cur->objnum].xpos - centerx;
-	    dy = Things[ cur->objnum].ypos - centery;
-	    RotateAndScaleCoords( &dx, &dy, angle, scale);
-	    Things[ cur->objnum].xpos = centerx + dx;
-	    Things[ cur->objnum].ypos = centery + dy;
-	 }
-	 MadeChanges = TRUE;
-	 break;
+         accx = 0L;
+         accy = 0L;
+         num = 0L;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            accx += (long) Things[ cur->objnum].xpos;
+            accy += (long) Things[ cur->objnum].ypos;
+            num++;
+         }
+         centerx = (int) ((accx + num / 2L) / num);
+         centery = (int) ((accy + num / 2L) / num);
+         for (cur = obj; cur; cur = cur->next)
+         {
+            dx = Things[ cur->objnum].xpos - centerx;
+            dy = Things[ cur->objnum].ypos - centery;
+            RotateAndScaleCoords( &dx, &dy, angle, scale);
+            Things[ cur->objnum].xpos = centerx + dx;
+            Things[ cur->objnum].ypos = centery + dy;
+         }
+         MadeChanges = TRUE;
+         break;
       case OBJ_VERTEXES:
-	 accx = 0L;
-	 accy = 0L;
-	 num = 0L;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    accx += (long) Vertexes[ cur->objnum].x;
-	    accy += (long) Vertexes[ cur->objnum].y;
-	    num++;
-	 }
-	 centerx = (int) ((accx + num / 2L) / num);
-	 centery = (int) ((accy + num / 2L) / num);
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    dx = Vertexes[ cur->objnum].x - centerx;
-	    dy = Vertexes[ cur->objnum].y - centery;
-	    RotateAndScaleCoords( &dx, &dy, angle, scale);
-	    Vertexes[ cur->objnum].x = (centerx + dx + 4) & ~7;
-	    Vertexes[ cur->objnum].y = (centery + dy + 4) & ~7;
-	 }
-	 MadeChanges = TRUE;
-	 MadeMapChanges = TRUE;
-	 break;
+         accx = 0L;
+         accy = 0L;
+         num = 0L;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            accx += (long) Vertexes[ cur->objnum].x;
+            accy += (long) Vertexes[ cur->objnum].y;
+            num++;
+         }
+         centerx = (int) ((accx + num / 2L) / num);
+         centery = (int) ((accy + num / 2L) / num);
+         for (cur = obj; cur; cur = cur->next)
+         {
+            dx = Vertexes[ cur->objnum].x - centerx;
+            dy = Vertexes[ cur->objnum].y - centery;
+            RotateAndScaleCoords( &dx, &dy, angle, scale);
+            Vertexes[ cur->objnum].x = (centerx + dx + 4) & ~7;
+            Vertexes[ cur->objnum].y = (centery + dy + 4) & ~7;
+         }
+         MadeChanges = TRUE;
+         MadeMapChanges = TRUE;
+         break;
       case OBJ_LINEDEFS:
-	 vertices = NULL;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    if (!IsSelected( vertices, LineDefs[ cur->objnum].start))
-	       SelectObject( &vertices, LineDefs[ cur->objnum].start);
-	    if (!IsSelected( vertices, LineDefs[ cur->objnum].end))
-	       SelectObject( &vertices, LineDefs[ cur->objnum].end);
-	 }
-	 RotateAndScaleObjects( OBJ_VERTEXES, vertices, angle, scale);
-	 ForgetSelection( &vertices);
-	 break;
+         vertices = NULL;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            if (!IsSelected( vertices, LineDefs[ cur->objnum].start))
+               SelectObject( &vertices, LineDefs[ cur->objnum].start);
+            if (!IsSelected( vertices, LineDefs[ cur->objnum].end))
+               SelectObject( &vertices, LineDefs[ cur->objnum].end);
+         }
+         RotateAndScaleObjects( OBJ_VERTEXES, vertices, angle, scale);
+         ForgetSelection( &vertices);
+         break;
       case OBJ_SECTORS:
-	 ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-	 vertices = NULL;
-	 for (cur = obj; cur; cur = cur->next)
-	 {
-	    for (n = 0; n < NumLineDefs; n++)
-	       if (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
-		|| ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
-	       {
-		  if (!IsSelected( vertices, LineDefs[ n].start))
-		     SelectObject( &vertices, LineDefs[ n].start);
-		  if (!IsSelected( vertices, LineDefs[ n].end))
-		     SelectObject( &vertices, LineDefs[ n].end);
-	       }
-	 }
-	 RotateAndScaleObjects( OBJ_VERTEXES, vertices, angle, scale);
-	 ForgetSelection( &vertices);
-	 break;
+         ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
+         vertices = NULL;
+         for (cur = obj; cur; cur = cur->next)
+         {
+            for (n = 0; n < NumLineDefs; n++)
+               if (((m = LineDefs[ n].sidedef1) >= 0 && SideDefs[ m].sector == cur->objnum)
+                || ((m = LineDefs[ n].sidedef2) >= 0 && SideDefs[ m].sector == cur->objnum))
+               {
+                  if (!IsSelected( vertices, LineDefs[ n].start))
+                     SelectObject( &vertices, LineDefs[ n].start);
+                  if (!IsSelected( vertices, LineDefs[ n].end))
+                     SelectObject( &vertices, LineDefs[ n].end);
+               }
+         }
+         RotateAndScaleObjects( OBJ_VERTEXES, vertices, angle, scale);
+         ForgetSelection( &vertices);
+         break;
    }
 }
 
@@ -1377,18 +1379,18 @@ int FindFreeTag() /* SWAP! */
    {
       ok = TRUE;
       for (n = 0; n < NumLineDefs; n++)
-	 if (LineDefs[ n].tag == tag)
-	 {
-	    ok = FALSE;
-	    break;
-	 }
+         if (LineDefs[ n].tag == tag)
+         {
+            ok = FALSE;
+            break;
+         }
       if (ok)
-	 for (n = 0; n < NumSectors; n++)
-	    if (Sectors[ n].tag == tag)
-	    {
-	       ok = FALSE;
-	       break;
-	    }
+         for (n = 0; n < NumSectors; n++)
+            if (Sectors[ n].tag == tag)
+            {
+               ok = FALSE;
+               break;
+            }
       tag++;
    }
    return tag - 1;
@@ -1410,10 +1412,10 @@ void FlipLineDefs( SelPtr obj, Bool swapvertices) /* SWAP! */
    {
       if (swapvertices)
       {
-	 /* swap starting and ending Vertices */
-	 tmp = LineDefs[ cur->objnum].end;
-	 LineDefs[ cur->objnum].end = LineDefs[ cur->objnum].start;
-	 LineDefs[ cur->objnum].start = tmp;
+         /* swap starting and ending Vertices */
+         tmp = LineDefs[ cur->objnum].end;
+         LineDefs[ cur->objnum].end = LineDefs[ cur->objnum].start;
+         LineDefs[ cur->objnum].start = tmp;
       }
       /* swap first and second SideDefs */
       tmp = LineDefs[ cur->objnum].sidedef1;
@@ -1445,27 +1447,27 @@ void DeleteVerticesJoinLineDefs( SelPtr obj) /* SWAP! */
       lend = -1;
       for (l = 0; l < NumLineDefs; l++)
       {
-	 if (LineDefs[ l].start == cur->objnum)
-	 {
-	    if (lstart == -1)
-	       lstart = l;
-	    else
-	       lstart = -2;
-	 }
-	 if (LineDefs[ l].end == cur->objnum)
-	 {
-	    if (lend == -1)
-	       lend = l;
-	    else
-	       lend = -2;
-	 }
+         if (LineDefs[ l].start == cur->objnum)
+         {
+            if (lstart == -1)
+               lstart = l;
+            else
+               lstart = -2;
+         }
+         if (LineDefs[ l].end == cur->objnum)
+         {
+            if (lend == -1)
+               lend = l;
+            else
+               lend = -2;
+         }
       }
       if (lstart < 0 || lend < 0)
       {
-	 Beep();
-	 sprintf(msg, "Cannot delete Vertex #%d and join the LineDefs", cur->objnum);
-	 Notify( -1, -1, msg, "The Vertex must be the start of one LineDef and the end of another one");
-	 continue;
+         Beep();
+         sprintf(msg, "Cannot delete Vertex #%d and join the LineDefs", cur->objnum);
+         Notify( -1, -1, msg, "The Vertex must be the start of one LineDef and the end of another one");
+         continue;
       }
       LineDefs[ lend].end = LineDefs[ lstart].end;
       DeleteObject( OBJ_LINEDEFS, lstart);
@@ -1499,15 +1501,15 @@ void MergeVertices( SelPtr *list) /* SWAP! */
    {
       if (IsSelected( *list, LineDefs[ l].start))
       {
-	 /* don't change a LineDef that has both ends on the same spot */
-	 if (!IsSelected( *list, LineDefs[ l].end) && LineDefs[ l].end != v)
-	    LineDefs[ l].start = v;
+         /* don't change a LineDef that has both ends on the same spot */
+         if (!IsSelected( *list, LineDefs[ l].end) && LineDefs[ l].end != v)
+            LineDefs[ l].start = v;
       }
       else if (IsSelected( *list, LineDefs[ l].end))
       {
-	 /* idem */
-	 if (LineDefs[ l].start != v)
-	    LineDefs[ l].end = v;
+         /* idem */
+         if (LineDefs[ l].start != v)
+            LineDefs[ l].end = v;
       }
    }
    /* delete the Vertices (and some LineDefs too) */
@@ -1545,37 +1547,37 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
       ref = ref->next;
       /* check if there is a Vertex at the same position (same X and Y) */
       for (v = 0; v < NumVertexes; v++)
-	 if (v != refv && Vertexes[ refv].x == Vertexes[ v].x && Vertexes[ refv].y == Vertexes[ v].y)
-	 {
-	    redraw = TRUE;
-	    if (confirmed || Expert || Confirm( -1, -1, "Some Vertices occupy the same position", "Do you want to merge them into one?"))
-	    {
-	       /* don't ask for confirmation twice */
-	       confirmed = TRUE;
-	       /* merge the two vertices */
-	       mergedone = TRUE;
-	       cur = NULL;
-	       SelectObject( &cur, refv);
-	       SelectObject( &cur, v);
-	       MergeVertices( &cur);
-	       /* not useful but safer... */
-	       ObjectsNeeded( OBJ_VERTEXES, 0);
-	       /* update the references in the selection list */
-	       for (cur = *list; cur; cur = cur->next)
-		  if (cur->objnum > refv)
-		     cur->objnum = cur->objnum - 1;
-	       if (v > refv)
-		  v--;
-	       /* the old Vertex has been deleted */
-	       UnSelectObject( list, refv);
-	       /* select the new Vertex instead */
-	       if (!IsSelected( *list, v))
-		  SelectObject( list, v);
-	       break;
-	    }
-	    else
-	       return redraw;
-	 }
+         if (v != refv && Vertexes[ refv].x == Vertexes[ v].x && Vertexes[ refv].y == Vertexes[ v].y)
+         {
+            redraw = TRUE;
+            if (confirmed || Expert || Confirm( -1, -1, "Some Vertices occupy the same position", "Do you want to merge them into one?"))
+            {
+               /* don't ask for confirmation twice */
+               confirmed = TRUE;
+               /* merge the two vertices */
+               mergedone = TRUE;
+               cur = NULL;
+               SelectObject( &cur, refv);
+               SelectObject( &cur, v);
+               MergeVertices( &cur);
+               /* not useful but safer... */
+               ObjectsNeeded( OBJ_VERTEXES, 0);
+               /* update the references in the selection list */
+               for (cur = *list; cur; cur = cur->next)
+                  if (cur->objnum > refv)
+                     cur->objnum = cur->objnum - 1;
+               if (v > refv)
+                  v--;
+               /* the old Vertex has been deleted */
+               UnSelectObject( list, refv);
+               /* select the new Vertex instead */
+               if (!IsSelected( *list, v))
+                  SelectObject( list, v);
+               break;
+            }
+            else
+               return redraw;
+         }
    }
    confirmed = FALSE;
 
@@ -1589,44 +1591,44 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
       /* check if this Vertex is on a LineDef */
       for (ld = 0; ld < oldnumld; ld++)
       {
-	 ObjectsNeeded( OBJ_VERTEXES, OBJ_LINEDEFS, 0);
-	 if (LineDefs[ ld].start == refv || LineDefs[ ld].end == refv)
-	 {
-	    /* one Vertex had a LineDef bound to it -- check it later */
-	    isldend = TRUE;
-	 }
-	 else if (IsLineDefInside( ld, Vertexes[ refv].x - 3, Vertexes[ refv].y - 3, Vertexes[ refv].x + 3, Vertexes[ refv].y + 3))
-	 {
-	    redraw = TRUE;
-	    if (confirmed || Expert || Confirm( -1, -1, "Some Vertices are on a LineDef", "Do you want to split the LineDef there?"))
-	    {
-	       /* don't ask for confirmation twice */
-	       confirmed = TRUE;
-	       /* split the LineDef */
-	       mergedone = TRUE;
-	       InsertObject( OBJ_LINEDEFS, ld, 0, 0);
-	       LineDefs[ ld].end = refv;
-	       LineDefs[ NumLineDefs - 1].start = refv;
-	       sd = LineDefs[ ld].sidedef1;
-	       if (sd >= 0)
-	       {
-		  InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
-		  ObjectsNeeded( OBJ_LINEDEFS, 0);
-		  LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
-	       }
-	       sd = LineDefs[ ld].sidedef2;
-	       if (sd >= 0)
-	       {
-		  InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
-		  ObjectsNeeded( OBJ_LINEDEFS, 0);
-		  LineDefs[ NumLineDefs - 1].sidedef2 = NumSideDefs - 1;
-	       }
-	       MadeChanges = TRUE;
-	       MadeMapChanges = TRUE;
-	    }
-	    else
-	       return redraw;
-	 }
+         ObjectsNeeded( OBJ_VERTEXES, OBJ_LINEDEFS, 0);
+         if (LineDefs[ ld].start == refv || LineDefs[ ld].end == refv)
+         {
+            /* one Vertex had a LineDef bound to it -- check it later */
+            isldend = TRUE;
+         }
+         else if (IsLineDefInside( ld, Vertexes[ refv].x - 3, Vertexes[ refv].y - 3, Vertexes[ refv].x + 3, Vertexes[ refv].y + 3))
+         {
+            redraw = TRUE;
+            if (confirmed || Expert || Confirm( -1, -1, "Some Vertices are on a LineDef", "Do you want to split the LineDef there?"))
+            {
+               /* don't ask for confirmation twice */
+               confirmed = TRUE;
+               /* split the LineDef */
+               mergedone = TRUE;
+               InsertObject( OBJ_LINEDEFS, ld, 0, 0);
+               LineDefs[ ld].end = refv;
+               LineDefs[ NumLineDefs - 1].start = refv;
+               sd = LineDefs[ ld].sidedef1;
+               if (sd >= 0)
+               {
+                  InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
+                  ObjectsNeeded( OBJ_LINEDEFS, 0);
+                  LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
+               }
+               sd = LineDefs[ ld].sidedef2;
+               if (sd >= 0)
+               {
+                  InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
+                  ObjectsNeeded( OBJ_LINEDEFS, 0);
+                  LineDefs[ NumLineDefs - 1].sidedef2 = NumSideDefs - 1;
+               }
+               MadeChanges = TRUE;
+               MadeMapChanges = TRUE;
+            }
+            else
+               return redraw;
+         }
       }
    }
 
@@ -1639,51 +1641,51 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
    /* finally, test if two LineDefs are between the same pair of Vertices */
    for (v = 0; v < NumLineDefs - 1; v++)
       for (ld = v + 1; ld < NumLineDefs; ld++)
-	 if ((LineDefs[ v].start == LineDefs[ ld].start && LineDefs[ v].end == LineDefs[ ld].end)
-	  || (LineDefs[ v].start == LineDefs[ ld].end && LineDefs[ v].end == LineDefs[ ld].start))
-	 {
-	    redraw = TRUE;
-	    if (confirmed || Expert || Confirm( -1, -1, "Some LineDefs are superimposed", "Do you want to merge them into one?"))
-	    {
-	       /* don't ask for confirmation twice */
-	       confirmed = TRUE;
-	       /* test if the LineDefs have the same orientation */
-	       if (LineDefs[ v].start == LineDefs[ ld].end)
-		  flipped = TRUE;
-	       else
-		  flipped = FALSE;
-	       /* merge the two LineDefs */
-	       if (LineDefs[ v].sidedef1 < 0)
-	       {
-		  if (flipped)
-		  {
-		    LineDefs[ v].sidedef1 = LineDefs[ ld].sidedef2;
-		    LineDefs[ ld].sidedef2 = -1;
-		  }
-		  else
-		  {
-		    LineDefs[ v].sidedef1 = LineDefs[ ld].sidedef1;
-		    LineDefs[ ld].sidedef1 = -1;
-		  }
-	       }
-	       if (LineDefs[ v].sidedef2 < 0)
-	       {
-		  if (flipped)
-		  {
-		    LineDefs[ v].sidedef2 = LineDefs[ ld].sidedef1;
-		    LineDefs[ ld].sidedef1 = -1;
-		  }
-		  else
-		  {
-		    LineDefs[ v].sidedef2 = LineDefs[ ld].sidedef2;
-		    LineDefs[ ld].sidedef2 = -1;
-		  }
-	       }
-	       if (LineDefs[ v].sidedef1 >= 0 && LineDefs[ v].sidedef2 >= 0 && (LineDefs[ v].flags & 0x04) == 0)
-		  LineDefs[ v].flags = 0x04;
-	       DeleteObject( OBJ_LINEDEFS, ld);
-	    }
-	 }
+         if ((LineDefs[ v].start == LineDefs[ ld].start && LineDefs[ v].end == LineDefs[ ld].end)
+          || (LineDefs[ v].start == LineDefs[ ld].end && LineDefs[ v].end == LineDefs[ ld].start))
+         {
+            redraw = TRUE;
+            if (confirmed || Expert || Confirm( -1, -1, "Some LineDefs are superimposed", "Do you want to merge them into one?"))
+            {
+               /* don't ask for confirmation twice */
+               confirmed = TRUE;
+               /* test if the LineDefs have the same orientation */
+               if (LineDefs[ v].start == LineDefs[ ld].end)
+                  flipped = TRUE;
+               else
+                  flipped = FALSE;
+               /* merge the two LineDefs */
+               if (LineDefs[ v].sidedef1 < 0)
+               {
+                  if (flipped)
+                  {
+                    LineDefs[ v].sidedef1 = LineDefs[ ld].sidedef2;
+                    LineDefs[ ld].sidedef2 = -1;
+                  }
+                  else
+                  {
+                    LineDefs[ v].sidedef1 = LineDefs[ ld].sidedef1;
+                    LineDefs[ ld].sidedef1 = -1;
+                  }
+               }
+               if (LineDefs[ v].sidedef2 < 0)
+               {
+                  if (flipped)
+                  {
+                    LineDefs[ v].sidedef2 = LineDefs[ ld].sidedef1;
+                    LineDefs[ ld].sidedef1 = -1;
+                  }
+                  else
+                  {
+                    LineDefs[ v].sidedef2 = LineDefs[ ld].sidedef2;
+                    LineDefs[ ld].sidedef2 = -1;
+                  }
+               }
+               if (LineDefs[ v].sidedef1 >= 0 && LineDefs[ v].sidedef2 >= 0 && (LineDefs[ v].flags & 0x04) == 0)
+                  LineDefs[ v].flags = 0x04;
+               DeleteObject( OBJ_LINEDEFS, ld);
+            }
+         }
    return redraw;
 }
 
@@ -1710,16 +1712,16 @@ void SplitLineDefs( SelPtr obj) /* SWAP! */
       sd = LineDefs[ cur->objnum].sidedef1;
       if (sd >= 0)
       {
-	 InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
+         InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         LineDefs[ NumLineDefs - 1].sidedef1 = NumSideDefs - 1;
       }
       sd = LineDefs[ cur->objnum].sidedef2;
       if (sd >= 0)
       {
-	 InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 LineDefs[ NumLineDefs - 1].sidedef2 = NumSideDefs - 1;
+         InsertObject( OBJ_SIDEDEFS, sd, 0, 0);
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         LineDefs[ NumLineDefs - 1].sidedef2 = NumSideDefs - 1;
       }
    }
    MadeChanges = TRUE;
@@ -1755,40 +1757,40 @@ void SplitSector( int vertex1, int vertex2) /* SWAP! */
    {
       for (l = 0; l < NumLineDefs; l++)
       {
-	 sd = LineDefs[ l].sidedef1;
-	 if (sd >= 0 && SideDefs[ sd].sector == s && LineDefs[ l].start == curv)
-	 {
-	    curv = LineDefs[ l].end;
-	    SelectObject( &llist, l);
-	    break;
-	 }
-	 sd = LineDefs[ l].sidedef2;
-	 if (sd >= 0 && SideDefs[ sd].sector == s && LineDefs[ l].end == curv)
-	 {
-	    curv = LineDefs[ l].start;
-	    SelectObject( &llist, l);
-	    break;
-	 }
+         sd = LineDefs[ l].sidedef1;
+         if (sd >= 0 && SideDefs[ sd].sector == s && LineDefs[ l].start == curv)
+         {
+            curv = LineDefs[ l].end;
+            SelectObject( &llist, l);
+            break;
+         }
+         sd = LineDefs[ l].sidedef2;
+         if (sd >= 0 && SideDefs[ sd].sector == s && LineDefs[ l].end == curv)
+         {
+            curv = LineDefs[ l].start;
+            SelectObject( &llist, l);
+            break;
+         }
       }
       if (l >= NumLineDefs)
       {
-	 Beep();
-	 sprintf( msg1, "Cannot find a closed path from Vertex #%d to Vertex #%d", vertex1, vertex2);
-	 if (curv == vertex1)
-	    sprintf( msg2, "There is no SideDef starting from Vertex #%d on Sector #%d", vertex1, s);
-	 else
-	    sprintf( msg2, "Check if Sector #%d is closed (cannot go past Vertex #%d)", s, curv);
-	 Notify( -1, -1, msg1, msg2);
-	 ForgetSelection( &llist);
-	 return;
+         Beep();
+         sprintf( msg1, "Cannot find a closed path from Vertex #%d to Vertex #%d", vertex1, vertex2);
+         if (curv == vertex1)
+            sprintf( msg2, "There is no SideDef starting from Vertex #%d on Sector #%d", vertex1, s);
+         else
+            sprintf( msg2, "Check if Sector #%d is closed (cannot go past Vertex #%d)", s, curv);
+         Notify( -1, -1, msg1, msg2);
+         ForgetSelection( &llist);
+         return;
       }
       if (curv == vertex1)
       {
-	 Beep();
-	 sprintf( msg1, "Vertex #%d is not on the same Sector (#%d) as Vertex #%d", vertex2, s, vertex1);
-	 Notify( -1, -1, msg1, NULL);
-	 ForgetSelection( &llist);
-	 return;
+         Beep();
+         sprintf( msg1, "Vertex #%d is not on the same Sector (#%d) as Vertex #%d", vertex2, s, vertex1);
+         Notify( -1, -1, msg1, NULL);
+         ForgetSelection( &llist);
+         return;
       }
    }
    /* now, the list of LineDefs for the new Sector is in llist */
@@ -1813,7 +1815,7 @@ void SplitSector( int vertex1, int vertex2) /* SWAP! */
    {
       sd = LineDefs[ llist->objnum].sidedef1;
       if (sd < 0 || SideDefs[ sd].sector != s)
-	 sd = LineDefs[ llist->objnum].sidedef2;
+         sd = LineDefs[ llist->objnum].sidedef2;
       SideDefs[ sd].sector = NumSectors - 1;
       UnSelectObject( &llist, llist->objnum);
    }
@@ -1910,8 +1912,8 @@ void MergeSectors( SelPtr *slist) /* SWAP! */
      olds = cur->objnum;
      for (n = 0; n < NumSideDefs; n++)
      {
-	if (SideDefs[ n].sector == olds)
-	   SideDefs[ n].sector = news;
+        if (SideDefs[ n].sector == olds)
+           SideDefs[ n].sector = news;
      }
   }
 
@@ -2003,23 +2005,23 @@ void MakeDoorFromSector( int sector) /* SWAP! */
       sd2 = LineDefs[ n].sidedef2;
       if (sd1 >= 0 && sd2 >= 0)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (SideDefs[ sd2].sector == sector)
-	 {
-	    SelectObject( &ldok, n); /* already ok */
-	    s++;
-	 }
-	 if (SideDefs[ sd1].sector == sector)
-	 {
-	    SelectObject( &ldflip, n); /* must be flipped */
-	    s++;
-	 }
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (SideDefs[ sd2].sector == sector)
+         {
+            SelectObject( &ldok, n); /* already ok */
+            s++;
+         }
+         if (SideDefs[ sd1].sector == sector)
+         {
+            SelectObject( &ldflip, n); /* must be flipped */
+            s++;
+         }
       }
       else if (sd1 >= 0 && sd2 < 0)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (SideDefs[ sd1].sector == sector)
-	    SelectObject( &ld1s, n); /* wall (one-sided) */
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (SideDefs[ sd1].sector == sector)
+            SelectObject( &ld1s, n); /* wall (one-sided) */
       }
    }
    /* a normal door has two sides... */
@@ -2046,7 +2048,7 @@ void MakeDoorFromSector( int sector) /* SWAP! */
    while (ldflip != NULL)
    {
       if (!IsSelected( ldok, ldflip->objnum))
-	 SelectObject( &ldok, ldflip->objnum);
+         SelectObject( &ldok, ldflip->objnum);
       UnSelectObject( &ldflip, ldflip->objnum);
    }
    /* change the LineDefs and SideDefs */
@@ -2063,12 +2065,12 @@ void MakeDoorFromSector( int sector) /* SWAP! */
       ObjectsNeeded( OBJ_SIDEDEFS, 0);
       if (strncmp( SideDefs[ sd1].tex3, "-", 8))
       {
-	 if (!strncmp( SideDefs[ sd1].tex1, "-", 8))
-	    strncpy( SideDefs[ sd1].tex1, SideDefs[ sd1].tex3, 8);
-	 strncpy( SideDefs[ sd1].tex3, "-", 8);
+         if (!strncmp( SideDefs[ sd1].tex1, "-", 8))
+            strncpy( SideDefs[ sd1].tex1, SideDefs[ sd1].tex3, 8);
+         strncpy( SideDefs[ sd1].tex3, "-", 8);
       }
       if (!strncmp( SideDefs[ sd1].tex1, "-", 8))
-	 strncpy( SideDefs[ sd1].tex1, "BIGDOOR2", 8);
+         strncpy( SideDefs[ sd1].tex1, "BIGDOOR2", 8);
       strncpy( SideDefs[ sd2].tex3, "-", 8);
       UnSelectObject( &ldok, n);
    }
@@ -2082,7 +2084,7 @@ void MakeDoorFromSector( int sector) /* SWAP! */
       /* adjust the textures for the SideDef */
       ObjectsNeeded( OBJ_SIDEDEFS, 0);
       if (!strncmp( SideDefs[ sd1].tex3, "-", 8))
-	 strncpy( SideDefs[ sd1].tex3, "DOORTRAK", 8);
+         strncpy( SideDefs[ sd1].tex3, "DOORTRAK", 8);
       strncpy( SideDefs[ sd1].tex1, "-", 8);
       strncpy( SideDefs[ sd1].tex2, "-", 8);
       UnSelectObject( &ld1s, n);
@@ -2118,27 +2120,27 @@ void MakeLiftFromSector( int sector) /* SWAP! */
       sd2 = LineDefs[ n].sidedef2;
       if (sd1 >= 0 && sd2 >= 0)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (SideDefs[ sd2].sector == sector)
-	 {
-	    SelectObject( &ldok, n); /* already ok */
-	    s = SideDefs[ sd1].sector;
-	    if (s != sector && !IsSelected( sect, s))
-	       SelectObject( &sect, s);
-	 }
-	 if (SideDefs[ sd1].sector == sector)
-	 {
-	    SelectObject( &ldflip, n); /* will be flipped */
-	    s = SideDefs[ sd2].sector;
-	    if (s != sector && !IsSelected( sect, s))
-	       SelectObject( &sect, s);
-	 }
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (SideDefs[ sd2].sector == sector)
+         {
+            SelectObject( &ldok, n); /* already ok */
+            s = SideDefs[ sd1].sector;
+            if (s != sector && !IsSelected( sect, s))
+               SelectObject( &sect, s);
+         }
+         if (SideDefs[ sd1].sector == sector)
+         {
+            SelectObject( &ldflip, n); /* will be flipped */
+            s = SideDefs[ sd2].sector;
+            if (s != sector && !IsSelected( sect, s))
+               SelectObject( &sect, s);
+         }
       }
       else if (sd1 >= 0 && sd2 < 0)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (SideDefs[ sd1].sector == sector)
-	    SelectObject( &ld1s, n); /* wall (one-sided) */
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (SideDefs[ sd1].sector == sector)
+            SelectObject( &ld1s, n); /* wall (one-sided) */
       }
    }
    /* there must be a way to go on the lift... */
@@ -2158,7 +2160,7 @@ void MakeLiftFromSector( int sector) /* SWAP! */
    while (ldflip != NULL)
    {
       if (!IsSelected( ldok, ldflip->objnum))
-	 SelectObject( &ldok, ldflip->objnum);
+         SelectObject( &ldok, ldflip->objnum);
       UnSelectObject( &ldflip, ldflip->objnum);
    }
 
@@ -2172,9 +2174,9 @@ void MakeLiftFromSector( int sector) /* SWAP! */
    for (curs = sect; curs; curs = curs->next)
    {
       if (Sectors[ curs->objnum].floorh < minh)
-	 minh = Sectors[ curs->objnum].floorh;
+         minh = Sectors[ curs->objnum].floorh;
       if (Sectors[ curs->objnum].floorh > maxh)
-	 maxh = Sectors[ curs->objnum].floorh;
+         maxh = Sectors[ curs->objnum].floorh;
    }
    ForgetSelection( &sect);
 
@@ -2204,53 +2206,53 @@ void MakeLiftFromSector( int sector) /* SWAP! */
       ObjectsNeeded( OBJ_SIDEDEFS, 0);
       if (strncmp( SideDefs[ sd1].tex3, "-", 8))
       {
-	 if (!strncmp( SideDefs[ sd1].tex2, "-", 8))
-	    strncpy( SideDefs[ sd1].tex2, SideDefs[ sd1].tex3, 8);
-	 strncpy( SideDefs[ sd1].tex3, "-", 8);
+         if (!strncmp( SideDefs[ sd1].tex2, "-", 8))
+            strncpy( SideDefs[ sd1].tex2, SideDefs[ sd1].tex3, 8);
+         strncpy( SideDefs[ sd1].tex3, "-", 8);
       }
       if (!strncmp( SideDefs[ sd1].tex2, "-", 8))
-	 strncpy( SideDefs[ sd1].tex2, "SHAWN2", 8);
+         strncpy( SideDefs[ sd1].tex2, "SHAWN2", 8);
       /* adjust the textures for the SideDef visible from the lift */
       strncpy( SideDefs[ sd2].tex3, "-", 8);
       s = SideDefs[ sd1].sector;
       ObjectsNeeded( OBJ_SECTORS, 0);
       if (Sectors[ s].floorh > minh)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (strncmp( SideDefs[ sd2].tex3, "-", 8))
-	 {
-	    if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
-	       strncpy( SideDefs[ sd2].tex2, SideDefs[ sd1].tex3, 8);
-	    strncpy( SideDefs[ sd2].tex3, "-", 8);
-	 }
-	 if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
-	    strncpy( SideDefs[ sd2].tex2, "SHAWN2", 8);
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (strncmp( SideDefs[ sd2].tex3, "-", 8))
+         {
+            if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
+               strncpy( SideDefs[ sd2].tex2, SideDefs[ sd1].tex3, 8);
+            strncpy( SideDefs[ sd2].tex3, "-", 8);
+         }
+         if (!strncmp( SideDefs[ sd2].tex2, "-", 8))
+            strncpy( SideDefs[ sd2].tex2, "SHAWN2", 8);
       }
       else
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 strncpy( SideDefs[ sd2].tex2, "-", 8);
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         strncpy( SideDefs[ sd2].tex2, "-", 8);
       }
       strncpy( SideDefs[ sd2].tex3, "-", 8);
       ObjectsNeeded( OBJ_SECTORS, 0);
       /* if the ceiling of the Sector is lower than that of the lift */
       if (Sectors[ s].ceilh < Sectors[ sector].ceilh)
       {
-	 ObjectsNeeded( OBJ_SIDEDEFS, 0);
-	 if (strncmp( SideDefs[ sd2].tex1, "-", 8))
-	    strncpy( SideDefs[ sd2].tex1, DefaultUpperTexture, 8);
+         ObjectsNeeded( OBJ_SIDEDEFS, 0);
+         if (strncmp( SideDefs[ sd2].tex1, "-", 8))
+            strncpy( SideDefs[ sd2].tex1, DefaultUpperTexture, 8);
       }
       ObjectsNeeded( OBJ_SECTORS, 0);
       /* if the floor of the Sector is above the lift */
       if (Sectors[ s].floorh >= Sectors[ sector].floorh)
       {
-	 ObjectsNeeded( OBJ_LINEDEFS, 0);
-	 LineDefs[ n].type = 88; /* lower lift (walk through) */
-	 /* flip it, just for fun */
-	 curs = NULL;
-	 SelectObject( &curs, n);
-	 FlipLineDefs( curs, TRUE);
-	 ForgetSelection( &curs);
+         ObjectsNeeded( OBJ_LINEDEFS, 0);
+         LineDefs[ n].type = 88; /* lower lift (walk through) */
+         /* flip it, just for fun */
+         curs = NULL;
+         SelectObject( &curs, n);
+         FlipLineDefs( curs, TRUE);
+         ForgetSelection( &curs);
       }
       /* done with this LineDef */
       UnSelectObject( &ldok, n);
@@ -2266,7 +2268,7 @@ void MakeLiftFromSector( int sector) /* SWAP! */
       /* adjust the textures for the SideDef */
       ObjectsNeeded( OBJ_SIDEDEFS, 0);
       if (!strncmp( SideDefs[ sd1].tex3, "-", 8))
-	 strncpy( SideDefs[ sd1].tex3, DefaultWallTexture, 8);
+         strncpy( SideDefs[ sd1].tex3, DefaultWallTexture, 8);
       strncpy( SideDefs[ sd1].tex1, "-", 8);
       strncpy( SideDefs[ sd1].tex2, "-", 8);
       UnSelectObject( &ld1s, n);
@@ -2290,13 +2292,13 @@ int GetTextureRefHeight( int sidedef) /* SWAP! */
    {
       if (LineDefs[ l].sidedef1 == sidedef)
       {
-	 otherside = LineDefs[ l].sidedef2;
-	 break;
+         otherside = LineDefs[ l].sidedef2;
+         break;
       }
       if (LineDefs[ l].sidedef2 == sidedef)
       {
-	 otherside = LineDefs[ l].sidedef1;
-	 break;
+         otherside = LineDefs[ l].sidedef1;
+         break;
       }
    }
    /* get the Sector number */
@@ -2308,9 +2310,9 @@ int GetTextureRefHeight( int sidedef) /* SWAP! */
       l = SideDefs[ otherside].sector;
       if (l > 0)
       {
-	 ObjectsNeeded( OBJ_SECTORS, 0);
-	 if (Sectors[ l].ceilh < Sectors[ sector].ceilh && Sectors[ l].ceilh > Sectors[ sector].floorh)
-	    sector = l;
+         ObjectsNeeded( OBJ_SECTORS, 0);
+         if (Sectors[ l].ceilh < Sectors[ sector].ceilh && Sectors[ l].ceilh > Sectors[ sector].floorh)
+            sector = l;
       }
    }
    /* return the altitude of the ceiling */
@@ -2361,277 +2363,277 @@ void AlignTexturesY( SelPtr *sdlist) /* SWAP! */
 
 
 /*
-	Function is to align all highlighted textures in the X-axis
+        Function is to align all highlighted textures in the X-axis
 
-	Note from RJH:
-		LineDefs highlighted are read off in reverse order of highlighting.
-		The '*sdlist' is in the reverse order of the above mentioned LineDefs
-		i.e. the first LineDef SideDefs you highlighted will be processed first.
+        Note from RJH:
+                LineDefs highlighted are read off in reverse order of highlighting.
+                The '*sdlist' is in the reverse order of the above mentioned LineDefs
+                i.e. the first LineDef SideDefs you highlighted will be processed first.
 
-	Note from RQ:
-		See also the note for the previous function.
+        Note from RQ:
+                See also the note for the previous function.
 
-	Note from RJH:
-		For the menu for aligning textures 'X' NOW operates upon the fact that
-		ALL the SIDEDEFS from the selected LINEDEFS are in the *SDLIST, 2nd
-		SideDef is first, 1st SideDef is 2nd). Aligning textures X now does
-		SIDEDEF 1's and SIDEDEF 2's.  If the selection process is changed,
-		the following needs to be altered radically.
+        Note from RJH:
+                For the menu for aligning textures 'X' NOW operates upon the fact that
+                ALL the SIDEDEFS from the selected LINEDEFS are in the *SDLIST, 2nd
+                SideDef is first, 1st SideDef is 2nd). Aligning textures X now does
+                SIDEDEF 1's and SIDEDEF 2's.  If the selection process is changed,
+                the following needs to be altered radically.
 */
 
 void AlignTexturesX(SelPtr *sdlist) /* SWAP! */
 {
-	char texname[9];       	/* FIRST texture name used in the highlited objects */
-	char errormessage[80];	/* area to hold the error messages produced */
-	int  ldef;		/* linedef number */
-	int  sd1;         	/* current SideDef in *sdlist */
-	int  vert1, vert2;	/* vertex 1 and 2 for the linedef under scrutiny */
-	int  xoffset;		/* xoffset accumulator */
-	int  useroffset;        /* user input offset for first input */
-	int  texlength;        	/* the length of texture to format to */
-	int  length;		/* length of linedef under scrutiny */
-	int  dummy;		/* holds useless data */
-	int  type_off;		/* do we have an initial offset to use */
-	int  type_tex;          /* do we check for same textures */
-	int  type_sd;		/* do we align SideDef 1 or SideDef2 */
+        char texname[9];        /* FIRST texture name used in the highlited objects */
+        char errormessage[80];  /* area to hold the error messages produced */
+        int  ldef;              /* linedef number */
+        int  sd1;               /* current SideDef in *sdlist */
+        int  vert1, vert2;      /* vertex 1 and 2 for the linedef under scrutiny */
+        int  xoffset;           /* xoffset accumulator */
+        int  useroffset;        /* user input offset for first input */
+        int  texlength;         /* the length of texture to format to */
+        int  length;            /* length of linedef under scrutiny */
+        int  dummy;             /* holds useless data */
+        int  type_off;          /* do we have an initial offset to use */
+        int  type_tex;          /* do we check for same textures */
+        int  type_sd;           /* do we align SideDef 1 or SideDef2 */
 
-	type_sd  = 0;     /* which SideDef to align, 1 = SideDef1, 2 = SideDef2 */
-	type_tex = 0;     /* do we test for similar textures, 0 = inactive, 1 = active */
-	type_off = 0;     /* do we have an inital offset, 0 = inactive, 1 = active */
+        type_sd  = 0;     /* which SideDef to align, 1 = SideDef1, 2 = SideDef2 */
+        type_tex = 0;     /* do we test for similar textures, 0 = inactive, 1 = active */
+        type_off = 0;     /* do we have an inital offset, 0 = inactive, 1 = active */
 
-	vert1   = -1;
-	vert2   = -1;		/* first time round the while loop the -1 value is needed */
-	texlength  = 0;
-	xoffset    = 0;
-	useroffset = 0;
+        vert1   = -1;
+        vert2   = -1;           /* first time round the while loop the -1 value is needed */
+        texlength  = 0;
+        xoffset    = 0;
+        useroffset = 0;
 
-	switch(DisplayMenu( 250, 110, "Aligning textures 'X' menu:",
+        switch(DisplayMenu( 250, 110, "Aligning textures 'Y' menu:",
 
-			  " SideDef 1,  Check for identical textures.     ",
-			  " SideDef 1,  As above, but with inital offset. ",
-			  " SideDef 1,  No texture checking.              ",
-			  " SideDef 1,  As above, but with inital offset. ",
+                          " SideDef 1,  Check for identical textures.     ",
+                          " SideDef 1,  As above, but with inital offset. ",
+                          " SideDef 1,  No texture checking.              ",
+                          " SideDef 1,  As above, but with inital offset. ",
 
-			  " SideDef 2, Check for identical textures.     ",
-			  " SideDef 2, As above, but with inital offset. ",
-			  " SideDef 2, No texture checking.              ",
-			  " SideDef 2, As above, but with inital offset. ",
-			  NULL))
-		{
-		 case 1: 		/* SideDef 1 with checking for same textures   */
-			type_sd = 1; type_tex = 1; type_off = 0;
-			break;
+                          " SideDef 2, Check for identical textures.     ",
+                          " SideDef 2, As above, but with inital offset. ",
+                          " SideDef 2, No texture checking.              ",
+                          " SideDef 2, As above, but with inital offset. ",
+                          NULL))
+                {
+                 case 1:                /* SideDef 1 with checking for same textures   */
+                        type_sd = 1; type_tex = 1; type_off = 0;
+                        break;
 
-		 case 2: 		/* SideDef 1 as above, but with inital offset  */
-			type_sd = 1; type_tex = 1; type_off = 1;
-			break;
+                 case 2:                /* SideDef 1 as above, but with inital offset  */
+                        type_sd = 1; type_tex = 1; type_off = 1;
+                        break;
 
-		 case 3: 		/* SideDef 1 regardless of same textures       */
-			type_sd = 1; type_tex = 0; type_off = 0;
-			break;
+                 case 3:                /* SideDef 1 regardless of same textures       */
+                        type_sd = 1; type_tex = 0; type_off = 0;
+                        break;
 
-		 case 4: 		/* SideDef 1 as above, but with inital offset  */
-			type_sd = 1; type_tex = 0; type_off = 1;
-			break;
+                 case 4:                /* SideDef 1 as above, but with inital offset  */
+                        type_sd = 1; type_tex = 0; type_off = 1;
+                        break;
 
-		 case 5: 		/* SideDef 2 with checking for same textures   */
-			type_sd = 2; type_tex = 1; type_off = 0;
-			break;
+                 case 5:                /* SideDef 2 with checking for same textures   */
+                        type_sd = 2; type_tex = 1; type_off = 0;
+                        break;
 
-		 case 6: 		/* SideDef 2 as above, but with initial offset */
-			type_sd = 2; type_tex = 1; type_off = 1;
-			break;
+                 case 6:                /* SideDef 2 as above, but with initial offset */
+                        type_sd = 2; type_tex = 1; type_off = 1;
+                        break;
 
-		 case 7: 		/* SideDef 2 regardless of same textures       */
-			type_sd = 2; type_tex = 0; type_off = 0;
-			break;
+                 case 7:                /* SideDef 2 regardless of same textures       */
+                        type_sd = 2; type_tex = 0; type_off = 0;
+                        break;
 
-		 case 8: /* SideDef 2 as above, but with initial offset       */
-			type_sd = 2; type_tex = 0; type_off = 1;
-			break;
-		}
+                 case 8: /* SideDef 2 as above, but with initial offset       */
+                        type_sd = 2; type_tex = 0; type_off = 1;
+                        break;
+                }
 
-	ldef = 0;
-	sd1 = (*sdlist) ->objnum;
+        ldef = 0;
+        sd1 = (*sdlist) ->objnum;
 
-	if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
-	{
-		while((*sdlist)!=NULL && LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
-		{
-			ldef++;
-			if(LineDefs[ldef].sidedef2 == sd1)
-			{
-				UnSelectObject(sdlist, (*sdlist)->objnum);
-				sd1 = (*sdlist) ->objnum;
-				ldef = 0;
-				if((*sdlist)==NULL)
-					return;
-			}
-		}
-	}
+        if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
+        {
+                while((*sdlist)!=NULL && LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
+                {
+                        ldef++;
+                        if(LineDefs[ldef].sidedef2 == sd1)
+                        {
+                                UnSelectObject(sdlist, (*sdlist)->objnum);
+                                sd1 = (*sdlist) ->objnum;
+                                ldef = 0;
+                                if((*sdlist)==NULL)
+                                        return;
+                        }
+                }
+        }
 
-	if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
-	{
-		while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
-		{
-			ldef++;
-			if(LineDefs[ldef].sidedef1 == sd1)
-			{
-				UnSelectObject(sdlist, (*sdlist)->objnum);
-				sd1 = (*sdlist) ->objnum;
-				ldef = 0;
-				if((*sdlist) == NULL)
-					return;
-			}
-		}
-	}
+        if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
+        {
+                while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
+                {
+                        ldef++;
+                        if(LineDefs[ldef].sidedef1 == sd1)
+                        {
+                                UnSelectObject(sdlist, (*sdlist)->objnum);
+                                sd1 = (*sdlist) ->objnum;
+                                ldef = 0;
+                                if((*sdlist) == NULL)
+                                        return;
+                        }
+                }
+        }
 
-	ObjectsNeeded( OBJ_SIDEDEFS, 0);
+        ObjectsNeeded( OBJ_SIDEDEFS, 0);
 
-	/* get texture name of the SideDef in the *sdlist) */
-	strncpy( texname, SideDefs[ (*sdlist)->objnum].tex3, 8);
+        /* get texture name of the SideDef in the *sdlist) */
+        strncpy( texname, SideDefs[ (*sdlist)->objnum].tex3, 8);
 
-	/* test if there is a texture there */
-	if (texname[0] == '-')
-	{
-		Beep();
-		sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
-		Notify( -1, -1, errormessage, NULL);
-		return;
-	}
+        /* test if there is a texture there */
+        if (texname[0] == '-')
+        {
+                Beep();
+                sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
+                Notify( -1, -1, errormessage, NULL);
+                return;
+        }
 
-	GetWallTextureSize( &texlength, &dummy, texname); /* clunky, but it works */
+        GetWallTextureSize( &texlength, &dummy, texname); /* clunky, but it works */
 
-	/* get initial offset to use (if requrired) */
-	if(type_off == 1)    /* source taken from InputObjectNumber */
-	{
-		int  x0;          /* left hand (x) window start     */
-		int  y0;		      /* top (y) window start           */
-		int  key;			/* holds value returned by InputInteger */
-		char prompt[80];  /* prompt for inital offset input */
+        /* get initial offset to use (if requrired) */
+        if(type_off == 1)    /* source taken from InputObjectNumber */
+        {
+                int  x0;          /* left hand (x) window start     */
+                int  y0;                      /* top (y) window start           */
+                int  key;                       /* holds value returned by InputInteger */
+                char prompt[80];  /* prompt for inital offset input */
 
-		if(UseMouse)
-			HideMousePointer();
+                if(UseMouse)
+                        HideMousePointer();
 
-		sprintf(prompt, "Enter initial offset between 0 and %d:", texlength);
+                sprintf(prompt, "Enter initial offset between 0 and %d:", texlength);
 
-		x0 = (ScrMaxX - 25 - 8 * strlen(prompt)) / 2;
-		y0 = (ScrMaxY - 55) / 2;
+                x0 = (ScrMaxX - 25 - 8 * strlen(prompt)) / 2;
+                y0 = (ScrMaxY - 55) / 2;
 
-		DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
-		SetColor( WHITE);
-		DrawScreenText( x0 + 10, y0 + 8, prompt);
+                DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
+                SetColor( WHITE);
+                DrawScreenText( x0 + 10, y0 + 8, prompt);
 
-		while ( ((key=InputInteger(x0+10, y0+28, &useroffset, 0, texlength))&0x00FF)!=0x000D
-					&& (key & 0x00FF) != 0x001B)
-			Beep();
+                while ( ((key=InputInteger(x0+10, y0+28, &useroffset, 0, texlength))&0x00FF)!=0x000D
+                                        && (key & 0x00FF) != 0x001B)
+                        Beep();
 
-		if (UseMouse)
-			ShowMousePointer();
-	}
+                if (UseMouse)
+                        ShowMousePointer();
+        }
 
-	while (*sdlist != NULL)  /* main processing loop */
-	{
-		ldef = 0;
-		sd1 = (*sdlist)->objnum;
+        while (*sdlist != NULL)  /* main processing loop */
+        {
+                ldef = 0;
+                sd1 = (*sdlist)->objnum;
 
-		if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
-		{
-			while(LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
-			{
-				ldef++;
-				if(LineDefs[ldef].sidedef2 == sd1)
-				{
-					UnSelectObject(sdlist, (*sdlist)->objnum);
-					sd1 = (*sdlist) ->objnum;
-					ldef = 0;
-					if((*sdlist) == NULL)
-						return;
-				}
-			}
-		}
+                if(type_sd == 1) /* throw out all 2nd SideDefs untill a 1st is found */
+                {
+                        while(LineDefs[ldef].sidedef1!=sd1 && ldef<=NumLineDefs)
+                        {
+                                ldef++;
+                                if(LineDefs[ldef].sidedef2 == sd1)
+                                {
+                                        UnSelectObject(sdlist, (*sdlist)->objnum);
+                                        sd1 = (*sdlist) ->objnum;
+                                        ldef = 0;
+                                        if((*sdlist) == NULL)
+                                                return;
+                                }
+                        }
+                }
 
-		if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
-		{
-			while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
-			{
-				ldef++;
-				if(LineDefs[ldef].sidedef1 == sd1)
-				{
-					UnSelectObject(sdlist, (*sdlist)->objnum);
-					sd1 = (*sdlist) ->objnum;
-					ldef = 0;
-					if((*sdlist) == NULL)
-						return;
-				}
-			}
-		}
+                if(type_sd == 2) /* throw out all 1st SideDefs untill a 2nd is found */
+                {
+                        while(LineDefs[ldef].sidedef2!=sd1 && ldef<=NumLineDefs)
+                        {
+                                ldef++;
+                                if(LineDefs[ldef].sidedef1 == sd1)
+                                {
+                                        UnSelectObject(sdlist, (*sdlist)->objnum);
+                                        sd1 = (*sdlist) ->objnum;
+                                        ldef = 0;
+                                        if((*sdlist) == NULL)
+                                                return;
+                                }
+                        }
+                }
 
-		if(type_tex == 1) /* do we test for same textures for the SideDef in question?? */
+                if(type_tex == 1) /* do we test for same textures for the SideDef in question?? */
 
-		{
-			ObjectsNeeded( OBJ_SIDEDEFS, 0);
-			if (strncmp( SideDefs[ (*sdlist)->objnum].tex3, texname,8))
-			{
-				Beep();
-				sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
-				Notify( -1, -1, errormessage, NULL);
-				return;
-			}
-		}
+                {
+                        ObjectsNeeded( OBJ_SIDEDEFS, 0);
+                        if (strncmp( SideDefs[ (*sdlist)->objnum].tex3, texname,8))
+                        {
+                                Beep();
+                                sprintf( errormessage, "No texture for SideDef #%d.", (*sdlist)->objnum);
+                                Notify( -1, -1, errormessage, NULL);
+                                return;
+                        }
+                }
 
-		sd1 = (*sdlist)->objnum;
-		ldef = 0;
+                sd1 = (*sdlist)->objnum;
+                ldef = 0;
 
-		ObjectsNeeded(OBJ_LINEDEFS,0);
+                ObjectsNeeded(OBJ_LINEDEFS,0);
 
-		/* find out which LineDef holds that SideDef */
-		if(type_sd == 1)
-		{
-			while (LineDefs[ ldef].sidedef1 != sd1 && ldef < NumLineDefs)
-				ldef++;
-		}
-		else
-		{
-			while (LineDefs[ ldef].sidedef2 != sd1 && ldef < NumLineDefs)
-				ldef++;
-		}
+                /* find out which LineDef holds that SideDef */
+                if(type_sd == 1)
+                {
+                        while (LineDefs[ ldef].sidedef1 != sd1 && ldef < NumLineDefs)
+                                ldef++;
+                }
+                else
+                {
+                        while (LineDefs[ ldef].sidedef2 != sd1 && ldef < NumLineDefs)
+                                ldef++;
+                }
 
-		vert1 = LineDefs[ ldef].start;
-		/* test for linedef highlight continuity */
-		if (vert1 != vert2 && vert2 != -1)
-		{
-			Beep();
-			sprintf( errormessage, "LineDef #%d is not contiguous with the previous LineDef, please reselect.", (*sdlist)->objnum);
-			Notify( -1, -1, errormessage, NULL);
-			return;
-		}
-		/* is this the first time round here */
-		if(vert1 != vert2)
-		{
-			if(type_off == 1)  /* do we have an initial offset ? */
-			{
-				SideDefs[sd1].xoff = useroffset;
-				xoffset = useroffset;
-			}
-			else
-				SideDefs[sd1].xoff = 0;
-		}
-		else		/* put new xoffset into the SideDef */
-			SideDefs[sd1].xoff = xoffset;
+                vert1 = LineDefs[ ldef].start;
+                /* test for linedef highlight continuity */
+                if (vert1 != vert2 && vert2 != -1)
+                {
+                        Beep();
+                        sprintf( errormessage, "LineDef #%d is not contiguous with the previous LineDef, please reselect.", (*sdlist)->objnum);
+                        Notify( -1, -1, errormessage, NULL);
+                        return;
+                }
+                /* is this the first time round here */
+                if(vert1 != vert2)
+                {
+                        if(type_off == 1)  /* do we have an initial offset ? */
+                        {
+                                SideDefs[sd1].xoff = useroffset;
+                                xoffset = useroffset;
+                        }
+                        else
+                                SideDefs[sd1].xoff = 0;
+                }
+                else            /* put new xoffset into the SideDef */
+                        SideDefs[sd1].xoff = xoffset;
 
-		/* calculate length of LineDef */
-		vert2 = LineDefs[ldef].end;
-		ObjectsNeeded( OBJ_VERTEXES, 0);
-		length = ComputeDist( Vertexes[vert2].x - Vertexes[vert1].x, Vertexes[vert2].y - Vertexes[vert1].y);
+                /* calculate length of LineDef */
+                vert2 = LineDefs[ldef].end;
+                ObjectsNeeded( OBJ_VERTEXES, 0);
+                length = ComputeDist( Vertexes[vert2].x - Vertexes[vert1].x, Vertexes[vert2].y - Vertexes[vert1].y);
 
-		xoffset += length;
-		/* remove multiples of texlength from xoffset */
-		xoffset = xoffset % texlength;
-		/* move to next object in selected list */
-		UnSelectObject( sdlist, (*sdlist)->objnum);
-	}
-	MadeChanges = TRUE;
+                xoffset += length;
+                /* remove multiples of texlength from xoffset */
+                xoffset = xoffset % texlength;
+                /* move to next object in selected list */
+                UnSelectObject( sdlist, (*sdlist)->objnum);
+        }
+        MadeChanges = TRUE;
 }
 
 
@@ -2695,3 +2697,4 @@ void DistributeSectorCeilings( SelPtr obj) /* SWAP! */
 
 
 /* end of file */
+

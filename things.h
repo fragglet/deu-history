@@ -21,6 +21,7 @@
 #define THING_BLUESKULLKEY    40
 #define THING_YELLOWSKULLKEY  39
 #define THING_REDSKULLKEY     38
+#define THING_MEGASPHERE      83
 #define THING_ARMBONUS1       2015
 #define THING_HLTBONUS1       2014
 #define THING_GREENARMOR      2018
@@ -51,21 +52,32 @@
 #define THING_ENERGYCELL      2047
 #define THING_ENERGYPACK      17
 #define THING_BACKPACK        8
+#define THING_SUPERSHOTGUN    82
 
 /* enemies */
 #define THING_SARGEANT        9
 #define THING_TROOPER         3004
+#define THING_HEAVYWEAPONDUDE 65
 #define THING_IMP             3001
+#define THING_REVENANT        66
 #define THING_DEMON           3002
 #define THING_BARON           3003
+#define THING_HELLKNIGHT      69
 #define THING_SPECTOR         58
 #define THING_CACODEMON       3005
+#define THING_PAIN            71
 #define THING_LOSTSOUL        3006
+#define THING_ARACHNOTRON     68
+#define THING_ARCHVILE        64
+#define THING_MANCUBUS        67
+#define THING_NAZI            84
 #define THING_SPIDERBOSS      7
 #define THING_CYBERDEMON      16
 
 /* decorations */
 #define THING_BARREL          2035
+#define THING_FUELCAN         70
+#define THING_GARFIELD        81
 #define THING_TECHCOLUMN      48
 #define THING_TGREENPILLAR    30
 #define THING_TREDPILLAR      32
@@ -77,6 +89,7 @@
 #define THING_GREYTREE        43
 #define THING_BROWNSTUB       47
 #define THING_BROWNTREE       54
+#define THING_COMMANDERKEEN   72
 
 /* decorations 2 */
 #define THING_LAMP            2028
@@ -88,6 +101,8 @@
 #define THING_SBLUETORCH      55
 #define THING_SGREENTORCH     56
 #define THING_SREDTORCH       57
+#define THING_TALLLAMP1       85
+#define THING_TALLLAMP2       86
 
 /* decorations 3 */
 #define THING_DEADPLAYER      15
@@ -97,6 +112,12 @@
 #define THING_DEADDEMON       21
 #define THING_DEADCACODEMON   22
 #define THING_DEADLOSTSOUL    23
+#define THING_DEADARCHVILE1   73
+#define THING_DEADARCHVILE2   74
+#define THING_DEADARCHVILE3   75
+#define THING_DEADARCHVILE4   76
+#define THING_DEADARCHVILE5   77
+#define THING_DEADARCHVILE6   78
 #define THING_BONES           10
 #define THING_BONES2          12
 #define THING_POOLOFBLOOD     24
@@ -121,5 +142,9 @@
 
 /* teleport arrival */
 #define THING_TELEPORT        14
+#define THING_SPAWNSPOT       87
+#define THING_FINALENEMY      88
+#define THING_SPAWNSOURCE     89
 
 /* end of file */
+

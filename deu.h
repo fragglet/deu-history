@@ -26,7 +26,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.21"	/* the version number */
+#define DEU_VERSION     "5.25"  /* the version number */
 
 
 
@@ -38,9 +38,9 @@
 typedef struct Directory huge *DirPtr;
 struct Directory
 {
-   long start;			/* offset to start of data */
-   long size;			/* byte size of data */
-   char name[ 8];		/* name of data block */
+   long start;                  /* offset to start of data */
+   long size;                   /* byte size of data */
+   char name[ 8];               /* name of data block */
 };
 
 
@@ -55,13 +55,13 @@ struct Directory
 typedef struct WadFileInfo huge *WadPtr;
 struct WadFileInfo
 {
-   WadPtr next;			/* next file in linked list */
-   char *filename;		/* name of the wad file */
-   FILE *fileinfo;		/* C file stream information */
-   char type[ 4];		/* type of wad file (IWAD or PWAD) */
-   long dirsize;		/* directory size of WAD */
-   long dirstart;		/* offset to start of directory */
-   DirPtr directory;		/* array of directory information */
+   WadPtr next;                 /* next file in linked list */
+   char *filename;              /* name of the wad file */
+   FILE *fileinfo;              /* C file stream information */
+   char type[ 4];               /* type of wad file (IWAD or PWAD) */
+   long dirsize;                /* directory size of WAD */
+   long dirstart;               /* offset to start of directory */
+   DirPtr directory;            /* array of directory information */
 };
 
 
@@ -74,9 +74,9 @@ struct WadFileInfo
 typedef struct MasterDirectory huge *MDirPtr;
 struct MasterDirectory
 {
-   MDirPtr next;		/* next in list */
-   WadPtr wadfile;		/* file of origin */
-   struct Directory dir;	/* directory data */
+   MDirPtr next;                /* next in list */
+   WadPtr wadfile;              /* file of origin */
+   struct Directory dir;        /* directory data */
 };
 
 
@@ -88,8 +88,8 @@ struct MasterDirectory
 typedef struct SelectionList *SelPtr;
 struct SelectionList
 {
-   SelPtr next;			/* next in list */
-   int objnum;			/* object number */
+   SelPtr next;                 /* next in list */
+   int objnum;                  /* object number */
 };
 
 
@@ -105,19 +105,19 @@ typedef int Bool;               /* Boolean data: true or false */
 
 typedef struct
 {
-   char *short_name;		/* abbreviated command line argument */
-   char *long_name;		/* command line arg. or keyword */
-   enum				/* type of this option */
+   char *short_name;            /* abbreviated command line argument */
+   char *long_name;             /* command line arg. or keyword */
+   enum                         /* type of this option */
    {
-      OPT_BOOLEAN,			/* boolean (toggle) */
-      OPT_INTEGER,			/* integer number */
-      OPT_STRING,			/* character string */
-      OPT_STRINGACC,			/* character string, but store in a list */
-      OPT_STRINGLIST,			/* list of character strings */
-      OPT_END				/* end of the options description */
+      OPT_BOOLEAN,                      /* boolean (toggle) */
+      OPT_INTEGER,                      /* integer number */
+      OPT_STRING,                       /* character string */
+      OPT_STRINGACC,                    /* character string, but store in a list */
+      OPT_STRINGLIST,                   /* list of character strings */
+      OPT_END                           /* end of the options description */
    } opt_type;
-   char *msg_if_true;		/* message printed if option is true */
-   char *msg_if_false;		/* message printed if option is false */
+   char *msg_if_true;           /* message printed if option is true */
+   char *msg_if_false;          /* message printed if option is false */
    void *data_ptr;              /* pointer to the data */
 } OptDesc;
 
@@ -127,37 +127,37 @@ typedef struct
 */
 
 /* name of the configuration file */
-#define DEU_CONFIG_FILE		"DEU.INI"
+#define DEU_CONFIG_FILE         "ADE2.INI"
 
 /* name of the log file (debug mode) */
-#define DEU_LOG_FILE		"DEU.LOG"
+#define DEU_LOG_FILE            "ADE2.LOG"
 
 /* convert screen coordinates to map coordinates */
-#define MAPX(x)			(OrigX + (int) (((x) - ScrCenterX) / Scale))
-#define MAPY(y)			(OrigY + (int) ((ScrCenterY - (y)) / Scale))
+#define MAPX(x)                 (OrigX + (int) (((x) - ScrCenterX) / Scale))
+#define MAPY(y)                 (OrigY + (int) ((ScrCenterY - (y)) / Scale))
 
 /* convert map coordinates to screen coordinates */
-#define SCREENX(x)		(ScrCenterX + (int) (((x) - OrigX) * Scale))
-#define SCREENY(y)		(ScrCenterY + (int) ((OrigY - (y)) * Scale))
+#define SCREENX(x)              (ScrCenterX + (int) (((x) - OrigX) * Scale))
+#define SCREENY(y)              (ScrCenterY + (int) ((OrigY - (y)) * Scale))
 
 /* object types */
-#define OBJ_THINGS		1
-#define OBJ_LINEDEFS		2
-#define OBJ_SIDEDEFS		3
-#define OBJ_VERTEXES		4
-#define OBJ_SEGS		5
-#define OBJ_SSECTORS		6
-#define OBJ_NODES		7
-#define OBJ_SECTORS		8
-#define OBJ_REJECT		9
-#define OBJ_BLOCKMAP		10
+#define OBJ_THINGS              1
+#define OBJ_LINEDEFS            2
+#define OBJ_SIDEDEFS            3
+#define OBJ_VERTEXES            4
+#define OBJ_SEGS                5
+#define OBJ_SSECTORS            6
+#define OBJ_NODES               7
+#define OBJ_SECTORS             8
+#define OBJ_REJECT              9
+#define OBJ_BLOCKMAP            10
 
 /* boolean constants */
-#define TRUE			1
-#define FALSE			0
+#define TRUE                    1
+#define FALSE                   0
 
 /* half the size of an object (Thing or Vertex) in map coords */
-#define OBJSIZE			7
+#define OBJSIZE                 7
 
 
 /*
@@ -165,45 +165,54 @@ typedef struct
 */
 
 /* from deu.c */
-extern Bool  Registered;	/* registered or shareware WAD file? */
-extern Bool  Debug;		/* are we debugging? */
-extern Bool  SwapButtons;	/* swap right and middle mouse buttons */
-extern Bool  Quiet;		/* don't play a sound when an object is selected */
-extern Bool  Quieter;		/* don't play any sound, even when an error occurs */
-extern Bool  Expert;		/* don't ask for confirmation for some operations */
-extern int   InitialScale;	/* initial zoom factor for map */
-extern int   VideoMode;		/* default video mode for VESA cards */
-extern char *BGIDriver;		/* default extended BGI driver */
-extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
-extern Bool  CirrusCursor;	/* use hardware cursor on Cirrus Logic VGA cards */
-extern Bool  Colour2;		/* use the alternate set for things colors */
-extern Bool  AdditiveSelBox;	/* additive selection box or select in box only? */
-extern int   SplitFactor;	/* factor used by the Nodes builder */
-extern Bool  Select0;		/* select object 0 by default when switching modes */
-extern char *MainWad;		/* name of the main wad file */
-extern FILE *logfile;		/* filepointer to the error log */
+extern Bool  Registered;        /* registered or shareware WAD file? */
+extern Bool  Debug;             /* are we debugging? */
+extern Bool  SwapButtons;       /* swap right and middle mouse buttons */
+extern Bool  Quiet;             /* don't play a sound when an object is selected */
+extern Bool  Quieter;           /* don't play any sound, even when an error occurs */
+extern Bool  Expert;            /* don't ask for confirmation for some operations */
+extern int   InitialScale;      /* initial zoom factor for map */
+extern int   VideoMode;         /* default video mode for VESA cards */
+extern char *BGIDriver;         /* default extended BGI driver */
+extern Bool  FakeCursor;        /* use a "fake" mouse cursor */
+extern Bool  CirrusCursor;      /* use hardware cursor on Cirrus Logic VGA cards */
+extern Bool  Colour2;           /* use the alternate set for things colors */
+extern Bool  AdditiveSelBox;    /* additive selection box or select in box only? */
+extern int   SplitFactor;       /* factor used by the Nodes builder */
+extern int   MoveSpeed;         /* pixels to scroll when pointer at edge of screen */
+extern Bool  AutoBSP;           /* run BSP automatically when necessary */
+extern Bool  DoBSP;             /* run BSP automatically */
+extern char  *BSPprog;          /* BSP program name */
+extern Bool  Select0;           /* select object 0 by default when switching modes */
+extern char *MainWad;           /* name of the main wad file */
+extern FILE *logfile;           /* filepointer to the error log */
+extern Bool  buildflag;         /* rebuild flag */
+extern char *BSPfile;
 
 /* from wads.c */
-extern WadPtr  WadFileList;	/* list of wad files */
-extern MDirPtr MasterDir;	/* the master directory */
+extern WadPtr  WadFileList;     /* list of wad files */
+extern MDirPtr MasterDir;       /* the master directory */
+extern int tempint;             /* Integer for temporary files */
+extern Bool buildlev;
 
 /* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
+extern int buildlev;            /* should the Doom 1 level be rebuild? */
 
 /* from gfx.c */
-extern int   GfxMode;		/* current graphics mode, or 0 for text */
-extern float Scale;		/* scale to draw map 20 to 1 */
-extern int   OrigX;		/* the X origin */
-extern int   OrigY;		/* the Y origin */
-extern int   PointerX;		/* X position of pointer */
-extern int   PointerY;		/* Y position of pointer */
-extern int   ScrMaxX;		/* maximum X screen coord */
-extern int   ScrMaxY;		/* maximum Y screen coord */
-extern int   ScrCenterX;	/* X coord of screen center */
-extern int   ScrCenterY;	/* Y coord of screen center */
+extern int   GfxMode;           /* current graphics mode, or 0 for text */
+extern float Scale;             /* scale to draw map 20 to 1 */
+extern int   OrigX;             /* the X origin */
+extern int   OrigY;             /* the Y origin */
+extern int   PointerX;          /* X position of pointer */
+extern int   PointerY;          /* Y position of pointer */
+extern int   ScrMaxX;           /* maximum X screen coord */
+extern int   ScrMaxY;           /* maximum Y screen coord */
+extern int   ScrCenterX;        /* X coord of screen center */
+extern int   ScrCenterY;        /* Y coord of screen center */
 
 /* from mouse.c */
-extern Bool UseMouse;		/* is there a mouse driver? */
+extern Bool UseMouse;           /* is there a mouse driver? */
 
 
 
@@ -235,8 +244,10 @@ void FreeFarMemory( void huge *);
 /* from wads.c */
 void OpenMainWad( char *);
 void OpenPatchWad( char *);
+void OpenTransWad( char *);
 void CloseWadFiles( void);
 void CloseUnusedWadFiles( void);
+void DoBuild( void);
 WadPtr BasicWadOpen( char *);
 void BasicWadRead( WadPtr, void huge *, long);
 void BasicWadSeek( WadPtr, long);
@@ -251,6 +262,7 @@ void DumpDirectoryEntry( FILE *, char *);
 void SaveDirectoryEntry( FILE *, char *);
 void SaveEntryToRawFile( FILE *, char *);
 void SaveEntryFromRawFile( FILE *, FILE *, char *);
+char *GetTemporary( void);
 
 /* from levels.c */
 void ReadLevelData( int, int); /* SWAP! */
@@ -264,10 +276,14 @@ void ForgetWTextureNames( void);
 /* from edit.c */
 void EditLevel( int, int, Bool);
 void SelectLevel( int *, int *);
+void SelectTranslatedLevel( int *, int *, char *);
 void EditorLoop( int, int); /* SWAP! */
 void DrawMap( int, int, Bool); /* SWAP! */
 void CenterMapAroundCoords( int, int);
 void GoToObject( int, int); /* SWAP! */
+void ConvertSidedefs( void);
+void ConvertTexture( char *);
+char *GetWadFileName( int, int);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -378,6 +394,7 @@ void DistributeSectorCeilings( SelPtr); /* SWAP! */
 
 /* from editobj.c */
 void DisplayObjectInfo( int, int); /* SWAP! */
+void DisplayLevelName( int, int, int, int, int);
 int DisplayThingsMenu( int, int, char *, ...);
 int DisplayLineDefTypeMenu( int, int, char *, ...);
 int InputObjectNumber( int, int, int, int);
@@ -406,3 +423,4 @@ void ObjectsNeeded( int, ...);
 
 
 /* end of file */
+

@@ -1,5 +1,5 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -27,8 +27,8 @@
       about memory fragmentation.
 */
 
-#define SIZE_THRESHOLD	1024
-#define SIZE_OF_BLOCK	4095  /* actually, this is (size - 1) */
+#define SIZE_THRESHOLD  1024
+#define SIZE_OF_BLOCK   4095  /* actually, this is (size - 1) */
 
 
 /*
@@ -154,3 +154,4 @@ void FreeFarMemory( void huge *ptr)
 
 
 /* end of file */
+

@@ -1,7 +1,9 @@
 /*
    Texture display by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>,
-		      Trevor Phillips <rphillip@cc.curtin.edu.au>,
-		  and Christian Johannes Schladetsch <s924706@yallara.cs.rmit.OZ.AU>
+                      Trevor Phillips <rphillip@cc.curtin.edu.au>,
+                  and Christian Johannes Schladetsch <s924706@yallara.cs.rmit.OZ.AU>
+
+   Doom II texture stuff by Adrian Cable.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -27,8 +29,8 @@
 
 void DisplayFloorTexture( int x0, int y0, int x1, int y1, char *texname)
 {
-   MDirPtr             dir;	/* main directory pointer to the texture entry */
-   unsigned char huge *pixels;	/* array of pixels that hold the image */
+   MDirPtr             dir;     /* main directory pointer to the texture entry */
+   unsigned char huge *pixels;  /* array of pixels that hold the image */
 
    dir = FindMasterDir( MasterDir, texname);
    if (dir == NULL)
@@ -71,11 +73,11 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
 
    unsigned char huge *lpColumnData;
    unsigned char huge *lpColumn;
-   long	   	 huge *lpNeededOffsets;
-   int		       nColumns, nCurrentColumn;
+   long          huge *lpNeededOffsets;
+   int                 nColumns, nCurrentColumn;
    long                lCurrentOffset;
-   int		       fColumnInMemory;
-   int		       i, n;
+   int                 fColumnInMemory;
+   int                 i, n;
    unsigned char       bRowStart, bColored;
 
 
@@ -98,8 +100,8 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
    xofs = 0;
    yofs = 0;
 
-#define TEX_COLUMNBUFFERSIZE	(60L * 1024L)
-#define TEX_COLUMNSIZE		512L
+#define TEX_COLUMNBUFFERSIZE    (60L * 1024L)
+#define TEX_COLUMNSIZE          512L
 
    nColumns = xsize;
 
@@ -125,13 +127,13 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
       fColumnInMemory = lCurrentOffset >= lpNeededOffsets[ 0] && lCurrentOffset < (long)(lpNeededOffsets[ 0] + TEX_COLUMNBUFFERSIZE - TEX_COLUMNSIZE);
       if (fColumnInMemory)
       {
-	 lpColumn = &lpColumnData[ lCurrentOffset - lpNeededOffsets[ 0]];
+         lpColumn = &lpColumnData[ lCurrentOffset - lpNeededOffsets[ 0]];
       }
       else
       {
-	 lpColumn = GetFarMemory( TEX_COLUMNSIZE);
-	 BasicWadSeek( dir->wadfile, dir->dir.start + lCurrentOffset);
-	 BasicWadRead( dir->wadfile, lpColumn, TEX_COLUMNSIZE);
+         lpColumn = GetFarMemory( TEX_COLUMNSIZE);
+         BasicWadSeek( dir->wadfile, dir->dir.start + lCurrentOffset);
+         BasicWadRead( dir->wadfile, lpColumn, TEX_COLUMNSIZE);
       }
 
       /* we now have the needed column data, one way or another, so write it */
@@ -139,23 +141,23 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
       bRowStart = lpColumn[ 0];
       while (bRowStart != 255 && n < TEX_COLUMNSIZE)
       {
-	 bColored = lpColumn[ n];
-	 n += 2;				/* skip over 'null' pixel in data */
-	 for (i = 0; i < bColored; i++)
-	 {
-	    x = x0 + xofs + nCurrentColumn;
-	    y = y0 + yofs + bRowStart + i;
-	    if (x >= x0 && y >= y0 && x <= x1 && y <= y1)
-	       putpixel( x, y, lpColumn[ i + n]);
-	 }
-	 n += bColored + 1;	/* skip over written pixels, and the 'null' one */
-	 bRowStart = lpColumn[ n++];
+         bColored = lpColumn[ n];
+         n += 2;                                /* skip over 'null' pixel in data */
+         for (i = 0; i < bColored; i++)
+         {
+            x = x0 + xofs + nCurrentColumn;
+            y = y0 + yofs + bRowStart + i;
+            if (x >= x0 && y >= y0 && x <= x1 && y <= y1)
+               putpixel( x, y, lpColumn[ i + n]);
+         }
+         n += bColored + 1;     /* skip over written pixels, and the 'null' one */
+         bRowStart = lpColumn[ n++];
       }
       if (bRowStart != 255)
-	 ProgError( "BUG: bRowStart != 255.");
+         ProgError( "BUG: bRowStart != 255.");
 
       if (!fColumnInMemory)
-	 FreeFarMemory( lpColumn);
+         FreeFarMemory( lpColumn);
    }
    FreeMemory( lpColumnData);
    FreeMemory( lpNeededOffsets);
@@ -169,18 +171,18 @@ void DisplayPic( int x0, int y0, int x1, int y1, char *picname)
 
 void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
 {
-   MDirPtr  dir;	/* main directory pointer to the TEXTURE* entries */
-   MDirPtr  pdir;	/* main directory pointer to the PNAMES entry */
-   long    *offsets;	/* array of offsets to texture names */
-   int      n;		/* general counter */
+   MDirPtr  dir;        /* main directory pointer to the TEXTURE* entries */
+   MDirPtr  pdir;       /* main directory pointer to the PNAMES entry */
+   long    *offsets;    /* array of offsets to texture names */
+   int      n;          /* general counter */
    int      xsize, ysize; /* size of the texture */
-   int      xofs, yofs;	/* offset in texture space for the wall patch */
-   int      fields;	/* number of wall patches used to build this texture */
-   int      pnameind;	/* patch name index in PNAMES table */
+   int      xofs, yofs; /* offset in texture space for the wall patch */
+   int      fields;     /* number of wall patches used to build this texture */
+   int      pnameind;   /* patch name index in PNAMES table */
    int      junk;       /* holds useless data */
-   long     numtex;	/* number of texture names in TEXTURE* list */
-   long     texofs;	/* offset in the wad file to the texture data */
-   char     tname[9]; 	/* texture name */
+   long     numtex;     /* number of texture names in TEXTURE* list */
+   long     texofs;     /* offset in the wad file to the texture data */
+   char     tname[9];   /* texture name */
    char     picname[9]; /* wall patch name */
 
    if (bioskey( 1) != 0)
@@ -201,28 +203,28 @@ void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
       BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
       BasicWadRead( dir->wadfile, &tname, 8);
       if (!strnicmp(tname, texname, 8))
-	 texofs = dir->dir.start + offsets[ n];
+         texofs = dir->dir.start + offsets[ n];
    }
    FreeMemory( offsets);
-   if (Registered && texofs == 0)
-   {
-      /* search for texname in texture2 names */
-      dir = FindMasterDir( MasterDir, "TEXTURE2");
-      BasicWadSeek( dir->wadfile, dir->dir.start);
-      BasicWadRead( dir->wadfile, &numtex, 4);
-      /* read in the offsets for texture2 names */
-      offsets = GetMemory( numtex * sizeof( long));
-      for (n = 0; n < numtex; n++)
-	 BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
-      for (n = 0; n < numtex && !texofs; n++)
-      {
-	 BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
-	 BasicWadRead( dir->wadfile, &tname, 8);
-	 if (!strnicmp( tname, texname, 8))
-	    texofs = dir->dir.start + offsets[ n];
-      }
-      FreeMemory( offsets);
-   }
+// if (Registered && texofs == 0)
+// {
+//    /* search for texname in texture2 names */
+//    dir = FindMasterDir( MasterDir, "TEXTURE2");
+//    BasicWadSeek( dir->wadfile, dir->dir.start);
+//    BasicWadRead( dir->wadfile, &numtex, 4);
+//    /* read in the offsets for texture2 names */
+//    offsets = GetMemory( numtex * sizeof( long));
+//    for (n = 0; n < numtex; n++)
+//       BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
+//    for (n = 0; n < numtex && !texofs; n++)
+//    {
+//       BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
+//       BasicWadRead( dir->wadfile, &tname, 8);
+//       if (!strnicmp( tname, texname, 8))
+//          texofs = dir->dir.start + offsets[ n];
+//    }
+//    FreeMemory( offsets);
+// }
 
    /* clear the box where the texture size will be drawn - see below */
    SetColor( LIGHTGRAY);
@@ -281,12 +283,12 @@ void DisplayWallTexture( int x0, int y0, int x1, int y1, char *texname)
 
 void GetWallTextureSize( int *xsize_r, int *ysize_r, char *texname)
 {
-   MDirPtr  dir;	/* pointer in main directory to texname */
-   long    *offsets;	/* array of offsets to texture names */
-   int      n;		/* general counter */
-   long     numtex;	/* number of texture names in TEXTURE* list */
-   long     texofs;	/* offset in doom.wad for the texture data */
-   char     tname[9];	/* texture name */
+   MDirPtr  dir;        /* pointer in main directory to texname */
+   long    *offsets;    /* array of offsets to texture names */
+   int      n;          /* general counter */
+   long     numtex;     /* number of texture names in TEXTURE* list */
+   long     texofs;     /* offset in doom.wad for the texture data */
+   char     tname[9];   /* texture name */
 
    /* offset for texture we want. */
    texofs = 0;
@@ -303,7 +305,7 @@ void GetWallTextureSize( int *xsize_r, int *ysize_r, char *texname)
       BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
       BasicWadRead( dir->wadfile, &tname, 8);
       if (!strnicmp(tname, texname, 8))
-	 texofs = dir->dir.start + offsets[ n];
+         texofs = dir->dir.start + offsets[ n];
    }
    FreeMemory( offsets);
    if (Registered && texofs == 0)
@@ -315,13 +317,13 @@ void GetWallTextureSize( int *xsize_r, int *ysize_r, char *texname)
       /* read in the offsets for texture2 names */
       offsets = GetMemory( numtex * sizeof( long));
       for (n = 0; n < numtex; n++)
-	 BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
+         BasicWadRead( dir->wadfile, &(offsets[ n]), 4L);
       for (n = 0; n < numtex && !texofs; n++)
       {
-	 BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
-	 BasicWadRead( dir->wadfile, &tname, 8);
-	 if (!strnicmp( tname, texname, 8))
-	    texofs = dir->dir.start + offsets[ n];
+         BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ n]);
+         BasicWadRead( dir->wadfile, &tname, 8);
+         if (!strnicmp( tname, texname, 8))
+            texofs = dir->dir.start + offsets[ n];
       }
       FreeMemory( offsets);
    }
@@ -452,3 +454,4 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
 }
 
 
+

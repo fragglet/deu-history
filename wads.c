@@ -1,5 +1,5 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -17,6 +17,9 @@
 WadPtr WadFileList = NULL;       /* linked list of wad files */
 MDirPtr MasterDir = NULL;        /* the master directory */
 
+int convflag;
+int tempint = 0;
+Bool buildlev = FALSE;
 
 /*
    open the main wad file, read in its directory and create the
@@ -33,7 +36,7 @@ void OpenMainWad( char *filename)
    printf( "\nLoading main WAD file: %s...\n", filename);
    wad = BasicWadOpen( filename);
    if (strncmp( wad->type, "IWAD", 4))
-      ProgError( "\"%s\" is not the main WAD file", filename);
+      ProgError( "\"%s\" is not the main WAD file!", filename);
 
    /* create the master directory */
    lastp = NULL;
@@ -44,24 +47,25 @@ void OpenMainWad( char *filename)
       newp->wadfile = wad;
       memcpy( &(newp->dir), &(wad->directory[ n]), sizeof( struct Directory));
       if (MasterDir)
-	 lastp->next = newp;
+         lastp->next = newp;
       else
-	 MasterDir = newp;
+         MasterDir = newp;
       lastp = newp;
    }
 
    /* check if registered version */
-   if (FindMasterDir( MasterDir, "E2M1") == NULL)
+   if (FindMasterDir( MasterDir, "SLIME01") == NULL)
    {
-      printf( "   *-------------------------------------------------*\n");
-      printf( "   | Warning: this is the shareware version of DOOM. |\n");
-      printf( "   |   You won't be allowed to save your changes.    |\n");
-      printf( "   |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
-      printf( "   *-------------------------------------------------*\n");
-      Registered = FALSE; /* If you remove this, bad things will happen to you... */
+      ProgError( "\"%s\" is not the main Doom II WAD file!", filename);
    }
    else
-      Registered = TRUE;
+   {
+      if (FindMasterDir( MasterDir, "MAP01") == NULL)
+         Registered = FALSE;
+      else
+      if ((FindMasterDir( MasterDir, "MAP01") != NULL) && (FindMasterDir( MasterDir, "MAP30") != NULL))
+         Registered = TRUE;
+   }
 }
 
 
@@ -77,6 +81,11 @@ void OpenPatchWad( char *filename)
    MDirPtr mdir;
    int n, l;
    char entryname[9];
+   char newname[9];
+   int episode = 0;
+   int mission = 0;
+   Bool noflag = FALSE;
+   char *outfile;
 
    /* ignore the file if it doesn't exist */
    if (! Exists( filename))
@@ -97,43 +106,94 @@ void OpenPatchWad( char *filename)
    {
       strncpy( entryname, wad->directory[ n].name, 8);
       entryname[8] = '\0';
+      newname[8] = '\0';
       if (l == 0)
       {
-	 mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
-	 /* if this entry is not in the master directory, then add it */
-	 if (mdir == NULL)
-	 {
-	    printf( "   [Adding new entry %s]\n", entryname);
-	    mdir = MasterDir;
-	    while (mdir->next)
-	       mdir = mdir->next;
-	    mdir->next = GetMemory( sizeof( struct MasterDirectory));
-	    mdir = mdir->next;
-	    mdir->next = NULL;
-	 }
-	 /* if this is a level, then copy this entry and the next 10 */
-	 else if (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0')
-	 {
-	    printf( "   [Updating level %s]\n", entryname);
-	    l = 10;
-	 }
-	 else
-	    printf( "   [Updating entry %s]\n", entryname);
+         if (convflag == 1)
+            EditLevel( episode, mission, 0);
+         mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
+         /* if this entry is not in the master directory, then add it */
+         if ((mdir == NULL) && (wad->directory[ n].name[ 0] != 'E' && wad->directory[ n].name[ 2] != 'M' && wad->directory[ n].name[ 4] != '\0'))
+         {
+            printf( "   [Adding new entry %s]\n", entryname);
+            mdir = MasterDir;
+            while (mdir->next)
+               mdir = mdir->next;
+            mdir->next = GetMemory( sizeof( struct MasterDirectory));
+            mdir = mdir->next;
+            mdir->next = NULL;
+         }
+         /* if this is a level, then copy this entry and the next 10 */
+         else if ((wad->directory[ n].name[ 0] == 'M' && wad->directory[ n].name[ 1] == 'A' && wad->directory[ n].name[ 5] == '\0') || (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0'))
+         {
+            convflag = 0;
+            if (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0')
+            {
+               InitGfx();
+               SelectTranslatedLevel (&episode, &mission, entryname);
+               TermGfx();
+               sprintf( newname, "MAP%d%d", episode, mission);
+               strncpy( wad->directory[ n].name, newname, 8);
+               strncpy( mdir->dir.name, newname, 8);
+               strncpy( entryname, newname, 8);
+               mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
+               convflag = 1;
+            }
+            printf( "   [Updating level %s]\n", entryname);
+            l = 10;
+         }
+         else
+            printf( "   [Updating entry %s]\n", entryname);
       }
       else
       {
-	 mdir = mdir->next;
-	 /* the level data should replace an existing level */
-	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
-	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
-	 l--;
+         mdir = mdir->next;
+         /* the level data should replace an existing level */
+         if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
+            ProgError( "\%s\ is not an understandable PWAD file (error with %s)", filename, entryname);
+         l--;
+         if (l == 0 && convflag == 1)
+         {
+            mdir->wadfile = wad;
+            memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
+            EditLevel( episode, mission, 0);
+            noflag = TRUE;
+            buildlev = TRUE;
+         }
       }
-      mdir->wadfile = wad;
-      memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
+      if (noflag == FALSE)
+      {
+         mdir->wadfile = wad;
+         memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
+      }
+      noflag = FALSE;
    }
 }
 
+void DoBuild()
+{
+   char *outfile = GetMemory( 80);
+   if (buildlev == TRUE)
+   {
+      buildlev = FALSE;
+      InitGfx();
+      sprintf( outfile, "OUTPUT.WAD");
+      InputFileName( -1, -1, "Save converted WAD as:", 79, outfile);
+      if (strlen( outfile) == 0)
+         sprintf( outfile, "(null)");
+      TermGfx();
+      BuildNewMainWad( outfile, TRUE);
+   }
+}
 
+char *GetTemporary()
+{
+   char *tempfile = GetMemory( 80);
+   tempint++;
+
+   sprintf( tempfile, "$TMP$%i.WAD", tempint);
+   return tempfile;
+}
 
 /*
    close all the wad files, deallocating the WAD file structures
@@ -185,19 +245,19 @@ void CloseUnusedWadFiles()
       /* check if the wad file is used by a directory entry */
       mdir = MasterDir;
       while (mdir && mdir->wadfile != curw)
-	 mdir = mdir->next;
+         mdir = mdir->next;
       if (mdir)
-	 prevw = curw;
+         prevw = curw;
       else
       {
-	 /* if this wad file is never used, close it */
-	 if (prevw)
-	    prevw->next = curw->next;
-	 else
-	    WadFileList = curw->next;
-	 fclose( curw->fileinfo);
-	 FreeMemory( curw->directory);
-	 FreeMemory( curw);
+         /* if this wad file is never used, close it */
+         if (prevw)
+            prevw->next = curw->next;
+         else
+            WadFileList = curw->next;
+         fclose( curw->fileinfo);
+         FreeMemory( curw->directory);
+         FreeMemory( curw);
       }
       curw = prevw->next;
    }
@@ -220,8 +280,8 @@ WadPtr BasicWadOpen( char *filename)
       curw = prevw->next;
       while (curw && strcmp( filename, curw->filename))
       {
-	 prevw = curw;
-	 curw = prevw->next;
+         prevw = curw;
+         curw = prevw->next;
       }
    }
    else
@@ -232,9 +292,9 @@ WadPtr BasicWadOpen( char *filename)
    {
       curw = GetMemory( sizeof( struct WadFileInfo));
       if (prevw == NULL)
-	 WadFileList = curw;
+         WadFileList = curw;
       else
-	 prevw->next = curw;
+         prevw->next = curw;
       curw->next = NULL;
       curw->filename = filename;
    }
@@ -294,7 +354,7 @@ MDirPtr FindMasterDir( MDirPtr from, char *name)
    while (from)
    {
       if (!strncmp( from->dir.name, name, 8))
-	 break;
+         break;
       from = from->next;
    }
    return from;
@@ -323,12 +383,12 @@ void ListMasterDirectory( FILE *file)
       fprintf( file, "%-8s  %-20s  %6ld  x%08lx\n", dataname, dir->wadfile->filename, dir->dir.size, dir->dir.start);
       if (file == stdout && lines++ > 21)
       {
-	 lines = 0;
+         lines = 0;
          printf( "[Q to abort, any other key to continue]");
-	 key = bioskey( 0);
-	 printf( "\r                                       \r");
-	 if (key == 'Q' || key == 'q')
-	    break;
+         key = bioskey( 0);
+         printf( "\r                                       \r");
+         if (key == 'Q' || key == 'q')
+            break;
       }
    }
 }
@@ -357,12 +417,12 @@ void ListFileDirectory( FILE *file, WadPtr wad)
       fprintf( file, "%-8s  %6ld  x%08lx  x%08lx\n", dataname, wad->directory[n].size, wad->directory[n].start, wad->directory[n].size + wad->directory[n].start - 1);
       if (file == stdout && lines++ > 21)
       {
-	 lines = 0;
-	 printf( "[Q to abort, any other key to continue]");
-	 key = bioskey( 0);
-	 printf( "\r                                       \r");
-	 if (key == 'Q' || key == 'q')
-	    break;
+         lines = 0;
+         printf( "[Q to abort, any other key to continue]");
+         key = bioskey( 0);
+         printf( "\r                                       \r");
+         if (key == 'Q' || key == 'q')
+            break;
       }
    }
 }
@@ -386,9 +446,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
    if (patchonly)
       printf( "Building a compound Patch Wad file \"%s\".\n", filename);
    else
-      printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
-   if (FindMasterDir( MasterDir, "E2M4") == NULL)
-      ProgError( "You were warned: you are not allowed to do this.");
+      printf( "Building a new Main Wad file \"%s\" (size approx 14000K)\n", filename);
    if ((file = fopen( filename, "wb")) == NULL)
       ProgError( "unable to open file \"%s\"", filename);
    if (patchonly)
@@ -402,7 +460,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
    for (cur = MasterDir; cur; cur = cur->next)
    {
       if (patchonly && cur->wadfile == WadFileList)
-	 continue;
+         continue;
       size = cur->dir.size;
       counter += size;
       BasicWadSeek( cur->wadfile, cur->dir.start);
@@ -417,13 +475,13 @@ void BuildNewMainWad( char *filename, Bool patchonly)
    for (cur = MasterDir; cur; cur = cur->next)
    {
       if (patchonly && cur->wadfile == WadFileList)
-	 continue;
+         continue;
       if (dirnum % 100 == 0)
-	 printf( "Outputting directory %04d...\r", dirnum);
+         printf( "Outputting directory %04d...\r", dirnum);
       if (cur->dir.start)
-	 WriteBytes( file, &counter, 4L);
+         WriteBytes( file, &counter, 4L);
       else
-	 WriteBytes( file, &(cur->dir.start), 4L);
+         WriteBytes( file, &(cur->dir.start), 4L);
       WriteBytes( file, &(cur->dir.size), 4L);
       WriteBytes( file, &(cur->dir.name), 8L);
       counter += cur->dir.size;
@@ -454,7 +512,7 @@ void WriteBytes( FILE *file, void huge *addr, long size)
    while (size > 0x8000)
    {
       if (fwrite( addr, 1, 0x8000, file) != 0x8000)
-	 ProgError( "error writing to file");
+         ProgError( "error writing to file");
       addr = (char huge *)addr + 0x8000;
       size -= 0x8000;
    }
@@ -478,9 +536,9 @@ void CopyBytes( FILE *dest, FILE *source, long size)
    while (size > 0x8000)
    {
       if (fread( data, 1, 0x8000, source) != 0x8000)
-	 ProgError( "error reading from file");
+         ProgError( "error reading from file");
       if (fwrite( data, 1, 0x8000, dest) != 0x8000)
-	 ProgError( "error writing to file");
+         ProgError( "error writing to file");
       size -= 0x8000;
    }
    if (fread( data, 1, size, source) != size)
@@ -528,42 +586,42 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
    {
       if (!strnicmp( entry->dir.name, entryname, 8))
       {
-	 strncpy( dataname, entry->dir.name, 8);
-	 dataname[ 8] = '\0';
-	 fprintf( file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
-	 BasicWadSeek( entry->wadfile, entry->dir.start);
-	 n = 0;
-	 i = -1;
-	 for (c = 0; c < entry->dir.size; c += i)
-	 {
-	    fprintf( file, "%04X: ", n);
-	    for (i = 0; i < 16; i++)
-	    {
-	       BasicWadRead( entry->wadfile, &(buf[ i]), 1);
-	       fprintf( file, " %02X", buf[ i]);
-	       n++;
-	    }
-	    fprintf( file, "   ");
-	    for (i = 0; i < 16; i++)
-	    {
-	       if (buf[ i] >= 32)
-		  fprintf( file, "%c", buf[ i]);
-	       else
-		  fprintf( file, " ");
-	    }
-	    fprintf( file, "\n");
-	    if (file == stdout && lines++ > 21)
-	    {
-	       lines = 0;
-	       printf( "[%d%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
-	       key = bioskey( 0);
-	       printf( "\r                                                                    \r");
-	       if (key == 'S' || key == 's')
-		  break;
-	       if (key == 'Q' || key == 'q')
-		  return;
-	    }
-	 }
+         strncpy( dataname, entry->dir.name, 8);
+         dataname[ 8] = '\0';
+         fprintf( file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
+         BasicWadSeek( entry->wadfile, entry->dir.start);
+         n = 0;
+         i = -1;
+         for (c = 0; c < entry->dir.size; c += i)
+         {
+            fprintf( file, "%04X: ", n);
+            for (i = 0; i < 16; i++)
+            {
+               BasicWadRead( entry->wadfile, &(buf[ i]), 1);
+               fprintf( file, " %02X", buf[ i]);
+               n++;
+            }
+            fprintf( file, "   ");
+            for (i = 0; i < 16; i++)
+            {
+               if (buf[ i] >= 32)
+                  fprintf( file, "%c", buf[ i]);
+               else
+                  fprintf( file, " ");
+            }
+            fprintf( file, "\n");
+            if (file == stdout && lines++ > 21)
+            {
+               lines = 0;
+               printf( "[%d%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
+               key = bioskey( 0);
+               printf( "\r                                                                    \r");
+               if (key == 'S' || key == 's')
+                  break;
+               if (key == 'Q' || key == 'q')
+                  return;
+            }
+         }
       }
       entry = entry->next;
    }
@@ -588,7 +646,7 @@ void SaveDirectoryEntry( FILE *file, char *entryname)
 
    for (entry = MasterDir; entry; entry = entry->next)
       if (!strnicmp( entry->dir.name, entryname, 8))
-	 break;
+         break;
    if (entry)
    {
       WriteBytes( file, "PWAD", 4L);     /* PWAD file */
@@ -623,7 +681,7 @@ void SaveEntryToRawFile( FILE *file, char *entryname)
 
    for (entry = MasterDir; entry; entry = entry->next)
       if (!strnicmp( entry->dir.name, entryname, 8))
-	 break;
+         break;
    if (entry)
    {
       BasicWadSeek( entry->wadfile, entry->dir.start);
@@ -673,3 +731,4 @@ void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
 
 
 /* end of file */
+

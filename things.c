@@ -1,5 +1,7 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
+
+   Doom II code by Adrian Cable.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -29,9 +31,9 @@ int GetThingColour( int type)
       case THING_PLAYER2:
       case THING_PLAYER3:
       case THING_PLAYER4:
-	 return GREEN;
+         return GREEN;
       case THING_DEATHMATCH:
-	 return LIGHTGREEN;
+         return LIGHTGREEN;
 
       case THING_SARGEANT:
       case THING_TROOPER:
@@ -39,12 +41,12 @@ int GetThingColour( int type)
       case THING_DEMON:
       case THING_SPECTOR:
       case THING_LOSTSOUL:
-	 return RED;
+         return RED;
       case THING_BARON:
       case THING_CACODEMON:
       case THING_SPIDERBOSS:
       case THING_CYBERDEMON:
-	 return LIGHTRED;
+         return LIGHTRED;
 
       /* Things you can always pick up */
       case THING_BLUECARD:
@@ -52,7 +54,7 @@ int GetThingColour( int type)
       case THING_REDCARD:
       case THING_ARMBONUS1:
       case THING_HLTBONUS1:
-	 return MAGENTA;
+         return MAGENTA;
       case THING_BLUESKULLKEY:
       case THING_YELLOWSKULLKEY:
       case THING_REDSKULLKEY:
@@ -64,17 +66,18 @@ int GetThingColour( int type)
       case THING_INVULN:
       case THING_LITEAMP:
       case THING_BACKPACK:
-	 return LIGHTMAGENTA;
+         return LIGHTMAGENTA;
 
       /* Guns */
+      case THING_SUPERSHOTGUN:
       case THING_SHOTGUN:
       case THING_CHAINSAW:
       case THING_CHAINGUN:
-	 return BLUE;
+         return BLUE;
       case THING_LAUNCHER:
       case THING_PLASMAGUN:
       case THING_BFG9000:
-	 return LIGHTBLUE;
+         return LIGHTBLUE;
 
       /* Things you can't always pick up */
       case THING_AMMOCLIP:
@@ -83,14 +86,14 @@ int GetThingColour( int type)
       case THING_ENERGYCELL:
       case THING_GREENARMOR:
       case THING_STIMPACK:
-	 return CYAN;
+         return CYAN;
       case THING_AMMOBOX:
       case THING_SHELLBOX:
       case THING_ROCKETBOX:
       case THING_ENERGYPACK:
       case THING_BLUEARMOR:
       case THING_MEDKIT:
-	 return LIGHTCYAN;
+         return LIGHTCYAN;
 
       /* Decorations, et al */
       case THING_TECHCOLUMN:
@@ -98,6 +101,8 @@ int GetThingColour( int type)
       case THING_TREDPILLAR:
       case THING_SGREENPILLAR:
       case THING_SREDPILLAR:
+      case THING_TALLLAMP1:
+      case THING_TALLLAMP2:
       case THING_PILLARHEART:
       case THING_PILLARSKULL:
       case THING_EYEINSYMBOL:
@@ -139,10 +144,13 @@ int GetThingColour( int type)
       case THING_HANGINGONELEG2:
       case THING_HANGINGTORSO2:
       case THING_HANGINGLEG2:
-	return BROWN;
+         return BROWN;
       case THING_BARREL:
+      case THING_GARFIELD:
+      case THING_FUELCAN:
+      case THING_SPAWNSPOT:
       case THING_TELEPORT:
-	 return YELLOW;
+         return YELLOW;
       }
    }
    else
@@ -154,7 +162,7 @@ int GetThingColour( int type)
       case THING_PLAYER3:
       case THING_PLAYER4:
       case THING_DEATHMATCH:
-	 return GREEN;
+         return GREEN;
       case THING_SARGEANT:
       case THING_TROOPER:
       case THING_IMP:
@@ -165,7 +173,15 @@ int GetThingColour( int type)
       case THING_CACODEMON:
       case THING_SPIDERBOSS:
       case THING_CYBERDEMON:
-	 return LIGHTRED;
+      case THING_HEAVYWEAPONDUDE:
+      case THING_REVENANT:
+      case THING_HELLKNIGHT:
+      case THING_PAIN:
+      case THING_ARACHNOTRON:
+      case THING_ARCHVILE:
+      case THING_MANCUBUS:
+      case THING_NAZI:
+         return LIGHTRED;
       case THING_BLUECARD:
       case THING_YELLOWCARD:
       case THING_REDCARD:
@@ -177,6 +193,7 @@ int GetThingColour( int type)
       case THING_GREENARMOR:
       case THING_BLUEARMOR:
       case THING_SOULSPHERE:
+      case THING_MEGASPHERE:
       case THING_MEDKIT:
       case THING_STIMPACK:
       case THING_RADSUIT:
@@ -185,8 +202,9 @@ int GetThingColour( int type)
       case THING_BESERK:
       case THING_INVULN:
       case THING_LITEAMP:
-	 return LIGHTGREEN;
+         return LIGHTGREEN;
       case THING_SHOTGUN:
+      case THING_SUPERSHOTGUN:
       case THING_CHAINSAW:
       case THING_CHAINGUN:
       case THING_LAUNCHER:
@@ -201,7 +219,7 @@ int GetThingColour( int type)
       case THING_ENERGYCELL:
       case THING_ENERGYPACK:
       case THING_BACKPACK:
-	 return BROWN;
+         return BROWN;
       }
    }
    return WHITE;
@@ -252,6 +270,22 @@ char *GetThingName( int type)
       return "Spider Boss";
    case THING_CYBERDEMON:
       return "Cyber Demon";
+   case THING_HEAVYWEAPONDUDE:
+      return "Chaingun Sargeant";
+   case THING_REVENANT:
+      return "Revenant";
+   case THING_HELLKNIGHT:
+      return "Hell Knight";
+   case THING_PAIN:
+      return "Pain Elemental";
+   case THING_ARACHNOTRON:
+      return "Arachnotron";
+   case THING_ARCHVILE:
+      return "ArchVile";
+   case THING_MANCUBUS:
+      return "Mancubus";
+   case THING_NAZI:
+      return "SS Nazi";
 
    /* enhancements */
    case THING_BLUECARD:
@@ -276,6 +310,8 @@ char *GetThingName( int type)
       return "Blue Armour";
    case THING_SOULSPHERE:
       return "Soul Sphere";
+   case THING_MEGASPHERE:
+      return "Mega Sphere";
    case THING_MEDKIT:
       return "Medical Kit";
    case THING_STIMPACK:
@@ -296,6 +332,8 @@ char *GetThingName( int type)
    /* weapons */
    case THING_SHOTGUN:
       return "Shotgun";
+   case THING_SUPERSHOTGUN:
+      return "Combat Shotgun";
    case THING_CHAINSAW:
       return "Chainsaw";
    case THING_CHAINGUN:
@@ -328,6 +366,10 @@ char *GetThingName( int type)
    /* decorations */
    case THING_BARREL:
       return "Barrel";
+   case THING_FUELCAN:
+      return "Burning Fuel Can";
+   case THING_GARFIELD:
+      return "Severed Limb";
    case THING_TECHCOLUMN:
       return "Technical Column";
    case THING_TGREENPILLAR:
@@ -338,6 +380,10 @@ char *GetThingName( int type)
       return "Short Green Pillar";
    case THING_SREDPILLAR:
       return "Short Red Pillar";
+   case THING_TALLLAMP1:
+      return "Tall Lantern 1";
+   case THING_TALLLAMP2:
+      return "Tall Lantern 2";
    case THING_PILLARHEART:
       return "Pillar w/Heart";
    case THING_PILLARSKULL:
@@ -381,9 +427,21 @@ char *GetThingName( int type)
    case THING_DEADDEMON:
       return "Dead Demon";
    case THING_DEADCACODEMON:
-      return "Dead CacoDemon";
+      return "Dead Cacodemon";
    case THING_DEADLOSTSOUL:
       return "Dead Lost Soul";
+   case THING_DEADARCHVILE1:
+      return "Hanging ArchVile 1";
+   case THING_DEADARCHVILE2:
+      return "Hanging ArchVile 2";
+   case THING_DEADARCHVILE3:
+      return "Hanging ArchVile 3";
+   case THING_DEADARCHVILE4:
+      return "Hanging ArchVile 4";
+   case THING_DEADARCHVILE5:
+      return "Hanging ArchVile 5";
+   case THING_DEADARCHVILE6:
+      return "Hanging ArchVile 6";
    case THING_BONES:
       return "Guts and Bones";
    case THING_BONES2:
@@ -423,10 +481,18 @@ char *GetThingName( int type)
       return "Hanging Torso 2";
    case THING_HANGINGLEG2:
       return "Hanging Leg 2";
+   case THING_COMMANDERKEEN:
+      return "Commander Keen!";
 
    /* teleport */
    case THING_TELEPORT:
-      return "Teleport exit";
+      return "Teleport Exit";
+   case THING_SPAWNSPOT:
+      return "Demon Spawn Target";
+   case THING_FINALENEMY:
+      return "John Romero Doll!";
+   case THING_SPAWNSOURCE:
+      return "Demon Spawn Source";
    }
 
    /* unknown */
@@ -558,3 +624,4 @@ char *GetWhenName( int when)
 
 
 /* end of file */
+

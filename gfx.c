@@ -1,5 +1,5 @@
 /*
-   Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
+   Amazing Doom Editor, by Brendon Wyber and Rapha‰l Quinet.
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -17,25 +17,25 @@
 
 /* if your graphics driver doesn't like circles, draw squares instead */
 #ifdef NO_CIRCLES
-#define circle( x, y, r)	line( x - r, y - r, x - r, y + r); \
-				line( x - r, y + r, x + r, y + r); \
-				line( x + r, y + r, x + r, y - r); \
-				line( x + r, y - r, x - r, y - r)
+#define circle( x, y, r)        line( x - r, y - r, x - r, y + r); \
+                                line( x - r, y + r, x + r, y + r); \
+                                line( x + r, y + r, x + r, y - r); \
+                                line( x + r, y - r, x - r, y - r)
 #endif /* NO_CIRCLES */
 
 /* the global variables */
-int GfxMode = 0;	/* graphics mode number, or 0 for text */
-			/* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
-			/* positive = 16 colors, negative = 256 colors */
-int OrigX;		/* the X origin */
-int OrigY;		/* the Y origin */
-float Scale;		/* the scale value */
-int PointerX;		/* X position of pointer */
-int PointerY;		/* Y position of pointer */
-int ScrMaxX;		/* maximum X screen coord */
-int ScrMaxY;		/* maximum Y screen coord */
-int ScrCenterX;		/* X coord of screen center */
-int ScrCenterY;		/* Y coord of screen center */
+int GfxMode = 0;        /* graphics mode number, or 0 for text */
+                        /* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
+                        /* positive = 16 colors, negative = 256 colors */
+int OrigX;              /* the X origin */
+int OrigY;              /* the Y origin */
+float Scale;            /* the scale value */
+int PointerX;           /* X position of pointer */
+int PointerY;           /* Y position of pointer */
+int ScrMaxX;            /* maximum X screen coord */
+int ScrMaxY;            /* maximum Y screen coord */
+int ScrCenterX;         /* X coord of screen center */
+int ScrCenterY;         /* Y coord of screen center */
 
 #ifdef CIRRUS_PATCH
 char mp[ 256];
@@ -98,15 +98,15 @@ void InitGfx()
    {
       if (VideoMode > 0)
       {
-	 gdriver = installuserdriver( BGIDriver, NULL);
-	 gmode = VideoMode;
-	 initgraph( &gdriver, &gmode, NULL);
-	 errorcode = graphresult();
+         gdriver = installuserdriver( BGIDriver, NULL);
+         gmode = VideoMode;
+         initgraph( &gdriver, &gmode, NULL);
+         errorcode = graphresult();
       }
       if (errorcode != grOk)
       {
-	 gdriver = VGA;
-	 gmode = VGAHI;
+         gdriver = VGA;
+         gmode = VGAHI;
       }
    }
    if (gdriver == VGA || !firsttime)
@@ -114,7 +114,7 @@ void InitGfx()
       initgraph( &gdriver, &gmode, NULL);
       errorcode = graphresult();
       if (errorcode != grOk)
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
+         ProgError( "graphics error: %s", grapherrormsg( errorcode));
    }
    if (gdriver == VGA)
       GfxMode = 2; /* 640x480x16 */
@@ -163,27 +163,27 @@ Bool SwitchToVGA256()
    {
       if (gdriver == -1)
       {
-	 gdriver = installuserdriver( "VGA256", NULL);
-	 errorcode = graphresult();
+         gdriver = installuserdriver( "VGA256", NULL);
+         errorcode = graphresult();
       }
       if (UseMouse)
-	 HideMousePointer();
+         HideMousePointer();
       closegraph();
       gmode = 0;
       initgraph( &gdriver, &gmode, NULL);
       errorcode = graphresult();
       if (errorcode != grOk)
       {
-	 /* failed for 256 colors - back to 16 colors */
-	 gdriver = VGA;
-	 gmode = VGAHI;
-	 initgraph( &gdriver, &gmode, NULL);
-	 errorcode = graphresult();
+         /* failed for 256 colors - back to 16 colors */
+         gdriver = VGA;
+         gmode = VGAHI;
+         initgraph( &gdriver, &gmode, NULL);
+         errorcode = graphresult();
       }
       if (errorcode != grOk) /* shouldn't happen */
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
+         ProgError( "graphics error: %s", grapherrormsg( errorcode));
       if (UseMouse)
-	 ShowMousePointer();
+         ShowMousePointer();
       GfxMode = -1 /* 320x200x256 */;
       SetDoomPalette( 0);
       ScrMaxX = getmaxx();
@@ -208,16 +208,16 @@ Bool SwitchToVGA16()
    if (GfxMode == -1) /* switch only if we are in 320x200x256 colors */
    {
       if (UseMouse)
-	 HideMousePointer();
+         HideMousePointer();
       closegraph();
       gdriver = VGA;
       gmode = VGAHI;
       initgraph( &gdriver, &gmode, NULL);
       errorcode = graphresult();
       if (errorcode != grOk) /* shouldn't happen */
-	 ProgError( "graphics error: %s", grapherrormsg( errorcode));
+         ProgError( "graphics error: %s", grapherrormsg( errorcode));
       if (UseMouse)
-	 ShowMousePointer();
+         ShowMousePointer();
       GfxMode = 2; /* 640x480x16 */
       ScrMaxX = getmaxx();
       ScrMaxY = getmaxy();
@@ -505,9 +505,9 @@ void SetDoomPalette( int playpalnum)
       dpal = GetFarMemory( 768 * sizeof( char));
       BasicWadSeek( dir->wadfile, dir->dir.start);
       for (n = 0; n <= playpalnum; n++)
-	 BasicWadRead( dir->wadfile, dpal, 768L);
+         BasicWadRead( dir->wadfile, dpal, 768L);
       for (n = 0; n < 768; n++)
-	 dpal[ n] /= 4;
+         dpal[ n] /= 4;
       _AX = 0x1012;
       _BX = 0;
       _CX = 256;
@@ -530,37 +530,37 @@ int TranslateToDoomColor( int color)
       switch (color)
       {
       case BLACK:
-	 return 0;
+         return 0;
       case BLUE:
-	 return 202;
+         return 202;
       case GREEN:
-	 return 118;
+         return 118;
       case CYAN:
-	 return 194;
+         return 194;
       case RED:
-	 return 183;
+         return 183;
       case MAGENTA:
-	 return 253;
+         return 253;
       case BROWN:
-	 return 144;
+         return 144;
       case LIGHTGRAY:
-	 return 88;
+         return 88;
       case DARKGRAY:
-	 return 96;
+         return 96;
       case LIGHTBLUE:
-	 return 197;
+         return 197;
       case LIGHTGREEN:
-	 return 112;
+         return 112;
       case LIGHTCYAN:
-	 return 193;
+         return 193;
       case LIGHTRED:
-	 return 176;
+         return 176;
       case LIGHTMAGENTA:
-	 return 250;
+         return 250;
       case YELLOW:
-	 return 231;
+         return 231;
       case WHITE:
-	 return 4;
+         return 4;
       }
    return color;
 }
@@ -720,3 +720,4 @@ void SetHWCursorMap( char *map)
 
 
 /* end of file */
+
