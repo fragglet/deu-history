@@ -33,6 +33,10 @@ extern SSPtr SSectors;		/* list of subsectors */
 extern SSPtr LastSSector;	/* last subsector in the list */
 extern int   NumSectors;	/* number of sectors */
 extern SPtr  Sectors;		/* sectors data */
+extern int   NumWTexture;	/* number of wall textures */
+extern char  **WTexture;	/* array of wall texture names */
+extern int   NumFTexture;	/* number of floor/ceiling textures */
+extern char  **FTexture;	/* array of texture names */
 
 extern int   MapMaxX;		/* maximum X value of map */
 extern int   MapMaxY;		/* maximum Y value of map */
@@ -41,4 +45,3 @@ extern int   MapMinY;		/* minimum Y value of map */
 
 extern Bool  MadeChanges;	/* made changes? */
 extern Bool  MadeMapChanges;	/* made changes that need rebuilding? */
-

@@ -1,6 +1,7 @@
 /*
-   Texture display by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>
-		  and Trevor Phillips <rphillip@cc.curtin.edu.au>
+   Texture display by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>,
+		      Trevor Phillips <rphillip@cc.curtin.edu.au>,
+		  and Christian Johannes Schladetsch <s924706@yallara.cs.rmit.OZ.AU>
 
    You are allowed to use any parts of this code in another program, as
    long as you give credits to the authors in the documentation and in
@@ -9,6 +10,11 @@
    This program comes with absolutely no warranty.
 
    TEXTURES.C - Textures in 256 colors.
+
+   Note from CJS:
+      DisplayPic() could be further speeded up by avoiding reading
+      the same column numerous times. However, this approach involves
+      exhorbitant memory usage for certain pictures.
 */
 
 /* the includes */
@@ -49,7 +55,7 @@ void DisplayFloorTexture( int x0, int y0, char *texname)
       ((unsigned int huge *)pixels)[ 1] = 64;
    }
    putimage( x0, y0, pixels, COPY_PUT);
-   farfree( pixels);
+   FreeFarMemory( pixels);
 }
 
 
@@ -65,11 +71,21 @@ void DisplayPic( int x0, int y0, char *picname)
    int                 x, y;
    long                offset;
    unsigned char       srow, rowlen, pixel;
-#ifndef OLD_PIX
+
+   unsigned char huge *lpColumnData;
+   unsigned char huge *lpColumn;
+   long	   	 huge *lpNeededOffsets;
+   int		       nColumns, nCurrentColumn;
+   long                lCurrentOffset;
+   unsigned 	       wRead;
+   int		       fColumnInMemory;
+   int		       i, n;
+   unsigned char       bRowStart, bColored;
+
    unsigned char huge *pixels;
    long                l;
    long huge          *offsets;
-#endif
+
 
    dir = FindMasterDir( MasterDir, picname);
    if (dir == NULL)
@@ -87,82 +103,67 @@ void DisplayPic( int x0, int y0, char *picname)
    /* ignore the picture offsets */
    xofs = 0;
    yofs = 0;
-#ifdef OLD_PIX
-   for (x = 0; x < xsize && !bioskey( 1); x++)
-   {
-      /* Seek to point of next pointer. */
-      BasicWadSeek( dir->wadfile, dir->dir.start + 8L + x * 4L);
-      BasicWadRead( dir->wadfile, &offset, 4L);
-      /* Seek to start of column data. */
-      BasicWadSeek( dir->wadfile, dir->dir.start + offset);
-      /* Read starting row. */
-      BasicWadRead( dir->wadfile, &srow, 1L);
-      while (srow != 255)
-      {
-	 /* Read length of row. */
-	 BasicWadRead( dir->wadfile, &rowlen, 1L);
-	 /* Read excess 0. */
-	 BasicWadRead( dir->wadfile, &pixel, 1L);
-	 for (y = 0; y < rowlen; y++)
-	 {
-	    /* Read next pixel colour. */
-	    BasicWadRead( dir->wadfile, &pixel, 1L);
-	    putpixel( x0 + xofs + x, y0 + yofs + srow + y, pixel);
-	 }
-	 /* Read excess 0. */
-	 BasicWadRead( dir->wadfile, &pixel, 1L);
-	 /* Read next starting row. */
-	 BasicWadRead( dir->wadfile, &srow, 1L);
-      }
-   }
-#else
-   pixels = GetFarMemory( (xsize * ysize + 4) * sizeof( char));
-   for (l = 0; l < xsize * ysize; l++)
-      pixels[ 4 + l] = 0;
-   offsets = GetFarMemory( xsize * sizeof( long));
-   BasicWadRead( dir->wadfile, offsets, (long) xsize * 4L);
-   for (x = 0; x < xsize && !bioskey( 1); x++)
-   {
-      /* Seek to start of column data. */
-      BasicWadSeek( dir->wadfile, dir->dir.start + offsets[ x]);
-      /* Read starting row. */
-      BasicWadRead( dir->wadfile, &srow, 1L);
-      while (srow != 255)
-      {
-	 /* Read length of row. */
-	 BasicWadRead( dir->wadfile, &rowlen, 1L);
-	 /* Read excess 0. */
-	 BasicWadRead( dir->wadfile, &pixel, 1L);
-	 for (y = 0; y < rowlen; y++)
-	 {
-	    /* Read next pixel colour. */
-	    BasicWadRead( dir->wadfile, &pixel, 1L);
-	    l = (long) xofs + (long) x + (long) (yofs + srow + y) * (long) xsize;
-	    if (l < (long) xsize * (long) ysize)
-	       pixels[ 4L + l] = pixel;
-	 }
-	 /* Read excess 0. */
-	 BasicWadRead( dir->wadfile, &pixel, 1L);
-	 /* Read next starting row. */
-	 BasicWadRead( dir->wadfile, &srow, 1L);
-      }
-   }
-   farfree( offsets);
-   if (GfxMode < -1)
-   {
-      /* Probably a bug in the VESA driver...    */
-      /* It requires "size-1" instead of "size"! */
-      ((unsigned int huge *)pixels)[ 0] = xsize - 1;
-      ((unsigned int huge *)pixels)[ 1] = ysize - 1;
-   }
-   else
-   {
-      ((unsigned int huge *)pixels)[ 0] = xsize;
-      ((unsigned int huge *)pixels)[ 1] = ysize;
-   }
-   putimage( x0, y0, pixels, COPY_PUT);
-   farfree( pixels);
-#endif
+
+#define TEX_COLUMNBUFFERSIZE	(60L * 1024L)
+#define TEX_COLUMNSIZE		512L
+
+  nColumns   = xsize;
+
+  /* Note from CJS:
+     I tried to use far memory originally, but kept getting out-of-mem errors
+     that is really strange - I assume that the wad dir et al uses all
+     the far mem, and there is only near memory available. NEVER seen
+     this situation before..... I'll keep them huge pointers anyway,
+     in case something changes later
+  */
+  lpColumnData    = GetMemory(TEX_COLUMNBUFFERSIZE);
+  lpNeededOffsets = GetMemory(nColumns * 4L);
+
+  BasicWadRead( dir->wadfile, lpNeededOffsets, nColumns * 4L);
+
+  /* read first column data, and subsequent column data */
+  BasicWadSeek(dir->wadfile, dir->dir.start + lpNeededOffsets[0]);
+  BasicWadRead(dir->wadfile, lpColumnData, TEX_COLUMNBUFFERSIZE);
+
+  for (nCurrentColumn = 0; nCurrentColumn < nColumns; nCurrentColumn++)
+  {
+     lCurrentOffset = lpNeededOffsets[nCurrentColumn];
+     fColumnInMemory = lCurrentOffset >= lpNeededOffsets[0] && lCurrentOffset < (long)(lpNeededOffsets[0] + TEX_COLUMNBUFFERSIZE - TEX_COLUMNSIZE);
+     if (fColumnInMemory)
+     {
+	lpColumn = &lpColumnData[lCurrentOffset - lpNeededOffsets[0]];
+     }
+     else
+     {
+	lpColumn = GetFarMemory(TEX_COLUMNSIZE);
+	BasicWadSeek(dir->wadfile, dir->dir.start + lCurrentOffset);
+	BasicWadRead(dir->wadfile, lpColumn, TEX_COLUMNSIZE);
+     }
+
+     /* we now have the needed column data, one way or another, so write it */
+     n = 1;
+     bRowStart = lpColumn[0];
+     while (bRowStart != 255 && n < TEX_COLUMNSIZE)
+     {
+	bColored = lpColumn[n];
+	n += 2;				/* skip over 'null' pixel in data */
+	for (i = 0; i < bColored; i++)
+	{
+	   putpixel(x0 + xofs + nCurrentColumn, y0 + yofs + bRowStart + i, lpColumn[i + n]);
+	}
+	n += bColored + 1;	/* skip over written pixels, and the 'null' one */
+	bRowStart = lpColumn[n++];
+     }
+     if (bRowStart != 255)
+	ProgError("BUG: bRowStart != 255.");
+
+     if (!fColumnInMemory)
+     {
+	FreeFarMemory(lpColumn);
+     }
+  }
+  FreeMemory(lpColumnData);
+  FreeMemory(lpNeededOffsets);
 }
 
 
@@ -196,7 +197,7 @@ void DisplayWallTexture( int x0, int y0, char *texname)
       if (!strncmp(tname, texname, 8))
 	 texofs = dir->dir.start + offsets[ n];
    }
-   free( offsets);
+   FreeMemory( offsets);
    if (Registered && !texofs)
    {
       /* search for texname in texture2 names */
@@ -214,7 +215,7 @@ void DisplayWallTexture( int x0, int y0, char *texname)
 	 if (!strncmp( tname, texname, 8))
 	    texofs = dir->dir.start + offsets[ n];
       }
-      free( offsets);
+      FreeMemory( offsets);
    }
 
    /* texture name not found */
@@ -350,10 +351,10 @@ void ChooseSprite( int x0, int y0, char *prompt, char *sname)
    SwitchToVGA16();
    if (UseMouse)
       ShowMousePointer();
-   free( name);
+   FreeMemory( name);
    for (n = 0; n < listsize; n++)
-      free( list[ n]);
-   free( list);
+      FreeMemory( list[ n]);
+   FreeMemory( list);
 }
 
 

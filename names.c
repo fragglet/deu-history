@@ -57,7 +57,7 @@ char *GetEditModeName( int objtype)
    case OBJ_SIDEDEFS:
       return "LineDefs & SideDefs";
    case OBJ_VERTEXES:
-      return "Vertexes";
+      return "Vertices";
    case OBJ_SEGS:
       return "Segments";
    case OBJ_SSECTORS:
@@ -182,7 +182,7 @@ char *GetLineDefTypeName( int type)
       return "W1 Raise floor>T";
    /* 60 */
    case 61:
-      return "SR Open door";
+      return "SR Open door (O)";
    case 62:
       return "WR Raise lift/SL";
    case 63:
@@ -347,7 +347,7 @@ char *GetLineDefTypeLongName( int type)
       return "W1 Raise floor up 8 and match Ne. texture and type";
    /* 60 */
    case 61:
-      return "SR Open door";
+      return "SR Open door (stays open)";
    case 62:
       return "WR Raise lift (also a Switch to Lower the lift)";
    case 63:

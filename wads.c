@@ -97,15 +97,7 @@ void OpenPatchWad( char *filename)
    {
       strncpy( entryname, wad->directory[ n].name, 8);
       entryname[8] = '\0';
-      if (l > 0)
-      {
-	 mdir = mdir->next;
-	 /* the level data should replace an existing level */
-	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
-	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
-	 l--;
-      }
-      else
+      if (l == 0)
       {
 	 mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
 	 /* if this entry is not in the master directory, then add it */
@@ -127,6 +119,14 @@ void OpenPatchWad( char *filename)
 	 }
 	 else
 	    printf( "   [Updating entry %s]\n", entryname);
+      }
+      else
+      {
+	 mdir = mdir->next;
+	 /* the level data should replace an existing level */
+	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
+	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
+	 l--;
       }
       mdir->wadfile = wad;
       memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
@@ -151,8 +151,8 @@ void CloseWadFiles()
    {
       nextw = curw->next;
       fclose( curw->fileinfo);
-      free( curw->directory);
-      free( curw);
+      FreeMemory( curw->directory);
+      FreeMemory( curw);
       curw = nextw;
    }
 
@@ -162,7 +162,7 @@ void CloseWadFiles()
    while (curd)
    {
       nextd = curd->next;
-      free( curd);
+      FreeMemory( curd);
       curd = nextd;
    }
 }
@@ -196,8 +196,8 @@ void CloseUnusedWadFiles()
 	 else
 	    WadFileList = curw->next;
 	 fclose( curw->fileinfo);
-	 free( curw->directory);
-	 free( curw);
+	 FreeMemory( curw->directory);
+	 FreeMemory( curw);
       }
       curw = prevw->next;
    }
@@ -327,8 +327,8 @@ void ListMasterDirectory( FILE *file)
          printf( "[Q to abort, any other key to continue]");
          key = getch();
 	 printf( "\r                                       \r");
-         if (key == 'Q' || key == 'q')
-            break;
+	 if (key == 'Q' || key == 'q')
+	    break;
       }
    }
 }
@@ -421,7 +421,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
       }
       printf( "Size: %dK\r", counter / 1024);
    }
-   farfree( data);
+   FreeFarMemory( data);
 
    /* output the directory */
    dirstart = counter;
@@ -464,6 +464,13 @@ void WriteBytes( FILE *file, void huge *addr, long size)
 {
    if (! Registered)
       return;
+   while (size > 0x8000)
+   {
+      if (fwrite( addr, 1, 0x8000, file) != 0x8000)
+	 ProgError( "error writing to file");
+      addr = (char huge *)addr + 0x8000;
+      size -= 0x8000;
+   }
    if (fwrite( addr, 1, size, file) != size)
       ProgError( "error writing to file");
 }
@@ -589,12 +596,60 @@ void SaveDirectoryEntry( FILE *file, char *entryname)
       }
       BasicWadRead( entry->wadfile, data, size);
       WriteBytes( file, data, size);
+      FreeMemory( data);
    }
    else
    {
       printf( "[Entry not in master directory]\n");
       return;
    }
+}
+
+
+
+/*
+   encapsulate a raw file in a PWAD file
+*/
+
+void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
+{
+   MDirPtr entry;
+   long    counter;
+   long    size;
+   void   *data;
+   char    name8[ 8];
+
+   for (counter = 0L; counter < 8L; counter++)
+      name8[ counter] = '\0';
+   strncpy( name8, entryname, 8);
+   WriteBytes( file, "PWAD", 4L);     /* PWAD file */
+   counter = 1L;
+   WriteBytes( file, &counter, 4L);   /* 1 entry */
+   counter = 12L;
+   WriteBytes( file, &counter, 4L);
+   counter = 28L;
+   WriteBytes( file, &counter, 4L);
+   if (fseek( raw, 0L, SEEK_END) != 0)
+      ProgError( "error reading from raw file");
+   size = ftell( raw);
+   if (size < 0)
+      ProgError( "error reading from raw file");
+   if (fseek( raw, 0L, SEEK_SET) != 0)
+      ProgError( "error reading from raw file");
+   WriteBytes( file, &size, 4L);
+   WriteBytes( file, name8, 8L);
+   data = GetMemory( 0x8000 + 2);
+   while (size > 0x8000)
+   {
+      if (fread( data, 1, 0x8000, raw) != 0x8000)
+	 ProgError( "error reading from raw file");
+      WriteBytes( file, data, 0x8000);
+      size -= 0x8000;
+   }
+   if (fread( data, 1, size, raw) != size)
+      ProgError( "error reading from raw file");
+   WriteBytes( file, data, size);
+   FreeMemory( data);
 }
 
 

@@ -19,19 +19,37 @@
    draws a line of text in a menu
 */
 
-void DisplayMenuText( int x0, int y0, int line, char *text, Bool shownumbers)
+void DisplayMenuText( int x0, int y0, int line, char *text, int highlightnum, Bool shownumbers)
 {
+   char h[ 2];
+
    if (UseMouse)
       HideMousePointer();
    if (shownumbers)
    {
+      DrawScreenText( x0 + 26, y0 + 8 + line * 10, "- %s", text);
+      SetColor( WHITE);
       if (line < 9)
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d", line + 1, text);
       else
-	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c", line + 56, text);
    }
    else
-      DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
+   {
+      if (highlightnum > 0)
+      {
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
+	 SetColor( WHITE);
+	 h[ 0] = text[ highlightnum - 1];
+	 h[ 1] = '\0';
+	 DrawScreenText( x0 + 2 + highlightnum * 8, y0 + 8 + line * 10, h);
+      }
+      else
+      {
+	 SetColor( DARKGRAY);
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
+      }
+   }
    if (UseMouse)
       ShowMousePointer();
 }
@@ -42,7 +60,7 @@ void DisplayMenuText( int x0, int y0, int line, char *text, Bool shownumbers)
    display and execute a menu
 */
 
-int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys, char *menustr[ 30])
+int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys, char *menustr[ 30], int highlight[ 30])
 {
    va_list args;
    int     maxlen, line, oldline;
@@ -62,19 +80,22 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
    if (UseMouse)
       HideMousePointer();
    if (x0 < 0)
-      x0 = (ScrMaxX - maxlen * 8 - 53) / 2;
+      x0 = (ScrMaxX - maxlen * 8 - (okkeys ? 19 : 53)) / 2;
    if (y0 < 0)
       y0 = (ScrMaxY - numitems * 10 - (menutitle ? 28 : 12)) / 2;
+   if (x0 > ScrMaxX - maxlen * 8 - (okkeys ? 19 : 53))
+      x0 = ScrMaxX - maxlen * 8 - (okkeys ? 19 : 53);
    DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + (okkeys ? 19 : 53), y0 + numitems * 10 + (menutitle ? 28 : 12));
    SetColor( YELLOW);
    if (menutitle)
       DrawScreenText( x0 + 10, y0 + 8, menutitle);
    if (UseMouse)
       ShowMousePointer();
-   SetColor( BLACK);
    for (line = 0; line < numitems; line++)
-      DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], !okkeys);
-
+   {
+      SetColor( BLACK);
+      DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], highlight[ line], !okkeys);
+   }
    oldline = -1;
    line = 0;
    oldbuttons = 0x0000;
@@ -189,12 +210,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys
 	 if (oldline >= 0 && oldline < numitems)
 	 {
 	    SetColor( BLACK);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[oldline], !okkeys);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[ oldline], highlight[ oldline], !okkeys);
 	 }
 	 if (line >= 0 && line < numitems)
 	 {
 	    SetColor( WHITE);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[line], !okkeys);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], highlight[ line], !okkeys);
 	 }
 	 oldline = line;
       }
@@ -216,6 +237,7 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
    va_list args;
    int     num;
    char   *menustr[ 30];
+   int     dummy[ 30];
 
    /* put the va_args in the menustr table */
    num = 0;
@@ -225,7 +247,7 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
    va_end( args);
 
    /* display the menu */
-   return DisplayMenuArray( x0, y0, menutitle, num, NULL, menustr);
+   return DisplayMenuArray( x0, y0, menutitle, num, NULL, menustr, dummy);
 }
 
 
@@ -241,6 +263,7 @@ int PullDownMenu( int x0, int y0, ...)
    char   *menustr[ 30];
    int     retnkeys[ 30];
    int     permkeys[ 30];
+   int     highlight[ 30];
 
    /* put the va_args in the menustr table and the two strings */
    num = 0;
@@ -248,15 +271,17 @@ int PullDownMenu( int x0, int y0, ...)
    while ((num < 30) && ((menustr[ num] = va_arg( args, char *)) != NULL))
    {
       if ((retnkeys[ num] = va_arg( args, int)) == NULL)
-	 ProgError("PullDownMenu() called with invalid arguments (BUG!)");
+	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
       if ((permkeys[ num] = va_arg( args, int)) == NULL)
-	 ProgError("PullDownMenu() called with invalid arguments (BUG!)");
+	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
+      if ((highlight[ num] = va_arg( args, int)) == NULL)
+	 ProgError( "BUG: PullDownMenu() called with invalid arguments");
       num++;
    }
    va_end( args);
 
    /* display the menu */
-   num = DisplayMenuArray( x0, y0, NULL, num, permkeys, menustr);
+   num = DisplayMenuArray( x0, y0, NULL, num, permkeys, menustr, highlight);
    if (num >= 1)
       return retnkeys[ num - 1]; /* return a valid key */
    else

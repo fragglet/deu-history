@@ -25,7 +25,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.00"	/* the version number */
+#define DEU_VERSION	"5.1 BETA3"	/* the version number */
 
 
 
@@ -128,7 +128,10 @@ typedef struct
 /* name of the configuration file */
 #define DEU_CONFIG_FILE		"DEU.INI"
 
-/* convert pointer coordinates to map coordinates */
+/* name of the log file (debug mode) */
+#define DEU_LOG_FILE		"DEU.LOG"
+
+/* convert screen coordinates to map coordinates */
 #define MAPX(x)			(OrigX + (x - ScrCenterX) * Scale)
 #define MAPY(y)			(OrigY + (ScrCenterY - y) * Scale)
 
@@ -149,7 +152,7 @@ typedef struct
 #define FALSE			0
 
 /* half the size of an object (Thing or Vertex) in map coords */
-#define OBJSIZE			15
+#define OBJSIZE			10
 
 
 /*
@@ -161,6 +164,7 @@ extern Bool  Registered;	/* registered or shareware WAD file? */
 extern Bool  Debug;		/* are we debugging? */
 extern Bool  SwapButtons;	/* swap right and middle mouse buttons */
 extern Bool  Quiet;		/* don't play a sound when an object is selected */
+extern Bool  Quieter;		/* don't play any sound, even when an error occurs */
 extern Bool  Expert;		/* don't ask for confirmation for some operations */
 extern int   InitialScale;	/* initial zoom factor for map */
 extern int   VideoMode;		/* default video mode for VESA cards */
@@ -168,16 +172,11 @@ extern char *BGIDriver;		/* default extended BGI driver */
 extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
 extern Bool  Colour2;		/* use the alternate set for things colors */
 extern char *MainWad;		/* name of the main wad file */
+extern FILE *logfile;		/* filepointer to the error log */
 
 /* from wads.c */
 extern WadPtr  WadFileList;	/* list of wad files */
 extern MDirPtr MasterDir;	/* the master directory */
-
-/* from levels.c */
-extern int    NumWTexture;	/* number of wall textures */
-extern char **WTexture;		/* wall texture names */
-extern int    NumFTexture;	/* number of floor/ceiling textures */
-extern char **FTexture;		/* floor/ceiling texture names */
 
 /* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
@@ -211,11 +210,16 @@ void Usage( FILE *);
 void Credits( FILE *);
 void Beep( void);
 void ProgError( char *, ...);
+void LogMessage( char *, ...);
+void MainLoop( void);
+
+/* from memory.c */
 void *GetMemory( size_t);
 void *ResizeMemory( void *, size_t);
+void FreeMemory( void *);
 void huge *GetFarMemory( unsigned long size);
 void huge *ResizeFarMemory( void huge *old, unsigned long size);
-void MainLoop( void);
+void FreeFarMemory( void huge *);
 
 /* from wads.c */
 void OpenMainWad( char *);
@@ -233,11 +237,12 @@ void WriteBytes( FILE *, void huge *, long);
 int Exists( char *);
 void DumpDirectoryEntry( FILE *, char *);
 void SaveDirectoryEntry( FILE *, char *);
+void SaveEntryFromRawFile( FILE *, FILE *, char *);
 
 /* from levels.c */
-void ReadLevelData( int, int);
-void ForgetLevelData( void);
-void SaveLevelData( char *);
+void ReadLevelData( int, int); /* SWAP! */
+void ForgetLevelData( void); /* SWAP! */
+void SaveLevelData( char *); /* SWAP! */
 void ReadWTextureNames( void);
 void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
@@ -246,8 +251,10 @@ void ForgetWTextureNames( void);
 /* from edit.c */
 void EditLevel( int, int, Bool);
 void SelectLevel( int *, int *);
-void EditorLoop( int, int);
-void DrawMap( int, int);
+void EditorLoop( int, int); /* SWAP! */
+void DrawMap( int, int); /* SWAP! */
+void CenterMapAroundCoords( int, int);
+void GoToObject( int, int); /* SWAP! */
 
 /* from gfx.c */
 void InitGfx( void);
@@ -266,12 +273,13 @@ void DrawScreenBox3D( int, int, int, int);
 void DrawScreenBoxHollow( int, int, int, int);
 void DrawScreenMeter( int, int, int, int, float);
 void DrawScreenText( int, int, char *, ...);
-void DrawPointer( void);
+void DrawPointer( Bool);
 void SetDoomPalette( int);
 int TranslateToDoomColor( int);
 unsigned ComputeAngle( int, int);
 unsigned ComputeDist( int, int);
 void InsertPolygonVertices( int, int, int, int);
+void RotateAndScaleCoords( int *, int *, double, double);
 
 /* from things.c */
 int GetThingColour( int);
@@ -300,7 +308,7 @@ void SetMouseLimits( int, int, int, int);
 void ResetMouseLimits( void);
 
 /* from menus.c */
-int DisplayMenuArray( int, int, char *, int, int *, char *[ 30]);
+int DisplayMenuArray( int, int, char *, int, int *, char *[ 30], int [30]);
 int DisplayMenu( int, int, char *, ...);
 int PullDownMenu( int, int, ...);
 int InputInteger( int, int, int *, int, int);
@@ -314,30 +322,41 @@ void DisplayMessage( int, int, char *, ...);
 void NotImplemented( void);
 
 /* from objects.c */
-void HighlightSelection( int, SelPtr);
+void HighlightSelection( int, SelPtr); /* SWAP! */
 Bool IsSelected( SelPtr, int);
 void SelectObject( SelPtr *, int);
 void UnSelectObject( SelPtr *, int);
 void ForgetSelection( SelPtr *);
-int GetCurObject( int, int, int, int, int);
-SelPtr SelectObjectsInBox( int, int, int, int, int);
-void HighlightObject( int, int, int);
-void DeleteObject( int, int);
-void DeleteObjects( int, SelPtr *);
-void InsertObject( int, int, int, int);
-Bool IsLineDefInside( int, int, int, int, int);
+int GetCurObject( int, int, int, int, int); /* SWAP! */
+SelPtr SelectObjectsInBox( int, int, int, int, int); /* SWAP! */
+void HighlightObject( int, int, int); /* SWAP! */
+void DeleteObject( int, int); /* SWAP! */
+void DeleteObjects( int, SelPtr *); /* SWAP! */
+void InsertObject( int, int, int, int); /* SWAP! */
+Bool IsLineDefInside( int, int, int, int, int); /* SWAP - needs Vertexes & LineDefs */
+void CopyObjects( int, SelPtr); /* SWAP! */
+Bool MoveObjectsToCoords( int, SelPtr, int, int, int); /* SWAP! */
+void GetObjectCoords( int, int, int *, int *); /* SWAP! */
+void RotateAndScaleObjects( int, SelPtr, double, double); /* SWAP! */
+int FindFreeTag(); /* SWAP! */
+void FlipLineDefs( SelPtr, Bool); /* SWAP! */
+void DeleteVerticesJoinLineDefs( SelPtr ); /* SWAP! */
+void MergeVertices( SelPtr *); /* SWAP! */
+Bool CheckMergedVertices( SelPtr *); /* SWAP! */
+void SplitLineDefs( SelPtr); /* SWAP! */
+void SplitSector( int, int); /* SWAP! */
 
 /* from editobj.c */
-void DisplayObjectInfo( int, int);
+void DisplayObjectInfo( int, int); /* SWAP! */
 int DisplayThingsMenu( int, int, char *, ...);
 int DisplayLineDefTypeMenu( int, int, char *, ...);
 int InputObjectNumber( int, int, int, int);
 int InputObjectXRef( int, int, int, Bool, int);
-int Input2VertexNumber( int, int, char *, int *, int *);
+Bool Input2VertexNumber( int, int, char *, int *, int *);
 void EditObjectsInfo( int, int, int, SelPtr);
-Bool MoveObjectsToCoords( int, SelPtr, int, int, int);
-void InsertStandardObject( int, int, int, int);
-void MiscOperations( int, int, int, SelPtr);
+void CheckLevel( int, int); /* SWAP! */
+void InsertStandardObject( int, int, int, int); /* SWAP! */
+void MiscOperations( int, int, int, SelPtr *); /* SWAP! */
 
 /* from nodes.c */
 void ShowProgress( int);
@@ -346,5 +365,11 @@ void ShowProgress( int);
 void ChooseFloorTexture( int, int, char *, int, char **, char *);
 void ChooseWallTexture( int, int, char *, int, char **, char *);
 void ChooseSprite( int, int, char *, char *);
+
+/* from swapmem.c */
+void InitSwap();
+void FreeSomeMemory();
+void ObjectsNeeded( int, ...);
+
 
 /* end of file */

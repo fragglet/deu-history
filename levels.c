@@ -16,7 +16,7 @@
 #include "things.h"
 
 /* external function from objects.c */
-extern NPtr CreateNodes( SEPtr);
+extern NPtr CreateNodes( SEPtr); /* SWAP - needs Vertexes */
 
 /* the global data */
 MDirPtr Level = NULL;		/* master dictionary entry for the level */
@@ -54,7 +54,7 @@ Bool MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
    read in the level data
 */
 
-void ReadLevelData( int episode, int level)
+void ReadLevelData( int episode, int mission) /* SWAP! */
 {
    MDirPtr dir;
    char name[ 7];
@@ -63,8 +63,11 @@ void ReadLevelData( int episode, int level)
    int OldNumVertexes;
    int *VertexUsed;
 
+   /* No objects are needed: they may be swapped after they have been read */
+   ObjectsNeeded( 0);
+
    /* find the various level information from the master directory */
-   sprintf( name, "E%dM%d", episode, level);
+   sprintf( name, "E%dM%d", episode, mission);
    DisplayMessage( -1, -1, "Reading data for level %s...", name);
    Level = FindMasterDir( MasterDir, name);
    if (!Level)
@@ -185,12 +188,14 @@ void ReadLevelData( int episode, int level)
       for (n = 0; n < OldNumVertexes; n++)
 	 if (VertexUsed[ n])
 	    VertexUsed[ n] = m++;
+      ObjectsNeeded( OBJ_LINEDEFS, 0);
       for (n = 0; n < NumLineDefs; n++)
       {
 	 LineDefs[ n].start = VertexUsed[ LineDefs[ n].start];
 	 LineDefs[ n].end = VertexUsed[ LineDefs[ n].end];
       }
-      free( VertexUsed);
+      ObjectsNeeded( 0);
+      FreeMemory( VertexUsed);
    }
 
    /* ignore the Segs, SSectors and Nodes */
@@ -223,37 +228,43 @@ void ReadLevelData( int episode, int level)
    forget the level data
 */
 
-void ForgetLevelData()
+void ForgetLevelData() /* SWAP! */
 {
    /* forget the Things */
+   ObjectsNeeded( OBJ_THINGS, 0);
    NumThings = 0;
    if (Things)
-      farfree( Things);
+      FreeFarMemory( Things);
    Things = NULL;
 
+   /* forget the Vertices */
+   ObjectsNeeded( OBJ_VERTEXES, 0);
+   NumVertexes = 0;
+   if (Vertexes)
+      FreeFarMemory( Vertexes);
+   Vertexes = NULL;
+
    /* forget the LineDefs */
+   ObjectsNeeded( OBJ_LINEDEFS, 0);
    NumLineDefs = 0;
    if (LineDefs)
-      farfree( LineDefs);
+      FreeFarMemory( LineDefs);
    LineDefs = NULL;
 
    /* forget the SideDefs */
+   ObjectsNeeded( OBJ_SIDEDEFS, 0);
    NumSideDefs = 0;
    if (SideDefs)
-      farfree( SideDefs);
+      FreeFarMemory( SideDefs);
    SideDefs = NULL;
 
-   /* forget the Vertices */
-   NumVertexes = 0;
-   if (Vertexes)
-      farfree( Vertexes);
-   Vertexes = NULL;
-
    /* forget the Sectors */
+   ObjectsNeeded( OBJ_SECTORS, 0);
    NumSectors = 0;
    if (Sectors)
-      farfree( Sectors);
+      FreeFarMemory( Sectors);
    Sectors = NULL;
+   ObjectsNeeded( 0);
 }
 
 
@@ -304,7 +315,7 @@ void ForgetNodes( NPtr node)
       ForgetNodes( node->node1);
    if ((node->child2 & 0x8000) == 0)
       ForgetNodes( node->node2);
-   farfree( node);
+   FreeFarMemory( node);
 }
 
 
@@ -313,7 +324,7 @@ void ForgetNodes( NPtr node)
    save the level data to a PWAD file
 */
 
-void SaveLevelData( char *outfile)
+void SaveLevelData( char *outfile) /* SWAP! */
 {
    FILE   *file;
    MDirPtr dir;
@@ -328,8 +339,11 @@ void SaveLevelData( char *outfile)
    long    oldpos;
    Bool    newnodes;
    long    rejectsize;
+   int     oldNumVertexes;
 
    DisplayMessage( -1, -1, "Saving data to \"%s\"...", outfile);
+   LogMessage( ": Saving data to \"%s\"...\n", outfile);
+   oldNumVertexes = NumVertexes;
    /* open the file */
    if ((file = fopen( outfile, "wb")) == NULL)
       ProgError( "Unable to open file \"%s\"", outfile);
@@ -340,6 +354,7 @@ void SaveLevelData( char *outfile)
    dir = Level->next;
 
    /* output the things data */
+   ObjectsNeeded( OBJ_THINGS, 0);
    for (n = 0; n < NumThings; n++)
    {
       WriteBytes( file, &(Things[ n].xpos), 2L);
@@ -352,6 +367,7 @@ void SaveLevelData( char *outfile)
    dir = dir->next;
 
    /* update MapMinX, MapMinY, MapMaxX, MapMaxY */
+   ObjectsNeeded( OBJ_VERTEXES, 0);
    MapMaxX = -32768;
    MapMaxY = -32768;
    MapMinX = 32767;
@@ -385,6 +401,7 @@ void SaveLevelData( char *outfile)
       if (UseMouse)
 	 ShowMousePointer();
       seglist = NULL;
+      ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
       for (n = 0; n < NumLineDefs; n++)
       {
 	 if (LineDefs[ n].sidedef1 >= 0)
@@ -432,14 +449,20 @@ void SaveLevelData( char *outfile)
       }
       ShowProgress( OBJ_VERTEXES);
       ShowProgress( OBJ_SIDEDEFS);
+      ObjectsNeeded( OBJ_VERTEXES, 0);
       Nodes = CreateNodes( seglist);
+      if (UseMouse)
+	 HideMousePointer();
       DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, 1.0);
+      if (UseMouse)
+	 ShowMousePointer();
       newnodes = TRUE;
    }
    else
       newnodes = FALSE;
 
    /* output the LineDefs */
+   ObjectsNeeded( OBJ_LINEDEFS, 0);
    for (n = 0; n < NumLineDefs; n++)
    {
       WriteBytes( file, &(LineDefs[ n].start), 2L);
@@ -454,6 +477,7 @@ void SaveLevelData( char *outfile)
    dir = dir->next;
 
    /* output the SideDefs */
+   ObjectsNeeded( OBJ_SIDEDEFS, 0);
    for (n = 0; n < NumSideDefs; n++)
    {
       WriteBytes( file, &(SideDefs[ n].xoff), 2L);
@@ -469,6 +493,7 @@ void SaveLevelData( char *outfile)
    if (MadeMapChanges)
    {
       /* output the Vertices */
+      ObjectsNeeded( OBJ_VERTEXES, 0);
       for (n = 0; n < NumVertexes; n++)
       {
 	 WriteBytes( file, &(Vertexes[ n].x), 2L);
@@ -479,6 +504,7 @@ void SaveLevelData( char *outfile)
    else
    {
       /* copy the Vertices */
+      ObjectsNeeded( 0);
       data = GetMemory( 0x8000 + 2);
       size = dir->dir.size;
       counter += size;
@@ -491,7 +517,7 @@ void SaveLevelData( char *outfile)
       }
       BasicWadRead( dir->wadfile, data, size);
       WriteBytes( file, data, size);
-      free( data);
+      FreeMemory( data);
    }
    dir = dir->next;
 
@@ -500,6 +526,7 @@ void SaveLevelData( char *outfile)
       SEPtr curse, oldse;
       SSPtr curss, oldss;
 
+      ObjectsNeeded( 0);
       /* output and forget the Segments */
       curse = Segs;
       while (curse)
@@ -512,7 +539,7 @@ void SaveLevelData( char *outfile)
 	 WriteBytes( file, &(curse->dist), 2L);
 	 oldse = curse;
 	 curse = curse->next;
-	 farfree( oldse);
+	 FreeFarMemory( oldse);
 	 counter += 12L;
       }
       Segs = NULL;
@@ -526,7 +553,7 @@ void SaveLevelData( char *outfile)
 	 WriteBytes( file, &(curss->first), 2L);
 	 oldss = curss;
 	 curss = curss->next;
-	 farfree( oldss);
+	 FreeFarMemory( oldss);
 	 counter += 4L;
       }
       SSectors = NULL;
@@ -561,10 +588,11 @@ void SaveLevelData( char *outfile)
 	 WriteBytes( file, data, size);
 	 dir = dir->next;
       }
-      free( data);
+      FreeMemory( data);
    }
 
    /* output the Sectors */
+   ObjectsNeeded( OBJ_SECTORS, 0);
    for (n = 0; n < NumSectors; n++)
    {
       WriteBytes( file, &(Sectors[ n].floorh), 2L);
@@ -581,6 +609,7 @@ void SaveLevelData( char *outfile)
    if (newnodes)
    {
       /* create and output the reject data */
+      ObjectsNeeded( OBJ_SECTORS, 0); /* !!! */
       if (UseMouse)
 	 HideMousePointer();
       DrawScreenBox3D( 218, 80, ScrMaxX, 135);
@@ -596,7 +625,11 @@ void SaveLevelData( char *outfile)
 	 ((char *) data)[ i] = 0;
       for (i = 0; i < NumSectors; i++)
       {
+	 if (UseMouse)
+	    HideMousePointer();
 	 DrawScreenMeter( 225, 108, ScrMaxX - 10, 128, (float) i / (float) NumSectors);
+	 if (UseMouse)
+	    ShowMousePointer();
 	 for (j = 0; j < NumSectors; j++)
 	 {
 /*
@@ -605,15 +638,20 @@ void SaveLevelData( char *outfile)
 */
 	 }
       }
+      if (UseMouse)
+	 HideMousePointer();
       DrawScreenMeter( 225, 108, ScrMaxX - 10, 128, 1.0);
+      if (UseMouse)
+	 ShowMousePointer();
       WriteBytes( file, data, rejectsize);
       counter += rejectsize;
       dir = dir->next;
-      free( data);
+      FreeMemory( data);
    }
    else
    {
       /* copy the Reject data */
+      ObjectsNeeded( 0);
       rejectsize = dir->dir.size;
       data = GetMemory( 0x8000 + 2);
       size = rejectsize;
@@ -628,12 +666,13 @@ void SaveLevelData( char *outfile)
       BasicWadRead( dir->wadfile, data, size);
       WriteBytes( file, data, size);
       dir = dir->next;
-      free( data);
+      FreeMemory( data);
    }
 
    if (newnodes)
    {
       /* create and output the blockmap */
+      ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
       if (UseMouse)
 	 HideMousePointer();
       DrawScreenBox3D( 218, 160, ScrMaxX, 215);
@@ -661,7 +700,11 @@ void SaveLevelData( char *outfile)
       blockcount = MapMaxX * MapMaxY + 4;
       for (i = 0; i < MapMaxY; i++)
       {
+	 if (UseMouse)
+	    HideMousePointer();
 	 DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, (float) i / (float) MapMaxY);
+	 if (UseMouse)
+	    ShowMousePointer();
 	 for (j = 0; j < MapMaxX; j++)
 	 {
 	    blockptr[ MapMaxX * i + j] = blockcount;
@@ -685,18 +728,23 @@ void SaveLevelData( char *outfile)
 	    blockcount++;
 	 }
       }
+      if (UseMouse)
+	 HideMousePointer();
       DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, 1.0);
+      if (UseMouse)
+	 ShowMousePointer();
       size = ftell( file);
       fseek( file, oldpos, SEEK_SET);
       WriteBytes( file, blockptr, (long) (MapMaxX * MapMaxY * sizeof( int)));
       fseek( file, size, SEEK_SET);
       if (FindMasterDir( dir, "P2_END"))
 	 counter--;
-      free( blockptr);
+      FreeMemory( blockptr);
    }
    else
    {
       /* copy the blockmap data */
+      ObjectsNeeded( 0);
       blocksize = dir->dir.size;
       data = GetMemory( 0x8000 + 2);
       size = blocksize;
@@ -711,8 +759,9 @@ void SaveLevelData( char *outfile)
       BasicWadRead( dir->wadfile, data, size);
       WriteBytes( file, data, size);
       dir = dir->next;
-      free( data);
+      FreeMemory( data);
    }
+
 
    /* output the actual directory */
    dirstart = counter;
@@ -745,7 +794,7 @@ void SaveLevelData( char *outfile)
    counter += size;
    dir = dir->next;
 
-   if (newnodes)
+   if (MadeMapChanges)
       size = (long) NumVertexes * 4L;
    else
       size = dir->dir.size;
@@ -818,11 +867,25 @@ void SaveLevelData( char *outfile)
    NumSSectors = 0;
    NumNodes = 0;
 
+   /* delete the vertices added by the Nodes builder */
+   if (NumVertexes != oldNumVertexes)
+   {
+      ObjectsNeeded( OBJ_VERTEXES, 0);
+      NumVertexes = oldNumVertexes;
+      ResizeFarMemory( Vertexes, NumVertexes * sizeof( struct Vertex));
+   }
+
    /* update pointers in Master Directory */
    OpenPatchWad( outfile);
 
    /* this should free the old "*.BAK" file */
    CloseUnusedWadFiles();
+
+   /* the file is now up to date */
+   MadeChanges = FALSE;
+   if (newnodes)
+      MadeMapChanges = FALSE;
+   ObjectsNeeded( 0);
 }
 
 
@@ -868,7 +931,7 @@ void ReadWTextureNames()
       BasicWadRead( dir->wadfile, WTexture[ n], 8);
       WTexture[ n][ 8] = '\0';
    }
-   free( offsets);
+   FreeMemory( offsets);
    if (Registered)
    {
       dir = FindMasterDir( MasterDir, "TEXTURE2");
@@ -888,7 +951,7 @@ void ReadWTextureNames()
 	 WTexture[ NumWTexture + n][ 8] = '\0';
       }
       NumWTexture += val;
-      free( offsets);
+      FreeMemory( offsets);
    }
    /* sort the names */
    qsort( WTexture, NumWTexture, sizeof( char *), SortTextures);
@@ -906,11 +969,11 @@ void ForgetWTextureNames()
 
    /* forget all names */
    for (n = 0; n < NumWTexture; n++)
-      free( WTexture[ n]);
+      FreeMemory( WTexture[ n]);
 
    /* forget the array */
    NumWTexture = 0;
-   free( WTexture);
+   FreeMemory( WTexture);
 }
 
 
@@ -978,11 +1041,11 @@ void ForgetFTextureNames()
 
    /* forget all names */
    for (n = 0; n < NumFTexture; n++)
-      free( FTexture[ n]);
+      FreeMemory( FTexture[ n]);
 
    /* forget the array */
    NumFTexture = 0;
-   free( FTexture);
+   FreeMemory( FTexture);
 }
 
 

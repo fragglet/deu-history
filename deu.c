@@ -18,38 +18,44 @@
 
 /* the includes */
 #include "deu.h"
+#include <time.h>
 
 /* global variables */
+FILE *logfile = NULL;		/* filepointer to the error log */
 Bool Registered = FALSE;	/* registered or shareware game? */
 Bool Debug = FALSE;		/* are we debugging? */
 Bool SwapButtons = FALSE;	/* swap right and middle mouse buttons */
 Bool Quiet = FALSE;		/* don't play a sound when an object is selected */
+Bool Quieter = FALSE;		/* don't play any sound, even when an error occurs */
 Bool Expert = FALSE;		/* don't ask for confirmation for some operations */
 char *CfgFile = DEU_CONFIG_FILE;/* name of the configuration file */
-int  InitialScale = 10;		/* initial zoom factor for map */
+int  InitialScale = 8;		/* initial zoom factor for map */
 int  VideoMode = 2;		/* default video mode for VESA/SuperVGA */
 char *BGIDriver = "VESA";	/* default extended BGI driver */
 Bool FakeCursor = FALSE;	/* use a "fake" mouse cursor */
 Bool Colour2 = FALSE;		/* use the alternate set for things colors */
+Bool InfoShown = TRUE;		/* should we display the info bar? */
 char *MainWad = "DOOM.WAD";	/* name of the main wad file */
 char **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
 {
-/*   short & long names   type            message if true/changed          message if false           where to store the value */
-   { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON.  Useless now..", "Debug mode OFF",          &Debug        },
-   { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",                 "Quiet mode OFF",          &Quiet        },
-   { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",                "Expert mode OFF",         &Expert       },
-   { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",         "Mouse buttons restored",  &SwapButtons  },
-   { "w",  "main",        OPT_STRING,     "Main WAD file",                 NULL,                      &MainWad      },
-   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",                NULL,                      &PatchWads    },
-   { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",                NULL,                      &PatchWads    },
-   { NULL, "config",      OPT_STRING,     "Config file",                   NULL,                      &CfgFile      },
-   { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",           NULL,                      &InitialScale },
-   { "v",  "video",       OPT_INTEGER,    "Default video mode",            NULL,                      &VideoMode    },
-   { NULL, "bgi",         OPT_STRING,     "Default video driver",          NULL,                      &BGIDriver    },
-   { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",                "Fake cursor OFF",         &FakeCursor   },
-   { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",    "Normal Things color set", &Colour2      },
-   { NULL, NULL,          OPT_NONE,       NULL,                            NULL,                      NULL          }
+/*   short & long names   type            message if true/changed       message if false           where to store the value */
+   { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON",		"Debug mode OFF",          &Debug        },
+   { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",		"Quiet mode OFF",          &Quiet        },
+   { "qq", "quieter",     OPT_BOOLEAN,    "Quieter mode ON",		"Quieter mode OFF",        &Quieter      },
+   { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",		"Expert mode OFF",         &Expert       },
+   { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",	"Mouse buttons restored",  &SwapButtons  },
+   { "w",  "main",        OPT_STRING,     "Main WAD file",		NULL,                      &MainWad      },
+   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",		NULL,                      &PatchWads    },
+   { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",		NULL,                      &PatchWads    },
+   { NULL, "config",      OPT_STRING,     "Config file",		NULL,                      &CfgFile      },
+   { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",	NULL,                      &InitialScale },
+   { "v",  "video",       OPT_INTEGER,    "Default video mode",		NULL,                      &VideoMode    },
+   { NULL, "bgi",         OPT_STRING,     "Default video driver",	NULL,                      &BGIDriver    },
+   { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",		"Fake cursor OFF",         &FakeCursor   },
+   { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",	"Normal Things color set", &Colour2      },
+   { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",		"Info bar hidden",         &InfoShown 	 },
+   { NULL, NULL,          OPT_NONE,       NULL,				NULL,                      NULL          }
 };
 
 
@@ -65,6 +71,8 @@ int main( int argc, char *argv[])
    Credits( stdout);
    argv++;
    argc--;
+   /* InitSwap must be called before any call to GetMemory(), etc. */
+   InitSwap();
    /* quick and dirty check for a "-config" option */
    for (i = 0; i < argc - 1; i++)
       if (!strcmp( argv[ i], "-config"))
@@ -75,6 +83,15 @@ int main( int argc, char *argv[])
    /* read config file and command line options */
    ParseConfigFileOptions( CfgFile);
    ParseCommandLineOptions( argc, argv);
+   if (Debug == TRUE)
+   {
+      logfile = fopen( DEU_LOG_FILE, "w");
+      if (logfile == NULL)
+	 printf( "Warning: Could not open log file \"%s\"", DEU_LOG_FILE);
+      LogMessage(": Welcome to DEU!\n");
+   }
+   if (Quieter == TRUE)
+      Quiet = TRUE;
    /* load the wad files */
    OpenMainWad( MainWad);
    if (PatchWads)
@@ -89,6 +106,9 @@ int main( int argc, char *argv[])
    MainLoop();
    /* that's all, folks! */
    CloseWadFiles();
+   LogMessage( ": The end!\n");
+   if (logfile != NULL)
+      fclose( logfile);
    return 0;
 }
 
@@ -135,14 +155,14 @@ void ParseCommandLineOptions( int argc, char *argv[])
    {
       if (argv[ 0][ 0] != '-' && argv[ 0][ 0] != '+')
 	 ProgError( "options must start with '-' or '+'");
-      if (!strcmp( argv[ 0], "-?") || !strcmp( argv[ 0], "-h") || !strcmp( argv[ 0], "-help"))
+      if (!strcmp( argv[ 0], "-?") || !stricmp( argv[ 0], "-h") || !stricmp( argv[ 0], "-help"))
       {
 	 Usage( stdout);
 	 exit( 0);
       }
       for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
       {
-	 if (!strcmp( &(argv[ 0][ 1]), options[ optnum].short_name) || !strcmp( &(argv[ 0][ 1]), options[ optnum].long_name))
+	 if (!stricmp( &(argv[ 0][ 1]), options[ optnum].short_name) || !stricmp( &(argv[ 0][ 1]), options[ optnum].long_name))
 	 {
 	    switch (options[ optnum].opt_type)
 	    {
@@ -270,7 +290,7 @@ void ParseConfigFileOptions( char *filename)
 	 value++;
       for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
       {
-	 if (!strcmp( option, options[ optnum].long_name))
+	 if (!stricmp( option, options[ optnum].long_name))
 	 {
 	    switch (options[ optnum].opt_type)
 	    {
@@ -383,9 +403,12 @@ void Credits( FILE *where)
 */
 void Beep()
 {
-   sound( 640);
-   delay( 100);
-   nosound();
+   if (Quieter == FALSE)
+   {
+      sound( 640);
+      delay( 100);
+      nosound();
+   }
 }
 
 
@@ -399,6 +422,7 @@ void ProgError( char *errstr, ...)
    va_list args;
 
    Beep();
+   Beep();
    if (GfxMode)
    {
       sleep( 1);
@@ -408,8 +432,17 @@ void ProgError( char *errstr, ...)
    printf( "\nProgram Error: *** ");
    vprintf( errstr, args);
    printf( " ***\n");
+   if (Debug == TRUE && logfile != NULL)
+   {
+      fprintf( logfile, "\nProgram Error: *** ");
+      vfprintf( logfile, errstr, args);
+      fprintf( logfile, " ***\n");
+   }
    va_end( args);
+   /* clean up things and free swap space */
    ForgetLevelData();
+   ForgetWTextureNames();
+   ForgetFTextureNames();
    CloseWadFiles();
    exit( 5);
 }
@@ -417,57 +450,29 @@ void ProgError( char *errstr, ...)
 
 
 /*
-   allocate memory with error checking
+   write a message in the log file
 */
 
-void *GetMemory( size_t size)
+void LogMessage( char *logstr, ...)
 {
-   void *ret = malloc( size);
-   if (!ret)
-      ProgError( "out of memory (cannot allocate %u bytes)", size);
-   return ret;
-}
+   va_list  args;
+   time_t   tval;
+   char    *tstr;
 
-
-
-/*
-   reallocate memory with error checking
-*/
-
-void *ResizeMemory( void *old, size_t size)
-{
-   void *ret = realloc( old, size);
-   if (!ret)
-      ProgError( "out of memory (cannot reallocate %u bytes)", size);
-   return ret;
-}
-
-
-
-/*
-   allocate memory from the far heap with error checking
-*/
-
-void huge *GetFarMemory( unsigned long size)
-{
-   void huge *ret = farmalloc( size);
-   if (!ret)
-      ProgError( "out of memory (cannot allocate %lu far bytes)", size);
-   return ret;
-}
-
-
-
-/*
-   reallocate memory from the far heap with error checking
-*/
-
-void huge *ResizeFarMemory( void huge *old, unsigned long size)
-{
-   void huge *ret = farrealloc( old, size);
-   if (!ret)
-      ProgError( "out of memory (cannot reallocate %lu far bytes)", size);
-   return ret;
+   if (Debug == TRUE && logfile != NULL)
+   {
+      va_start( args, logstr);
+      /* if the messsage begins with ":", output the current date & time first */
+      if (logstr[ 0] == ':')
+      {
+	 time( &tval);
+	 tstr = ctime( &tval);
+	 tstr[ strlen( tstr) - 1] = '\0';
+	 fprintf(logfile, "%s", tstr);
+      }
+      vfprintf( logfile, logstr, args);
+      va_end( args);
+   }
 }
 
 
@@ -480,7 +485,7 @@ void MainLoop()
 {
    char input[ 120];
    char *com, *out;
-   FILE *file;
+   FILE *file, *raw;
    WadPtr wad;
    int episode, level;
 
@@ -509,6 +514,7 @@ void MainLoop()
 	 printf( "E[dit] [episode [level]]          -- to edit a game level saving results to\n");
 	 printf( "                                          a patch wad file\n");
 	 printf( "G[roup] <WadFile>                 -- to group all patch wads in a file\n");
+	 printf( "I[nsert] <RawFile> <DirEntry>     -- to insert a raw file in a patch wad file\n");
 	 printf( "L[ist] <WadFile> [outfile]        -- to list the directory of a wadfile\n");
 	 printf( "M[aster] [outfile]                -- to list the master directory\n");
 	 printf( "Q[uit]                            -- to quit\n");
@@ -729,6 +735,11 @@ void MainLoop()
 	    printf( "[Object name argument missing.]\n");
 	    continue;
 	 }
+	 if (strlen( com) > 8 || strchr( com, '.') != NULL)
+	 {
+	    printf( "[Invalid object name.]\n");
+	    continue;
+	 }
 	 out = strtok( NULL, " ");
 	 if (out == NULL)
 	 {
@@ -747,6 +758,47 @@ void MainLoop()
 	 if ((file = fopen( out, "wb")) == NULL)
 	    ProgError( "error opening output file \"%s\"", out);
 	 SaveDirectoryEntry( file, com);
+	 fclose( file);
+      }
+
+      /* user asked to encapsulate a raw file in a PWAD file */
+      else if (!strcmp( com, "INSERT") || !strcmp( com, "I"))
+      {
+	 com = strtok( NULL, " ");
+	 if (com == NULL)
+	 {
+	    printf( "[Raw file name argument missing.]\n");
+	    continue;
+	 }
+	 out = strtok( NULL, " ");
+	 if (out == NULL)
+	 {
+	    printf( "[Object name argument missing.]\n");
+	    continue;
+	 }
+	 if (strlen( out) > 8 || strchr( out, '.') != NULL)
+	 {
+	    printf( "[Invalid object name.]\n");
+	    continue;
+	 }
+	 if ((raw = fopen( com, "rb")) == NULL)
+	    ProgError( "error opening input file \"%s\"", com);
+	 /* kluge */
+	 strcpy( input, out);
+	 strcat( input, ".WAD");
+	 for (wad = WadFileList; wad; wad = wad->next)
+	    if (!stricmp( input, wad->filename))
+	       break;
+	 if (wad)
+	 {
+	    printf( "[This Wad file is already in use (%s).  You may not overwrite it.]\n", input);
+	    continue;
+	 }
+	 printf( "Including new object %s in \"%s\".\n", out, input);
+	 if ((file = fopen( input, "wb")) == NULL)
+	    ProgError( "error opening output file \"%s\"", input);
+	 SaveEntryFromRawFile( file, raw, out);
+	 fclose( raw);
 	 fclose( file);
       }
 

@@ -15,6 +15,14 @@
 #include <math.h>
 #include <dos.h>
 
+/* if your graphics driver doesn't like circles, draw squares instead */
+#ifdef NO_CIRCLES
+#define circle( x, y, r)	line( x - r, y - r, x - r, y + r); \
+				line( x - r, y + r, x + r, y + r); \
+				line( x + r, y + r, x + r, y - r); \
+				line( x + r, y - r, x - r, y - r)
+#endif /* NO_CIRCLES */
+
 /* the global variables */
 int GfxMode = 0;	/* graphics mode number, or 0 for text */
 			/* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
@@ -406,14 +414,34 @@ void DrawScreenText( int Xstart, int Ystart, char *msg, ...)
    draw (or erase) the pointer if we aren't using the mouse
 */
 
-void DrawPointer()
+void DrawPointer( Bool rulers)
 {
+   int r;
+
    /* use XOR mode : drawing the pointer twice erases it */
    setwritemode( XOR_PUT);
    /* draw the pointer */
-   SetColor( YELLOW);
-   DrawScreenLine( PointerX - 15, PointerY - 13, PointerX + 15, PointerY + 13);
-   DrawScreenLine( PointerX - 15, PointerY + 13, PointerX + 15, PointerY - 13);
+   if ( rulers)
+   {
+      SetColor( MAGENTA);
+      r = 512 / Scale;
+      circle( PointerX, PointerY, r);
+      r >>= 1;
+      circle( PointerX, PointerY, r);
+      r >>= 1;
+      circle( PointerX, PointerY, r);
+      r >>= 1;
+      circle( PointerX, PointerY, r);
+      r = 1024 / Scale;
+      line( PointerX - r, PointerY, PointerX + r, PointerY);
+      line( PointerX, PointerY - r, PointerX, PointerY + r);
+   }
+   else
+   {
+      SetColor( YELLOW);
+      line( PointerX - 15, PointerY - 13, PointerX + 15, PointerY + 13);
+      line( PointerX - 15, PointerY + 13, PointerX + 15, PointerY - 13);
+   }
    /* restore normal write mode */
    setwritemode( COPY_PUT);
 }
@@ -440,14 +468,14 @@ void SetDoomPalette( int playpalnum)
       for (n = 0; n <= playpalnum; n++)
 	 BasicWadRead( dir->wadfile, dpal, 768L);
       for (n = 0; n < 768; n++)
-	 dpal[n] /= 4;
+	 dpal[ n] /= 4;
       _AX = 0x1012;
       _BX = 0;
       _CX = 256;
-      _ES = FP_SEG(dpal);
-      _DX = FP_OFF(dpal);
-      __int__(0x10);
-      farfree( dpal);
+      _ES = FP_SEG( dpal);
+      _DX = FP_OFF( dpal);
+      __int__( 0x10);
+      FreeFarMemory( dpal);
     }
 }
 
@@ -519,7 +547,7 @@ unsigned ComputeAngle( int dx, int dy)
 
 unsigned ComputeDist( int dx, int dy)
 {
-   return (unsigned) (hypot( (double) dy, (double) dx) + 0.5);
+   return (unsigned) (hypot( (double) dx, (double) dy) + 0.5);
    /* Yes, I know this function could be in another file, but */
    /* this is the only source file that includes <math.h>...  */
 }
@@ -536,6 +564,23 @@ void InsertPolygonVertices( int centerx, int centery, int sides, int radius)
 
    for (n = 0; n < sides; n++)
       InsertObject( OBJ_VERTEXES, -1, centerx + (int) ((double) radius * cos( 6.28 * (double) n / (double) sides)), centery + (int) ((double) radius * sin( 6.2832 * (double) n / (double) sides)));
+   /* Yes, I know... etc. */
+}
+
+
+
+/*
+   move (x, y) to a new position: rotate and scale around (0, 0)
+*/
+
+void RotateAndScaleCoords( int *x, int *y, double angle, double scale)
+{
+   double r, theta;
+
+   r = hypot( (double) *x, (double) *y);
+   theta = atan2( (double) *y, (double) *x);
+   *x = (int) (r * scale * cos( theta + angle) + 0.5);
+   *y = (int) (r * scale * sin( theta + angle) + 0.5);
    /* Yes, I know... etc. */
 }
 

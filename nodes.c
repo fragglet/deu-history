@@ -70,7 +70,7 @@ void ShowProgress( int objtype)
    find the point of intersection for two lines
 */
 
-Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2)
+Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - needs Vertexes */
 {
    /* floating-point required because long integers cause errors */
    double x1  = Vertexes[ seg1->start].x;
@@ -110,10 +110,14 @@ Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2)
    choose a nodeline amongst the list of Segs
 */
 
-SEPtr FindNodeLine( SEPtr seglist)
+SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
 {
-   int   splits, minsplits;
-   int   num1, num2, mindiff;
+   int   splits;
+#ifdef OLD_ALGORITHM
+   int   minsplits = 32767;
+#endif /* OLD_ALGORITHM */
+   int   mindiff = 32767;
+   int   num1, num2;
    SEPtr nodeline, bestnodeline;
    SEPtr curseg;
    long  x, y;
@@ -123,8 +127,6 @@ SEPtr FindNodeLine( SEPtr seglist)
    static SEPtr lastnodeline = NULL;
 
    /* find nodeline - brute force: try with all Segs */
-   minsplits = 32767;
-   mindiff = 32767;
    bestnodeline = NULL;
    for (nodeline = seglist; nodeline; nodeline = nodeline->next)
    {
@@ -169,13 +171,19 @@ SEPtr FindNodeLine( SEPtr seglist)
 	    num1++; /* one more Seg on the first (right) side */
 	 else
 	    num2++; /* one more Seg on the second (left) side */
+#ifdef OLD_ALGORITHM
 	 if (splits > minsplits)
 	    break;  /* don't waste time */
+#else
+	 if (max( num1, num2) + 8 * splits > mindiff)
+	    break;  /* don't waste time */
+#endif /* OLD_ALGORITHM */
       }
 
       /* there must be at least one Seg on each side */
       if (num1 > 0 && num2 > 0)
       {
+#ifdef OLD_ALGORITHM
 	 /* now, num1 = difference in number of Segs between two sides */
 	 if (num1 > num2)
 	    num1 = num1 - num2;
@@ -188,6 +196,16 @@ SEPtr FindNodeLine( SEPtr seglist)
 	    mindiff = num1; /* minimal difference between the two sides */
 	    bestnodeline = nodeline; /* save the nodeline */
 	 }
+#else
+	 /* now, num1 = rating for this nodeline */
+	 num1 = max( num1, num2) + 8 * splits;
+	 /* this nodeline is better than the previous one */
+	 if (num1 < mindiff)
+	 {
+	    mindiff = num1; /* save the rating */
+	    bestnodeline = nodeline; /* save the nodeline */
+	 }
+#endif /* OLD_ALGORITHM */
       }
    }
 
@@ -205,7 +223,7 @@ SEPtr FindNodeLine( SEPtr seglist)
    Move a Seg into a list and update the bounding box
 */
 
-void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend, NPtr node, int listnum, Bool updatebbox)
+void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend, NPtr node, int listnum, Bool updatebbox) /* SWAP - needs Vertexes */
 {
    if (*seglist)
    {
@@ -272,11 +290,12 @@ void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend, NPtr node, int 
    check if a list of Segs should be divided in smaller parts (by a nodeline)
 */
 
-Bool NeedFurtherDivision( SEPtr seglist)
+Bool NeedFurtherDivision( SEPtr seglist) /* SWAP! */
 {
    SEPtr curseg, refseg;
    int   refsector;
 
+   ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
    /* the sector number must be the same for all Segs */
    refseg = seglist;
    if (refseg->flip)
@@ -288,12 +307,18 @@ Bool NeedFurtherDivision( SEPtr seglist)
       if (curseg->flip)
       {
 	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef2].sector != refsector)
+	 {
+	    ObjectsNeeded( OBJ_VERTEXES, 0);
 	    return TRUE;
+	 }
       }
       else
       {
 	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef1].sector != refsector)
+	 {
+	    ObjectsNeeded( OBJ_VERTEXES, 0);
 	    return TRUE;
+	 }
       }
    }
 
@@ -302,9 +327,13 @@ Bool NeedFurtherDivision( SEPtr seglist)
    for (refseg = seglist; refseg; refseg = refseg->next)
       for (curseg = seglist; curseg; curseg = curseg->next)
 	 if (curseg->start == refseg->end && ((unsigned int) (refseg->angle - curseg->angle) > (unsigned int) 32767 || curseg->end == refseg->start))
+	 {
+	    ObjectsNeeded( OBJ_VERTEXES, 0);
 	    return TRUE;
+	 }
 
    /* no need to split the list: these Segs can be put in a SSector */
+   ObjectsNeeded( OBJ_VERTEXES, 0);
    return FALSE;
 }
 
@@ -354,7 +383,7 @@ int CreateSSector( SEPtr seglist)
    create all Nodes from a list of Segs
 */
 
-NPtr CreateNodes( SEPtr seglist)
+NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
 {
    NPtr         node;
    SEPtr        segs1, segs2;
@@ -384,20 +413,24 @@ NPtr CreateNodes( SEPtr seglist)
    /* special case: nodeline could not be found */
    if (nodeline == NULL)
    {
+      LogMessage( "\tNodeline could not be found.\n\t\tLineDefs in seglist:\n");
       /* this only occurs when a Sector is not closed, */
       /* or if there is only one Sector in the level.  */
       nodeline = seglist;
       curseg = seglist;
+      LogMessage( "\t\t%6d\n", curseg->linedef);
       seglist = seglist->next;
       StoreInSegList( curseg, &segs2, &lastseg2, node, 2, TRUE);
       while (seglist)
       {
 	 curseg = seglist;
+	 LogMessage( "\t\t%6d\n", curseg->linedef);
 	 seglist = seglist->next;
 	 StoreInSegList( curseg, &segs1, &lastseg1, node, 1, TRUE);
       }
       /* warn the user */
       ShowProgress( -1);
+      LogMessage( "\n");
    }
 
    /* compute x, y, dx, dy */
@@ -506,7 +539,7 @@ NPtr CreateNodes( SEPtr seglist)
 /*
    IF YOU ARE WRITING A DOOM EDITOR OR ANOTHER ADD-ON, PLEASE READ THIS:
 
-   I spent a lot of time writing the Nodes builder.  There are some bugs in
+   I spent a lot of time writing the Nodes builder.  There may be some bugs in
    it, but most of the code is OK.  If you steal any ideas from this program,
    put a prominent message in your own editor (i.e. it must be displayed when
    the program starts or in an "about" box) to make it CLEAR that some

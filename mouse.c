@@ -77,9 +77,9 @@ void GetMouseCoords(int *x, int *y, int *buttons)
 
    regs.x.ax = 0x0003;
    int86(MOUSE, &regs, &regs);
-   if (x)
+   if (x != NULL)
       *x = regs.x.cx;
-   if (y)
+   if (y != NULL)
       *y = regs.x.dx;
    if (buttons)
       *buttons = regs.x.bx;

@@ -3,7 +3,7 @@
 
                 DOOM EDITOR UTILITIES
 
-                     Version 5.0
+                     Version 5.1
                =======================
 
 CONTENTS
@@ -35,7 +35,7 @@ Contacting the Authors
 Credits
 
 
-
+
 
 WHAT IS DEU?
 ============
@@ -51,6 +51,7 @@ people from registering).
 You can do almost anything to any level: move, add or remove monsters and 
 powerups, change the wall colours and positions, create new lifts, doors, 
 acid pools, crushing ceilings... or even create a new level from scratch!
+If other Doom editors won't let you do it, then DEU it!
 
 
 
@@ -73,7 +74,7 @@ wuarchive.wustl.edu, doom.hope.edu...
 
 
 
-
+
 
 LEGALESE...
 ===========
@@ -131,7 +132,7 @@ things:
 
 
 
-
+
 
 RUNNING DEU
 ===========
@@ -148,7 +149,7 @@ Unzip it into any directory on your hard drive using commands like:
 
        mkdir \games\doom\deu                [create a directory for it.]
 
-       pkunzip a:deu50.zip \games\doom\deu  [unzip from your a: drive.]
+       pkunzip a:deu51.zip \games\doom\deu  [unzip from your a: drive.]
 
 Quickstart:
 ~~~~~~~~~~~
@@ -181,7 +182,7 @@ For starters, type:
 When the editor starts up, it should display the map.  The editor will now 
 let you insert, delete and edit objects in the map.  In the centre of the 
 map is a crosshair (or your mouse pointer) which marks your current 
-position.  Little x's represent the Things. Different colours represent 
+position.  Little x's represent the Things.  Different colours represent 
 different types of Things.
 
 Then press F1 for help, or just play around.
@@ -189,19 +190,45 @@ Then press F1 for help, or just play around.
 
 
 
-
+
 
 REVISION HISTORY
 ================
 
 By Rapha‰l Quinet:
 
+5.10   26 Apr 94
+       Better Nodes builder (but there is still a bug somewhere...).
+       Better memory management.  You can now edit huge levels (E2M7).
+       Changes in the menus, new menu under the 'F8' key.
+       New 'Preferences' menu ('F5').
+       Better automatic error checkers.  Show the object in error.
+       Keep the selection when you switch from one editor to another.
+       Missing textures displayed in red in the info box.
+       Better texture viewer (faster, and displays the texture size).
+       The debug mode now creates a log file (DEU.LOG).
+       New commands to Scale or Rotate any object or group of objects.
+       Automatic jump to object for 'N', 'P' and 'J'.
+       New features "make door from Sector", "make lift", ...
+       New keys:
+           O: copy any object or group of object
+           R: display a 'ruler' cursor (check wall length, etc.).
+           Shift-G: increase the grid size ('G' decreases it).
+           Shift-Ins: may be used instead of 'Ins' to close the polygon.
+       New commands (main menu):
+           I[nclude] to include any raw binary file in a PWAD.
+           X[tract] to extract any object to a raw binary file.
+       New command line options:
+           -i (-infobar) displays the info bar when you start the editor.
+           -a (-addselbox) use an additive selection box.
+           -qq (-quieter) when you are in a library...
+
 5.00   30 Mar 94
        Automatic Nodes builder!.
        Drop-down menus with menu bar.
        Selection box to select a group of objects.
        Smart add/delete for Vertices to split/join LineDef(s).
-       New "insert common shapes" and "misc. ops." menu.
+       New "insert common shapes" and "misc. ops." menus.
        VESA and SuperVGA support.
        Removed the Nodes and Segs editors (obsolete).
        The Things editor shows the size of the objects.
@@ -219,6 +246,8 @@ By Rapha‰l Quinet:
            S[ave] to save one object in a separate wad file.
        MANUAL.DOC renamed to DEU.TXT, DEU.TXT renamed to README.1ST
        DEUTUTOR.ZIP contains a step-by-step tutorial for DEU.
+
+
 
 4.31   8 Mar 94
        New mouse interface.
@@ -252,9 +281,6 @@ By Rapha‰l Quinet:
        'DUMP' command now documented in the main DEU menu.
        'N','P' (or '<','>') keys to jump to the Next/Previous object.
 
-
-
-
 4.00   16 Feb 94
        Mouse support. Pointer may now move around the screen.
        Map scrolls if the pointer reaches the edge of the screen.
@@ -271,16 +297,18 @@ By Brendon Wyber:
        Bug fix, can now edit levels higher than 3.
 
 3.00   29 Jan 94
-       Second Release. Merged DDIR and DEDT into one program.
+       Second Release.  Merged DDIR and DEDT into one program.
        Replaced THING DATA files with PWAD files.
        Released with source code.
 
 2.00   26 Jan 94
-       First release. Had two programs DDIR and DEDT and used
+       First release.  Had two programs DDIR and DEDT and used
        text THING DATA files.
 
 1.00   Never
 Really sucked!
+
+
 
 
 
@@ -295,13 +323,16 @@ Beavis:         "The future sucks!  Change it!"
 Butthead:       "I may be cool Beavis, but I can't change the future."
 ********
 
+* Use gcc and a dos extender instead of Turbo C.  DEU will be much faster
+  and will be able to use all available memory (normal or extended).
+
 * Port to Linux and X Window.
 
 * 3D previewer with hidden line removal.
 
 * Add scrollbars to some dialog boxes.
 
-* Bitmap editor.
+* Bitmap editor and GIF support.
 
 * New graphical interface instead of the text-only main menu.
 
@@ -310,14 +341,37 @@ Butthead:       "I may be cool Beavis, but I can't change the future."
 
 
 
-
-
 CONTACTING THE AUTHORS
 ======================
 
-* Rapha‰l's E-mail address is: quinet@montefiore.ulg.ac.be
+* Rapha‰l (DEU code)
+  E-mail: quinet@montefiore.ulg.ac.be
+  Snail mail: Rapha‰l Quinet
+              9 rue des Martyrs
+              B-4550 Nandrin
+              Belgium
 
-* Brendon's E-mail address is: b.wyber@csc.canterbury.ac.nz
+* Brendon (DEU code)
+  E-mail: b.wyber@csc.canterbury.ac.nz
+  Snail mail: Brendon Wyber
+              63 Shirley Road
+              Christchurch 1
+              New Zealand
+
+* Steve (DEU documentation)
+  E-mail: bareman@hope.cit.hope.edu
+  Snail mail: Steve Bareman
+              869 136th Ave
+              Holland Michigan 49424
+              USA
+
+
+Note: Please do not send a message asking when the next version will be
+      released.  The only thing you will do is slow down the DEU 
+      development.  And please read the following paragraphs before
+      sending anyhting by E-mail...  Thanks.
+
+
 
 
 Contributions to the DEU effort...
@@ -332,7 +386,7 @@ information will be given in the "Credits..." section of this file.
 
 Updates to the Program
 ~~~~~~~~~~~~~~~~~~~~~~
-Contact Brendon and/or Rapha‰l before submitting code.
+Contact Brendon and Rapha‰l before submitting code.
 
 If you write an extension to DEU, try keeping all of it in a separate 
 file.  This will facilitate the integration in the version under 
@@ -343,7 +397,7 @@ is a Un*x "diff -c" file (context diff).
 
 Updates to the Manual
 ~~~~~~~~~~~~~~~~~~~~~~
-Send Updates for manual to Brendon, Rapha‰l, and/or Steve Bareman.
+Send Updates for manual to Steve Bareman, Brendon and Rapha‰l.
 
 Please send ONLY the sections you wish to update, complete with Section 
 numbers.  Each section should be sent as a separate section.  If you 
@@ -354,7 +408,7 @@ The subject header of your message should include "DEU DOC's".
 
 Bug Reports
 ~~~~~~~~~~~
-Send bug reports to Brendon and/or Rapha‰l.
+Send bug reports to Brendon and Rapha‰l.
 
 Read the docs thoroughly before reporting any bugs.  Some of them are 
 features, not bugs...
@@ -367,14 +421,14 @@ The subject header of your message should include "DEU BUG REPORT".
 
 Suggestions for Enhancements to DEU program
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Send your suggestions to Brendon and/or Raphal.
+Send your suggestions to Brendon and Rapha‰l.
 
 Thanks for your support!
 
 
 
 
-
+
 
 CREDITS
 =======
@@ -406,7 +460,7 @@ say that these people did great things for DOOM or DEU:
      "wuarchive.wustl.edu" (/incoming/MSDOS_UPLOADS/games/doomstuff).
 
 * Steve Bareman                   (bareman@hope.cit.hope.edu)
-     Rewrote the documentation (this file and MANUAL.DOC)
+     Rewrote the documentation (this file and DEU.TXT)
      Author of the DEU tutorial (look in DEUTUTOR.ZIP).
      Constant promoter of including source code with the editor.
      For a good FTP...
@@ -428,6 +482,7 @@ say that these people did great things for DOOM or DEU:
      Drop-down menus and menu bar.
      Rewrote and reorganized part of this file.
      Numerous improvements and suggestions.
+     Now working on a GIF support for DEU.
 
 * Will Ellett                     (wellet@cs.uah.edu)
      Configuration file (DEU.INI) and better command line parsing.
@@ -438,7 +493,8 @@ say that these people did great things for DOOM or DEU:
           the DOOM-only FTP server: ocf.unt.edu (129.120.9.151)
           (DOOM add-ons and utils, collection of WAD files, ...)
      Also sent some useful suggestions and bug reports.
-
+
+
 
 * Sven Neuhaus                    (sven@lilly.ping.de)
 * Billy Chow                      (billy.chow@engineering.oxford.ac.uk)
@@ -451,12 +507,36 @@ say that these people did great things for DOOM or DEU:
 * Ed Boling                       (edb9140@tamsun.tamu.edu)
 * Greg Grimsby                    (stu_gwgrimsb@vax1.acs.jmu.edu)
 * Michael Emmons                  (ie78hc0z@solix.fiu.edu)
+* Ryan Budney                     (rybu@jazz.math.ualberta.ca)
+* Tom Neff                        (tneff@panix.com)
+* Cameron Newham                  (cam@iinet.com.au)
      Numerous comments, suggestions for improvements, and bug reports.
      They were amongst the first to have faith in DEU and support it.
 
 * Dietrich Hempelmann             (avatar@uni-paderborn.de)
      Designed the "DEU 5" logo in DEU.TXT.  Great ascii-art... 
 
+* Jean-Serge Gagnon               (js@gaaj.cosmos.uottawa.ca)
+     Helped Steve with the docs and improved the DEU tutorial.
+     If you want to see a good WAD file, get FOREST.WAD...
+
+* Sean Malloy                     (malloy@crash.cts.com)
+     Updated the docs for the stairs, sent some interesting suggestions
+     and bug reports.
+
+* Chirstian Johannes Sladetsch    (s924706@yallara.cs.rmit.oz.au)
+     Better texture display, working on XMS support (memory swapping).
+
+* Craig Smith                     (bcs@cs.tamu.edu)
+     Ideas for improvements in the memory allocation routines.
+
+* Tim Dedischew                   (kfdedisc@vela.acs.oakland.edu)
+     Working on a realistic 3D previewer for DEU.
+
 We certainly forgot one or two heroes of the DEU quest...  Apologies if 
-your name is not here and you deserve it.  Just drop us a note and we
-will change that for the next release.  Have a nice DOOM!  
+your name is not here and you deserve it.  Just drop us a note and we will
+change that for the next release.
+
+Have a nice DOOM!
+
+
