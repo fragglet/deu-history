@@ -16,7 +16,7 @@
 #include "things.h"
 
 /* external function from objects.c */
-extern NPtr CreateNodes( SEPtr); /* SWAP - needs Vertexes */
+extern Bool CreateNodes( NPtr *, int *, SEPtr); /* SWAP - needs Vertexes */
 
 /* the global data */
 MDirPtr Level = NULL;		/* master dictionary entry for the level */
@@ -42,13 +42,12 @@ int NumWTexture = 0;		/* number of wall textures */
 char **WTexture;		/* array of wall texture names */
 int NumFTexture = 0;		/* number of floor/ceiling textures */
 char **FTexture;		/* array of texture names */
-int MapMaxX = -32768;		/* maximum X value of map */
-int MapMaxY = -32768;		/* maximum Y value of map */
+int MapMaxX = -32767;		/* maximum X value of map */
+int MapMaxY = -32767;		/* maximum Y value of map */
 int MapMinX = 32767;		/* minimum X value of map */
 int MapMinY = 32767;		/* minimum Y value of map */
 Bool MadeChanges = FALSE;	/* made changes? */
 Bool MadeMapChanges = FALSE;	/* made changes that need rebuilding? */
-SelPtr errld = NULL;		/* LineDefs in error (Nodes builder) */
 
 
 /*
@@ -76,7 +75,10 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
 
    /* get the number of Vertices */
    dir = FindMasterDir( Level, "VERTEXES");
-   OldNumVertexes = (int) (dir->dir.size / 4L);
+   if (dir != NULL)
+      OldNumVertexes = (int) (dir->dir.size / 4L);
+   else
+      OldNumVertexes = 0;
    if (OldNumVertexes > 0)
    {
       VertexUsed = GetMemory( OldNumVertexes * sizeof( int));
@@ -86,7 +88,10 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
 
    /* read in the Things data */
    dir = FindMasterDir( Level, "THINGS");
-   NumThings = (int) (dir->dir.size / 10L);
+   if (dir != NULL)
+      NumThings = (int) (dir->dir.size / 10L);
+   else
+      NumThings = 0;
    if (NumThings > 0)
    {
       Things = GetFarMemory( (unsigned long) NumThings * sizeof( struct Thing));
@@ -103,7 +108,10 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
 
    /* read in the LineDef information */
    dir = FindMasterDir( Level, "LINEDEFS");
-   NumLineDefs = (int) (dir->dir.size / 14L);
+   if (dir != NULL)
+      NumLineDefs = (int) (dir->dir.size / 14L);
+   else
+      NumLineDefs = 0;
    if (NumLineDefs > 0)
    {
       LineDefs = GetFarMemory( (unsigned long) NumLineDefs * sizeof( struct LineDef));
@@ -124,7 +132,10 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
 
    /* read in the SideDef information */
    dir = FindMasterDir( Level, "SIDEDEFS");
-   NumSideDefs = (int) (dir->dir.size / 30L);
+   if (dir != NULL)
+      NumSideDefs = (int) (dir->dir.size / 30L);
+   else
+      NumSideDefs = 0;
    if (NumSideDefs > 0)
    {
       SideDefs = GetFarMemory( (unsigned long) NumSideDefs * sizeof( struct SideDef));
@@ -151,8 +162,8 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
       Vertexes = GetFarMemory( (unsigned long) NumVertexes * sizeof( struct Vertex));
       dir = FindMasterDir( Level, "VERTEXES");
       BasicWadSeek( dir->wadfile, dir->dir.start);
-      MapMaxX = -32768;
-      MapMaxY = -32768;
+      MapMaxX = -32767;
+      MapMaxY = -32767;
       MapMinX = 32767;
       MapMinY = 32767;
       m = 0;
@@ -203,7 +214,10 @@ void ReadLevelData( int episode, int mission) /* SWAP! */
 
    /* read in the Sectors information */
    dir = FindMasterDir( Level, "SECTORS");
-   NumSectors = (int) (dir->dir.size / 26L);
+   if (dir != NULL)
+      NumSectors = (int) (dir->dir.size / 26L);
+   else
+      NumSectors = 0;
    if (NumSectors > 0)
    {
       Sectors = GetFarMemory( (unsigned long) NumSectors * sizeof( struct Sector));
@@ -341,7 +355,6 @@ void SaveLevelData( char *outfile) /* SWAP! */
    Bool    newnodes;
    long    rejectsize;
    int     oldNumVertexes;
-   SelPtr  cur;
 
    DisplayMessage( -1, -1, "Saving data to \"%s\"...", outfile);
    LogMessage( ": Saving data to \"%s\"...\n", outfile);
@@ -370,8 +383,8 @@ void SaveLevelData( char *outfile) /* SWAP! */
 
    /* update MapMinX, MapMinY, MapMaxX, MapMaxY */
    ObjectsNeeded( OBJ_VERTEXES, 0);
-   MapMaxX = -32768;
-   MapMaxY = -32768;
+   MapMaxX = -32767;
+   MapMaxY = -32767;
    MapMinX = 32767;
    MapMinY = 32767;
    for (n = 0; n < NumVertexes; n++)
@@ -390,7 +403,7 @@ void SaveLevelData( char *outfile) /* SWAP! */
    if (MadeMapChanges && (Expert || Confirm( -1, 270, "Do you want to rebuild the NODES, SEGS, SSECTORS, REJECT and BLOCKMAP?",
 						      "WARNING: You won't be able to use your level if you don't do this...")))
    {
-      SEPtr seglist, lastseg;
+      SEPtr seglist;
 
       if (UseMouse)
 	 HideMousePointer();
@@ -451,23 +464,28 @@ void SaveLevelData( char *outfile) /* SWAP! */
       }
       ShowProgress( OBJ_VERTEXES);
       ShowProgress( OBJ_SIDEDEFS);
+      LogMessage( ": Starting Nodes builder...\n");
+      LogMessage( "\tNumber of Vertices: %d\n", NumVertexes);
+      LogMessage( "\tNumber of Segs:     %d\n", NumSegs);
       ObjectsNeeded( OBJ_VERTEXES, 0);
-      errld = NULL;
-      Nodes = CreateNodes( seglist);
+      if (CreateNodes( &Nodes, &n, seglist) == FALSE)
+      {
+	 Beep();
+	 Beep();
+	 Beep();
+         LogMessage( "\nError: CreateNodes failed!\n\n");
+	 Beep();
+	 Beep();
+	 Beep();
+      }
+      LogMessage( ": Nodes created OK.\n");
+      LogMessage( "\tNumber of Vertices: %d\n", NumVertexes);
+      LogMessage( "\tNumber of SideDefs: %d\n", NumSideDefs);
+      LogMessage( "\tNumber of Segs:     %d\n", NumSegs);
+      LogMessage( "\tNumber of SSectors: %d\n", NumSSectors);
       if (UseMouse)
 	 HideMousePointer();
       DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, 1.0);
-      if (errld != NULL)
-      {
-	 DrawScreenBox3D( 0, 130, 203, ScrMaxY);
-	 DrawScreenText( 10, 138, "Suspicious LineDefs:");
-	 n = 153;
-	 for (cur = errld; cur && n < ScrMaxY - 12; cur = cur->next)
-	 {
-	    DrawScreenText( 40, n, "#%d", cur->objnum);
-	    n += 10;
-	 }
-      }
       if (UseMouse)
 	 ShowMousePointer();
       newnodes = TRUE;
@@ -658,6 +676,8 @@ void SaveLevelData( char *outfile) /* SWAP! */
 
    if (newnodes)
    {
+      int mminx, mminy, mnumx, mnumy;
+
       /* create and output the blockmap */
       ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
       if (UseMouse)
@@ -669,39 +689,39 @@ void SaveLevelData( char *outfile) /* SWAP! */
       DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, 0.0);
       if (UseMouse)
 	 ShowMousePointer();
-      MapMinX = (int) (MapMinX / 8 - 8) * 8;
-      WriteBytes( file, &MapMinX, 2L);
-      MapMinY = (int) (MapMinY / 8 - 8) * 8;
-      WriteBytes( file, &MapMinY, 2L);
-      MapMaxX = MapMaxX / 128 - MapMinX / 128 + 2;
-      WriteBytes( file, &MapMaxX, 2L);
-      MapMaxY = MapMaxY / 128 - MapMinY / 128 + 2;
-      WriteBytes( file, &MapMaxY, 2L);
+      mminx = (int) (MapMinX / 8 - 8) * 8;
+      WriteBytes( file, &mminx, 2L);
+      mminy = (int) (MapMinY / 8 - 8) * 8;
+      WriteBytes( file, &mminy, 2L);
+      mnumx = MapMaxX / 128 - mminx / 128 + 2;
+      WriteBytes( file, &mnumx, 2L);
+      mnumy = MapMaxY / 128 - mminy / 128 + 2;
+      WriteBytes( file, &mnumy, 2L);
       counter += 8L;
       oldpos = ftell( file);
-      blocksize = (long) (MapMaxX * MapMaxY * sizeof( int));
+      blocksize = (long) (mnumx * mnumy * sizeof( int));
       blockptr = GetMemory( blocksize);
       WriteBytes( file, blockptr, blocksize);
       blocksize += 8L;
       counter += blocksize - 7L;
-      blockcount = MapMaxX * MapMaxY + 4;
-      for (i = 0; i < MapMaxY; i++)
+      blockcount = mnumx * mnumy + 4;
+      for (i = 0; i < mnumy; i++)
       {
 	 if (UseMouse)
 	    HideMousePointer();
-	 DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, (float) i / (float) MapMaxY);
+	 DrawScreenMeter( 225, 188, ScrMaxX - 10, 208, (float) i / (float) mnumy);
 	 if (UseMouse)
 	    ShowMousePointer();
-	 for (j = 0; j < MapMaxX; j++)
+	 for (j = 0; j < mnumx; j++)
 	 {
-	    blockptr[ MapMaxX * i + j] = blockcount;
+	    blockptr[ mnumx * i + j] = blockcount;
 	    n = 0;
 	    WriteBytes( file, &n, 2L);
 	    counter += 2L;
 	    blocksize += 2L;
 	    blockcount++;
 	    for (n = 0; n < NumLineDefs; n++)
-	       if (IsLineDefInside( n, MapMinX + j * 128, MapMinY + i * 128, MapMinX + 127 + j * 128, MapMinY + 127 + i * 128))
+	       if (IsLineDefInside( n, mminx + j * 128, mminy + i * 128, mminx + 127 + j * 128, mminy + 127 + i * 128))
 	       {
 		  WriteBytes( file, &n, 2L);
 		  counter += 2L;
@@ -722,7 +742,7 @@ void SaveLevelData( char *outfile) /* SWAP! */
 	 ShowMousePointer();
       size = ftell( file);
       fseek( file, oldpos, SEEK_SET);
-      WriteBytes( file, blockptr, (long) (MapMaxX * MapMaxY * sizeof( int)));
+      WriteBytes( file, blockptr, (long) (mnumx * mnumy * sizeof( int)));
       fseek( file, size, SEEK_SET);
       if (FindMasterDir( dir, "P2_END"))
 	 counter--;
@@ -856,17 +876,7 @@ void SaveLevelData( char *outfile) /* SWAP! */
    /* the file is now up to date */
    MadeChanges = FALSE;
    if (newnodes)
-   {
       MadeMapChanges = FALSE;
-      if (errld != NULL)
-      {
-	 DrawScreenBox3D( 218, ScrMaxY - 30, ScrMaxX, ScrMaxY);
-	 SetColor( YELLOW);
-	 DrawScreenText( 225, ScrMaxY - 18, "Errors found.  Press any key to continue...");
-	 bioskey( 0);
-	 ForgetSelection( &errld);
-      }
-   }
    ObjectsNeeded( 0);
 
    /* update pointers in Master Directory */
@@ -904,7 +914,7 @@ void ReadWTextureNames()
    dir = FindMasterDir( MasterDir, "TEXTURE1");
    BasicWadSeek( dir->wadfile, dir->dir.start);
    BasicWadRead( dir->wadfile, &val, 4);
-   NumWTexture = val + 1;
+   NumWTexture = (int) val + 1;
    /* read in the offsets for texture1 names */
    offsets = GetMemory( NumWTexture * sizeof( long));
    for (n = 1; n < NumWTexture; n++)

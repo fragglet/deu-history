@@ -27,12 +27,32 @@ Bool UseMouse;			/* is there a mouse driver? */
 
 void CheckMouseDriver()
 {
-   union REGS regs;
+   union  REGS  regs;
+   struct SREGS sregs;
 
    regs.x.ax = 0x0000;
    int86(MOUSE, &regs, &regs);
    if (regs.x.ax == 0xffff)
+   {
       UseMouse = TRUE; /* mouse */
+#ifdef CIRRUS_PATCH
+      /*
+         note from RQ:
+            This test is temporary and should be removed in DEU 5.3
+            We should create a better "fake cursor" by using the
+            mouse callback function.  Remember to remove the callback
+            when DEU exits...
+      */
+      if (CirrusCursor == TRUE)
+      {
+         regs.x.ax = 0x000C;
+         regs.x.cx = 0x0001;
+         regs.x.dx = FP_OFF( MouseCallBackFunction);
+         sregs.es  = FP_SEG( MouseCallBackFunction);
+         int86x( MOUSE, &regs, &regs, &sregs);
+      }
+#endif /* CIRRUS_PATCH */
+   }
    else
       UseMouse = FALSE; /* no mouse */
 }
@@ -142,5 +162,16 @@ void ResetMouseLimits()
 }
 
 
+/*
+   mouse callback function
+*/
+
+void MouseCallBackFunction()
+{
+#ifdef CIRRUS_PATCH
+   if (CirrusCursor == TRUE)
+      SetHWCursorPos(_CX, _DX);
+#endif /* CIRRUS_PATCH */
+}
 
 /* end of file */

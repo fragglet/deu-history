@@ -46,12 +46,12 @@ extern int   MapMinY;		/* minimum Y value of map */
 extern Bool  MadeChanges;	/* made changes? */
 extern Bool  MadeMapChanges;	/* made changes that need rebuilding? */
 
-extern SelPtr errld;		/* LineDefs in error (Nodes builder) */
 
-
-/* from objects.c */
-extern char DefaultWallTexture[ 9];
-extern char DefaultFloorTexture[ 9];
-extern char DefaultCeilingTexture[ 9];
-extern int DefaultFloorHeight;
-extern int DefaultCeilingHeight;
+/* from deu.c (config file options) */
+extern char *DefaultWallTexture;	/* default normal wall texture */
+extern char *DefaultLowerTexture;	/* default lower wall texture */
+extern char *DefaultUpperTexture;	/* default upper wall texture */
+extern char *DefaultFloorTexture;	/* default floor texture */
+extern char *DefaultCeilingTexture;	/* default ceiling texture */
+extern int  DefaultFloorHeight;		/* default floor height */
+extern int  DefaultCeilingHeight;	/* default ceiling height */

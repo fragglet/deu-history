@@ -325,7 +325,7 @@ void ListMasterDirectory( FILE *file)
       {
 	 lines = 0;
          printf( "[Q to abort, any other key to continue]");
-	 key = getch();
+	 key = bioskey( 0);
 	 printf( "\r                                       \r");
 	 if (key == 'Q' || key == 'q')
 	    break;
@@ -359,7 +359,7 @@ void ListFileDirectory( FILE *file, WadPtr wad)
       {
 	 lines = 0;
 	 printf( "[Q to abort, any other key to continue]");
-	 key = getch();
+	 key = bioskey( 0);
 	 printf( "\r                                       \r");
 	 if (key == 'Q' || key == 'q')
 	    break;
@@ -533,6 +533,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
 	 fprintf( file, "Contents of entry %s (size = %ld bytes):\n", dataname, entry->dir.size);
 	 BasicWadSeek( entry->wadfile, entry->dir.start);
 	 n = 0;
+	 i = -1;
 	 for (c = 0; c < entry->dir.size; c += i)
 	 {
 	    fprintf( file, "%04X: ", n);
@@ -555,7 +556,7 @@ void DumpDirectoryEntry( FILE *file, char *entryname)
 	    {
 	       lines = 0;
 	       printf( "[%d%% - Q to abort, S to skip this entry, any other key to continue]", n * 100 / entry->dir.size);
-	       key = getch();
+	       key = bioskey( 0);
 	       printf( "\r                                                                    \r");
 	       if (key == 'S' || key == 's')
 		  break;
@@ -643,7 +644,6 @@ void SaveEntryToRawFile( FILE *file, char *entryname)
 
 void SaveEntryFromRawFile( FILE *file, FILE *raw, char *entryname)
 {
-   MDirPtr entry;
    long    counter;
    long    size;
    char    name8[ 8];

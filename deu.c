@@ -33,9 +33,20 @@ int  InitialScale = 8;		/* initial zoom factor for map */
 int  VideoMode = 2;		/* default video mode for VESA/SuperVGA */
 char *BGIDriver = "VESA";	/* default extended BGI driver */
 Bool FakeCursor = FALSE;	/* use a "fake" mouse cursor */
+Bool CirrusCursor = FALSE;	/* use hardware cursor on Cirrus Logic VGA cards */
 Bool Colour2 = FALSE;		/* use the alternate set for things colors */
 Bool InfoShown = TRUE;		/* should we display the info bar? */
 Bool AdditiveSelBox = FALSE;	/* additive selection box or select in box only? */
+int  SplitFactor = 8;		/* factor used by the Nodes builder */
+char *DefaultWallTexture  = "GRAY4";	/* default normal wall texture */
+char *DefaultUpperTexture = "ICKWALL2";	/* default upper wall texture */
+char *DefaultLowerTexture = "GRAY1";	/* default lower wall texture */
+char *DefaultFloorTexture = "FLOOR0_3";	/* default floor texture */
+char *DefaultCeilingTexture = "FLAT18";	/* default ceiling texture */
+int  DefaultFloorHeight   = 0;		/* default floor height */
+int  DefaultCeilingHeight = 128;	/* default ceiling height */
+Bool Select0 = TRUE;		/* select object 0 by default when switching modes */
+Bool Reminder = TRUE;		/* display a funny message when DEU starts */
 char *MainWad = "DOOM.WAD";	/* name of the main wad file */
 char **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
@@ -54,10 +65,21 @@ OptDesc options[] =		/* description of the command line options */
    { "v",  "video",       OPT_INTEGER,    "Default video mode",		NULL,                         &VideoMode      },
    { NULL, "bgi",         OPT_STRING,     "Default video driver",	NULL,                         &BGIDriver      },
    { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",		"Fake cursor OFF",            &FakeCursor     },
+   { "cc", "cirruscursor",OPT_BOOLEAN,    "Cirrus hardware cursor ON",	"Cirrus hardware cursor OFF", &CirrusCursor,  },
    { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",	"Normal Things color set",    &Colour2        },
    { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",		"Info bar hidden",            &InfoShown      },
    { "a",  "addselbox",   OPT_BOOLEAN,    "Additive selection box",	"Select objects in box only", &AdditiveSelBox },
-   { NULL, NULL,          OPT_NONE,       NULL,				NULL,                         NULL            }
+   { "sf", "splitfactor", OPT_INTEGER,    "Split factor",		NULL,			      &SplitFactor    },
+   { NULL, "walltexture", OPT_STRING,     "Default wall texture",	NULL,                         &DefaultWallTexture    },
+   { NULL, "lowertexture",OPT_STRING,     "Default lower wall texture",	NULL,                         &DefaultLowerTexture   },
+   { NULL, "uppertexture",OPT_STRING,     "Default upper wall texture",	NULL,                         &DefaultUpperTexture   },
+   { NULL, "floortexture",OPT_STRING,     "Default floor texture",	NULL,                         &DefaultFloorTexture   },
+   { NULL, "ceiltexture", OPT_STRING,     "Default ceiling texture",	NULL,                         &DefaultCeilingTexture },
+   { NULL, "floorheight", OPT_INTEGER,    "Default floor height",	NULL,			      &DefaultFloorHeight    },
+   { NULL, "ceilheight",  OPT_INTEGER,    "Default ceiling height",	NULL,			      &DefaultCeilingHeight  },
+   { "s0", "select0",     OPT_BOOLEAN,    "Select 0 by default",	"No default selection",	      &Select0,	      },
+   { NULL, "reminder1",   OPT_BOOLEAN,	  NULL,				NULL,			      &Reminder,      },
+   { NULL, NULL,          OPT_END,        NULL,				NULL,                         NULL            }
 };
 
 
@@ -87,13 +109,15 @@ int main( int argc, char *argv[])
    ParseCommandLineOptions( argc, argv);
    if (Debug == TRUE)
    {
-      logfile = fopen( DEU_LOG_FILE, "w");
+      logfile = fopen( DEU_LOG_FILE, "a");
       if (logfile == NULL)
 	 printf( "Warning: Could not open log file \"%s\"", DEU_LOG_FILE);
       LogMessage(": Welcome to DEU!\n");
    }
    if (Quieter == TRUE)
       Quiet = TRUE;
+   if (Reminder == TRUE)
+      FunnyMessage( stdout);
    /* load the wad files */
    OpenMainWad( MainWad);
    if (PatchWads)
@@ -108,7 +132,7 @@ int main( int argc, char *argv[])
    MainLoop();
    /* that's all, folks! */
    CloseWadFiles();
-   LogMessage( ": The end!\n");
+   LogMessage( ": The end!\n\n\n");
    if (logfile != NULL)
       fclose( logfile);
    return 0;
@@ -162,7 +186,7 @@ void ParseCommandLineOptions( int argc, char *argv[])
 	 Usage( stdout);
 	 exit( 0);
       }
-      for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
+      for (optnum = 0; options[ optnum].opt_type != OPT_END; optnum++)
       {
 	 if (!stricmp( &(argv[ 0][ 1]), options[ optnum].short_name) || !stricmp( &(argv[ 0][ 1]), options[ optnum].long_name))
 	 {
@@ -227,7 +251,7 @@ void ParseCommandLineOptions( int argc, char *argv[])
 	    break;
 	 }
       }
-      if (options[ optnum].opt_type == OPT_NONE)
+      if (options[ optnum].opt_type == OPT_END)
 	 ProgError( "invalid argument: \"%s\"", argv[ 0]);
       argv++;
       argc--;
@@ -290,7 +314,7 @@ void ParseConfigFileOptions( char *filename)
       /* skip blanks after the equal sign */
       while (isspace( value[ 0]))
 	 value++;
-      for (optnum = 0; options[ optnum].opt_type != OPT_NONE; optnum++)
+      for (optnum = 0; options[ optnum].opt_type != OPT_END; optnum++)
       {
 	 if (!stricmp( option, options[ optnum].long_name))
 	 {
@@ -355,7 +379,7 @@ void ParseConfigFileOptions( char *filename)
 	    break;
 	 }
       }
-      if (options[ optnum].opt_type == OPT_NONE)
+      if (options[ optnum].opt_type == OPT_END)
 	 ProgError( "Invalid option in %s: \"%s\"", filename, option);
    }
    fclose( cfgfile);
@@ -369,21 +393,22 @@ void ParseConfigFileOptions( char *filename)
 void Usage( FILE *where)
 {
    fprintf( where, "Usage:\n");
-   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-qq] [-e] [-a] [-i] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-config <ini_file>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
-   fprintf( where, "   -w    Gives the name of the main wad file. (also -main)  Default is DOOM.WAD\n");
-   fprintf( where, "   -d    Enter debug mode. (also -debug)\n");
-   fprintf( where, "   -c    Use the alternate Things color set (also -color2)\n");
-   fprintf( where, "   -q    Suppresses some sounds. (also -quiet)\n");
-   fprintf( where, "   -qq   Suppresses all sounds. (also -quieter)\n");
-   fprintf( where, "   -e    Stops prompts for confirmation. (also -expert)\n");
-   fprintf( where, "   -a    To have an additive selection box (also -addselbox)\n");
-   fprintf( where, "   -i    Show the info bar in the editors (also -infobar)\n");
-   fprintf( where, "   -z    Set the initial zoom factor for the editors. (also -zoom)\n");
-   fprintf( where, "   -v    Set the default video mode number (also -video)\n");
-   fprintf( where, "   -bgi  Set the default video driver (*.BGI file)\n");
-   fprintf( where, "   -fc   Use a \"fake\" mouse cursor (also -fakecursor)\n");
-   fprintf( where, "   -sb   Swaps the mouse buttons. (also -swapbuttons)\n");
-   fprintf( where, "   -pw   To add one patch wad file to be loaded (may be repeated). (also -pwad)\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-qq] [-e] [-a] [-i] [-mg] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-config <ini_file>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
+   fprintf( where, "   -w    Gives the name of the main wad file (also -main).  Default is DOOM.WAD\n");
+   fprintf( where, "   -d    Enter debug mode (also -debug).\n");
+   fprintf( where, "   -c    Use the alternate Things color set (also -color2).\n");
+   fprintf( where, "   -q    Suppresses some sounds (also -quiet).\n");
+   fprintf( where, "   -qq   Suppresses all sounds (also -quieter).\n");
+   fprintf( where, "   -e    Stops prompts for confirmation (also -expert).\n");
+   fprintf( where, "   -a    To have an additive selection box (also -addselbox).\n");
+   fprintf( where, "   -i    Show the info bar in the editors (also -infobar).\n");
+   fprintf( where, "   -mg   Use a minimum grid of 8x8 for Vertices (also -mingrid8x8).\n");
+   fprintf( where, "   -z    Set the initial zoom factor for the editors (also -zoom).\n");
+   fprintf( where, "   -v    Set the default video mode number (also -video).\n");
+   fprintf( where, "   -bgi  Set the default video driver (*.BGI file).\n");
+   fprintf( where, "   -fc   Use a \"fake\" mouse cursor (also -fakecursor).\n");
+   fprintf( where, "   -sb   Swaps the mouse buttons (also -swapbuttons).\n");
+   fprintf( where, "   -pw   To add one patch wad file to be loaded; may be repeated (also -pwad).\n");
    fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
    fprintf( where, "   -config Gives the name of the config file.\n");
    fprintf( where, "Put a '+' instead of a '-' before boolean options to reverse their effect.\n");
@@ -397,11 +422,34 @@ void Usage( FILE *where)
 
 void Credits( FILE *where)
 {
-   fprintf( where, "DEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
+   fprintf( where, "\nDEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
    fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n");
    fprintf( where, "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n\n");
 }
 
+
+
+/*
+   display a funny message on the screen
+*/
+
+void FunnyMessage( FILE *where)
+{
+   fprintf( where, "\n");
+   fprintf( where, "*----------------------------------------------------------------------------*\n");
+   fprintf( where, "| Welcome to DEU!  This is a poweful utility and, like all good tools, it    |\n");
+   fprintf( where, "| comes with its user's manual.  Please print and read DEU.TXT if you want   |\n");
+   fprintf( where, "| to discover all the features of this program.  If you are new to DEU, the  |\n");
+   fprintf( where, "| tutorial will show you how to build your first level.                      |\n");
+   fprintf( where, "|                                                                            |\n");
+   fprintf( where, "| If you are an experienced DEU user and want to know what has changed since |\n");
+   fprintf( where, "| the last version, you should read the revision history in README.1ST.      |\n");
+   fprintf( where, "|                                                                            |\n");
+   fprintf( where, "| And if you have lots of suggestions for improvements, bug reports, or even |\n");
+   fprintf( where, "| complaints about this program, be sure to read README.1ST first.           |\n");
+   fprintf( where, "| Hint: you can easily disable this message.  Read the docs carefully...     |\n");
+   fprintf( where, "*----------------------------------------------------------------------------*\n");
+}
 
 
 /*

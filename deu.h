@@ -18,14 +18,15 @@
 #include <ctype.h>
 #include <graphics.h>
 #include <alloc.h>
-
+#include <dos.h>
+#include <bios.h>
 
 
 /*
    the version information
 */
 
-#define DEU_VERSION	"5.1"	/* the version number */
+#define DEU_VERSION	"5.2"	/* the version number */
 
 
 
@@ -113,7 +114,7 @@ typedef struct
       OPT_STRING,			/* character string */
       OPT_STRINGACC,			/* character string, but store in a list */
       OPT_STRINGLIST,			/* list of character strings */
-      OPT_NONE				/* end of the options description */
+      OPT_END				/* end of the options description */
    } opt_type;
    char *msg_if_true;		/* message printed if option is true */
    char *msg_if_false;		/* message printed if option is false */
@@ -132,8 +133,12 @@ typedef struct
 #define DEU_LOG_FILE		"DEU.LOG"
 
 /* convert screen coordinates to map coordinates */
-#define MAPX(x)			(OrigX + (x - ScrCenterX) * Scale)
-#define MAPY(y)			(OrigY + (ScrCenterY - y) * Scale)
+#define MAPX(x)			(OrigX + (int) (((x) - ScrCenterX) / Scale))
+#define MAPY(y)			(OrigY + (int) ((ScrCenterY - (y)) / Scale))
+
+/* convert map coordinates to screen coordinates */
+#define SCREENX(x)		(ScrCenterX + (int) (((x) - OrigX) * Scale))
+#define SCREENY(y)		(ScrCenterY + (int) ((OrigY - (y)) * Scale))
 
 /* object types */
 #define OBJ_THINGS		1
@@ -152,7 +157,7 @@ typedef struct
 #define FALSE			0
 
 /* half the size of an object (Thing or Vertex) in map coords */
-#define OBJSIZE			10
+#define OBJSIZE			7
 
 
 /*
@@ -170,8 +175,11 @@ extern int   InitialScale;	/* initial zoom factor for map */
 extern int   VideoMode;		/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
 extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
+extern Bool  CirrusCursor;	/* use hardware cursor on Cirrus Logic VGA cards */
 extern Bool  Colour2;		/* use the alternate set for things colors */
-extern Bool AdditiveSelBox;	/* additive selection box or select in box only? */
+extern Bool  AdditiveSelBox;	/* additive selection box or select in box only? */
+extern int   SplitFactor;	/* factor used by the Nodes builder */
+extern Bool  Select0;		/* select object 0 by default when switching modes */
 extern char *MainWad;		/* name of the main wad file */
 extern FILE *logfile;		/* filepointer to the error log */
 
@@ -183,16 +191,16 @@ extern MDirPtr MasterDir;	/* the master directory */
 extern Bool InfoShown;          /* is the bottom line displayed? */
 
 /* from gfx.c */
-extern int GfxMode;		/* current graphics mode, or 0 for text */
-extern int Scale;		/* scale to draw map 20 to 1 */
-extern int OrigX;		/* the X origin */
-extern int OrigY;		/* the Y origin */
-extern int PointerX;		/* X position of pointer */
-extern int PointerY;		/* Y position of pointer */
-extern int ScrMaxX;		/* maximum X screen coord */
-extern int ScrMaxY;		/* maximum Y screen coord */
-extern int ScrCenterX;		/* X coord of screen center */
-extern int ScrCenterY;		/* Y coord of screen center */
+extern int   GfxMode;		/* current graphics mode, or 0 for text */
+extern float Scale;		/* scale to draw map 20 to 1 */
+extern int   OrigX;		/* the X origin */
+extern int   OrigY;		/* the Y origin */
+extern int   PointerX;		/* X position of pointer */
+extern int   PointerY;		/* Y position of pointer */
+extern int   ScrMaxX;		/* maximum X screen coord */
+extern int   ScrMaxY;		/* maximum Y screen coord */
+extern int   ScrCenterX;	/* X coord of screen center */
+extern int   ScrCenterY;	/* Y coord of screen center */
 
 /* from mouse.c */
 extern Bool UseMouse;		/* is there a mouse driver? */
@@ -209,6 +217,7 @@ void ParseCommandLineOptions( int, char *[]);
 void ParseConfigFileOptions( char *);
 void Usage( FILE *);
 void Credits( FILE *);
+void FunnyMessage( FILE *);
 void Beep( void);
 void PlaySound( int, int);
 void ProgError( char *, ...);
@@ -256,7 +265,7 @@ void ForgetWTextureNames( void);
 void EditLevel( int, int, Bool);
 void SelectLevel( int *, int *);
 void EditorLoop( int, int); /* SWAP! */
-void DrawMap( int, int); /* SWAP! */
+void DrawMap( int, int, Bool); /* SWAP! */
 void CenterMapAroundCoords( int, int);
 void GoToObject( int, int); /* SWAP! */
 
@@ -284,6 +293,11 @@ unsigned ComputeAngle( int, int);
 unsigned ComputeDist( int, int);
 void InsertPolygonVertices( int, int, int, int);
 void RotateAndScaleCoords( int *, int *, double, double);
+#ifdef CIRRUS_PATCH
+void SetHWCursorPos( unsigned, unsigned);
+void SetHWCursorCol( long, long);
+void SetHWCursorMap( char *);
+#endif /* CIRRUS_PATCH */
 
 /* from things.c */
 int GetThingColour( int);
@@ -310,6 +324,7 @@ void GetMouseCoords( int *, int *, int *);
 void SetMouseCoords( int, int);
 void SetMouseLimits( int, int, int, int);
 void ResetMouseLimits( void);
+void MouseCallBackFunction( void);
 
 /* from menus.c */
 int DisplayMenuArray( int, int, char *, int, int *, char *[ 30], int [30]);
@@ -331,6 +346,7 @@ Bool IsSelected( SelPtr, int);
 void SelectObject( SelPtr *, int);
 void UnSelectObject( SelPtr *, int);
 void ForgetSelection( SelPtr *);
+int GetMaxObjectNum( int);
 int GetCurObject( int, int, int, int, int); /* SWAP! */
 SelPtr SelectObjectsInBox( int, int, int, int, int); /* SWAP! */
 void HighlightObject( int, int, int); /* SWAP! */
@@ -338,21 +354,27 @@ void DeleteObject( int, int); /* SWAP! */
 void DeleteObjects( int, SelPtr *); /* SWAP! */
 void InsertObject( int, int, int, int); /* SWAP! */
 Bool IsLineDefInside( int, int, int, int, int); /* SWAP - needs Vertexes & LineDefs */
+int GetOppositeSector( int, Bool); /* SWAP! */
 void CopyObjects( int, SelPtr); /* SWAP! */
 Bool MoveObjectsToCoords( int, SelPtr, int, int, int); /* SWAP! */
 void GetObjectCoords( int, int, int *, int *); /* SWAP! */
 void RotateAndScaleObjects( int, SelPtr, double, double); /* SWAP! */
-int FindFreeTag(); /* SWAP! */
+int FindFreeTag( void); /* SWAP! */
 void FlipLineDefs( SelPtr, Bool); /* SWAP! */
 void DeleteVerticesJoinLineDefs( SelPtr ); /* SWAP! */
 void MergeVertices( SelPtr *); /* SWAP! */
-Bool CheckMergedVertices( SelPtr *); /* SWAP! */
+Bool AutoMergeVertices( SelPtr *); /* SWAP! */
 void SplitLineDefs( SelPtr); /* SWAP! */
 void SplitSector( int, int); /* SWAP! */
 void SplitLineDefsAndSector( int, int); /* SWAP! */
+void MergeSectors( SelPtr *); /* SWAP! */
+void DeleteLineDefsJoinSectors( SelPtr *); /* SWAP! */
 void MakeDoorFromSector( int); /* SWAP! */
 void MakeLiftFromSector( int); /* SWAP! */
-void AlignTextures( SelPtr *); /* SWAP! */
+void AlignTexturesY( SelPtr *); /* SWAP! */
+void AlignTexturesX( SelPtr *); /* SWAP! */
+void DistributeSectorFloors( SelPtr); /* SWAP! */
+void DistributeSectorCeilings( SelPtr); /* SWAP! */
 
 /* from editobj.c */
 void DisplayObjectInfo( int, int); /* SWAP! */
@@ -360,9 +382,10 @@ int DisplayThingsMenu( int, int, char *, ...);
 int DisplayLineDefTypeMenu( int, int, char *, ...);
 int InputObjectNumber( int, int, int, int);
 int InputObjectXRef( int, int, int, Bool, int);
-Bool Input2VertexNumber( int, int, char *, int *, int *);
+Bool Input2VertexNumbers( int, int, char *, int *, int *);
 void EditObjectsInfo( int, int, int, SelPtr);
 void CheckLevel( int, int); /* SWAP! */
+Bool CheckStartingPos( void); /* SWAP! */
 void InsertStandardObject( int, int, int, int); /* SWAP! */
 void MiscOperations( int, int, int, SelPtr *); /* SWAP! */
 void Preferences( int, int);
@@ -374,10 +397,11 @@ void ShowProgress( int);
 void ChooseFloorTexture( int, int, char *, int, char **, char *);
 void ChooseWallTexture( int, int, char *, int, char **, char *);
 void ChooseSprite( int, int, char *, char *);
+void GetWallTextureSize( int *, int *, char *);
 
 /* from swapmem.c */
-void InitSwap();
-void FreeSomeMemory();
+void InitSwap( void);
+void FreeSomeMemory( void);
 void ObjectsNeeded( int, ...);
 
 

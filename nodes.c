@@ -29,7 +29,6 @@
 void ShowProgress( int objtype)
 {
    static int SavedNumVertexes = 0;
-   static int NumErrors = 0;
 
    if (UseMouse)
       HideMousePointer();
@@ -43,20 +42,12 @@ void ShowProgress( int objtype)
       DrawScreenBox3D( 0, 30, 203, 52);
       DrawScreenText( 10, 38, "Number of SideDefs: %d", NumSideDefs);
       SavedNumVertexes = NumVertexes;
-      NumErrors = 0;
       break;
    case OBJ_SSECTORS:
       DrawScreenBox3D( 0, 60, 203, 92);
       DrawScreenText( 10, 68, "Number of Segs:     %d", NumSegs);
       DrawScreenText( 10, 78, "Number of SSectors: %d", NumSSectors);
       DrawScreenMeter( 225, 28, ScrMaxX - 10, 48, (float) NumSegs / (float) (NumSideDefs + NumVertexes - SavedNumVertexes));
-      break;
-   default:
-      NumErrors++;
-      DrawScreenBox3D( 0, 100, 203, 122);
-      SetColor( RED);
-      DrawScreenText( 10, 108, "Number of warnings: %d", NumErrors);
-      Beep();
       break;
    }
    if (UseMouse)
@@ -66,7 +57,7 @@ void ShowProgress( int objtype)
 
 
 /*
-   find the point of intersection for two lines
+   find the point of intersection for two lines (return FALSE if there is none)
 */
 
 Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - needs Vertexes */
@@ -91,13 +82,23 @@ Bool ComputeIntersection( int *x, int *y, SEPtr seg1, SEPtr seg2) /* SWAP - need
       *x = (int) ((dx1 * x2 - dx2 * x1) / d);
       *y = (int) ((dy1 * x2 - dy2 * x1) / d);
       /* check if the intersection is not at one end of a Seg (vertex grid = 8*8) */
-      if ((*x < Vertexes[ seg1->start].x - 7 || *x > Vertexes[ seg1->start].x + 7 || *y < Vertexes[ seg1->start].y - 7 || *y > Vertexes[ seg1->start].y + 7)
-       && (*x < Vertexes[ seg1->end].x - 7   || *x > Vertexes[ seg1->end].x + 7   || *y < Vertexes[ seg1->end].y - 7   || *y > Vertexes[ seg1->end].y + 7  )
-       && (*x < Vertexes[ seg2->start].x - 7 || *x > Vertexes[ seg2->start].x + 7 || *y < Vertexes[ seg2->start].y - 7 || *y > Vertexes[ seg2->start].y + 7)
-       && (*x < Vertexes[ seg2->end].x - 7   || *x > Vertexes[ seg2->end].x + 7   || *y < Vertexes[ seg2->end].y - 7   || *y > Vertexes[ seg2->end].y + 7  ))
-	 return TRUE; /* intersection OK */
-      else
+      if (*x >= Vertexes[ seg1->start].x - 7 && *x <= Vertexes[ seg1->start].x + 7 && *y >= Vertexes[ seg1->start].y - 7 && *y <= Vertexes[ seg1->start].y + 7)
+      {
 	 return FALSE; /* not a real intersection point (round-off error in a previous operation) */
+      }
+      if (*x >= Vertexes[ seg1->end].x - 7   && *x <= Vertexes[ seg1->end].x + 7   && *y >= Vertexes[ seg1->end].y - 7   && *y <= Vertexes[ seg1->end].y + 7  )
+      {
+	 return FALSE; /* not a real intersection point (round-off error in a previous operation) */
+      }
+      if (*x >= Vertexes[ seg2->start].x - 7 && *x <= Vertexes[ seg2->start].x + 7 && *y >= Vertexes[ seg2->start].y - 7 && *y <= Vertexes[ seg2->start].y + 7)
+      {
+	 return FALSE; /* not a real intersection point (round-off error in a previous operation) */
+      }
+      if (*x >= Vertexes[ seg2->end].x - 7   && *x <= Vertexes[ seg2->end].x + 7   && *y >= Vertexes[ seg2->end].y - 7   && *y <= Vertexes[ seg2->end].y + 7  )
+      {
+	 return FALSE; /* not a real intersection point (round-off error in a previous operation) */
+      }
+      return TRUE; /* intersection OK */
    }
    else
       return FALSE; /* parallel lines */
@@ -122,6 +123,7 @@ SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
    long  x, y;
    long  dx, dy;
    long  a, b, c, d;
+   int   dummyx, dummyy;
    /* ***DEBUG*** */
    static SEPtr lastnodeline = NULL;
 
@@ -153,17 +155,11 @@ SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
 	 b = ((long) Vertexes[ curseg->start].y - y) * dx;
 	 c = ((long) Vertexes[ curseg->end].x - x) * dy;
 	 d = ((long) Vertexes[ curseg->end].y - y) * dx;
-	 if ((a != b) && (c != d) && ((a > b) != (c > d)))
+	 if ((a != b) && (c != d) && ((a > b) != (c > d)) && ComputeIntersection( &dummyx, &dummyy, nodeline, curseg))
 	 {
-	    int dummyx, dummyy;
-	    /* we should have an intersection, but... */
-	    /* check for round-off errors (intersection of long diagonal lines) */
-	    if (ComputeIntersection( &dummyx, &dummyy, nodeline, curseg))
-	    {
-	       splits++; /* one more split */
-	       num1++;
-	       num2++;
-	    }
+	    splits++; /* one more split */
+	    num1++;
+	    num2++;
 	 }
 	 else if ((a > b) || ((a == b) && (c > d))
 		  || ((a == b) && (c == d) && ((dx > 0) == ((Vertexes[ curseg->end].x - Vertexes[ curseg->start].x) > 0)) && ((dy > 0) == ((Vertexes[ curseg->end].y - Vertexes[ curseg->start].y) > 0))))
@@ -174,7 +170,7 @@ SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
 	 if (splits > minsplits)
 	    break;  /* don't waste time */
 #else
-	 if (max( num1, num2) + 8 * splits > mindiff)
+	 if (max( num1, num2) + SplitFactor * splits > mindiff)
 	    break;  /* don't waste time */
 #endif /* OLD_ALGORITHM */
       }
@@ -197,7 +193,7 @@ SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
 	 }
 #else
 	 /* now, num1 = rating for this nodeline */
-	 num1 = max( num1, num2) + 8 * splits;
+	 num1 = max( num1, num2) + SplitFactor * splits;
 	 /* this nodeline is better than the previous one */
 	 if (num1 < mindiff)
 	 {
@@ -222,7 +218,7 @@ SEPtr FindNodeLine( SEPtr seglist) /* SWAP - needs Vertexes */
    Move a Seg into a list and update the bounding box
 */
 
-void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend, NPtr node, int listnum, Bool updatebbox) /* SWAP - needs Vertexes */
+void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend) /* SWAP - needs Vertexes */
 {
    if (*seglist)
    {
@@ -235,105 +231,42 @@ void StoreInSegList( SEPtr seg, SEPtr *seglist, SEPtr *slistend, NPtr node, int 
       *slistend = *seglist;
    }
    (*slistend)->next = NULL;
-
-   if (updatebbox)
-   {
-      if (listnum == 1)
-      {
-	 /* update minx1, miny1, maxx1, maxy1 */
-	 if (Vertexes[ seg->start].x < node->minx1)
-	    node->minx1 = Vertexes[ seg->start].x;
-	 if (Vertexes[ seg->start].x > node->maxx1)
-	    node->maxx1 = Vertexes[ seg->start].x;
-	 if (Vertexes[ seg->start].y < node->miny1)
-	    node->miny1 = Vertexes[ seg->start].y;
-	 if (Vertexes[ seg->start].y > node->maxy1)
-	    node->maxy1 = Vertexes[ seg->start].y;
-
-	 if (Vertexes[ seg->end].x < node->minx1)
-	    node->minx1 = Vertexes[ seg->end].x;
-	 if (Vertexes[ seg->end].x > node->maxx1)
-	    node->maxx1 = Vertexes[ seg->end].x;
-	 if (Vertexes[ seg->end].y < node->miny1)
-	    node->miny1 = Vertexes[ seg->end].y;
-	 if (Vertexes[ seg->end].y > node->maxy1)
-	    node->maxy1 = Vertexes[ seg->end].y;
-      }
-      else
-      {
-	 /* update minx2, miny2, maxx2, maxy2 */
-	 if (Vertexes[ seg->start].x < node->minx2)
-	    node->minx2 = Vertexes[ seg->start].x;
-	 if (Vertexes[ seg->start].x > node->maxx2)
-	    node->maxx2 = Vertexes[ seg->start].x;
-	 if (Vertexes[ seg->start].y < node->miny2)
-	    node->miny2 = Vertexes[ seg->start].y;
-	 if (Vertexes[ seg->start].y > node->maxy2)
-	    node->maxy2 = Vertexes[ seg->start].y;
-
-	 if (Vertexes[ seg->end].x < node->minx2)
-	    node->minx2 = Vertexes[ seg->end].x;
-	 if (Vertexes[ seg->end].x > node->maxx2)
-	    node->maxx2 = Vertexes[ seg->end].x;
-	 if (Vertexes[ seg->end].y < node->miny2)
-	    node->miny2 = Vertexes[ seg->end].y;
-	 if (Vertexes[ seg->end].y > node->maxy2)
-	    node->maxy2 = Vertexes[ seg->end].y;
-      }
-   }
 }
 
 
 
 /*
-   check if a list of Segs should be divided in smaller parts (by a nodeline)
+   compute the bounding box (limits on X, Y) for a list of Segs
 */
 
-Bool NeedFurtherDivision( SEPtr seglist) /* SWAP! */
+void ComputeBoundingBox( SEPtr seglist, int *minx, int *maxx, int *miny, int *maxy) /* SWAP - needs Vertexes */
 {
-   SEPtr curseg, refseg;
-   int   refsector;
+   SEPtr curseg;
 
-   ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
-   /* the sector number must be the same for all Segs */
-   refseg = seglist;
-   if (refseg->flip)
-      refsector = SideDefs[ LineDefs[ refseg->linedef].sidedef2].sector;
-   else
-      refsector = SideDefs[ LineDefs[ refseg->linedef].sidedef1].sector;
-   for (curseg = seglist->next; curseg; curseg = curseg->next)
+   *maxx = -32767;
+   *maxy = -32767;
+   *minx = 32767;
+   *miny = 32767;
+   for (curseg = seglist; curseg; curseg = curseg->next)
    {
-      if (curseg->flip)
-      {
-	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef2].sector != refsector)
-	 {
-	    ObjectsNeeded( OBJ_VERTEXES, 0);
-	    return TRUE;
-	 }
-      }
-      else
-      {
-	 if (SideDefs[ LineDefs[ curseg->linedef].sidedef1].sector != refsector)
-	 {
-	    ObjectsNeeded( OBJ_VERTEXES, 0);
-	    return TRUE;
-	 }
-      }
+      if (Vertexes[ curseg->start].x < *minx)
+	 *minx = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].x > *maxx)
+	 *maxx = Vertexes[ curseg->start].x;
+      if (Vertexes[ curseg->start].y < *miny)
+	 *miny = Vertexes[ curseg->start].y;
+      if (Vertexes[ curseg->start].y > *maxy)
+	 *maxy = Vertexes[ curseg->start].y;
+
+      if (Vertexes[ curseg->end].x < *minx)
+	 *minx = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].x > *maxx)
+	 *maxx = Vertexes[ curseg->end].x;
+      if (Vertexes[ curseg->end].y < *miny)
+	 *miny = Vertexes[ curseg->end].y;
+      if (Vertexes[ curseg->end].y > *maxy)
+	 *maxy = Vertexes[ curseg->end].y;
    }
-
-   /* the angle between two successive Segs must be <= 32767 */
-   /* check also for two-sided walls (start1 = end2 and end1 = start2) */
-   for (refseg = seglist; refseg; refseg = refseg->next)
-      for (curseg = seglist; curseg; curseg = curseg->next)
-	 if (curseg->start == refseg->end && ((unsigned int) (refseg->angle - curseg->angle) > (unsigned int) 32767 || curseg->end == refseg->start))
-	 {
-	    ObjectsNeeded( OBJ_VERTEXES, 0);
-	    return TRUE;
-	 }
-
-   /* no need to split the list: these Segs can be put in a SSector */
-   ObjectsNeeded( OBJ_VERTEXES, 0);
-   return FALSE;
 }
 
 
@@ -382,7 +315,7 @@ int CreateSSector( SEPtr seglist)
    create all Nodes from a list of Segs
 */
 
-NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
+Bool CreateNodes( NPtr *node_r, int *ssector_r, SEPtr seglist) /* SWAP - needs Vertexes */
 {
    NPtr         node;
    SEPtr        segs1, segs2;
@@ -393,56 +326,26 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
    /* new Node */
    node = GetMemory( sizeof( struct Node));
 
-   /* reset bounding box limits */
-   node->maxx1 = -32768;
-   node->maxy1 = -32768;
-   node->minx1 = 32767;
-   node->miny1 = 32767;
-   node->maxx2 = -32768;
-   node->maxy2 = -32768;
-   node->minx2 = 32767;
-   node->miny2 = 32767;
-
-   segs1 = NULL;
-   segs2 = NULL;
-
    /* find the best nodeline */
    nodeline = FindNodeLine( seglist);
 
-   /* special case: nodeline could not be found */
+   /* nodeline could not be found: return a SSector */
    if (nodeline == NULL)
    {
-      LogMessage( "\tNodeline could not be found.\n\t\tLineDefs in seglist:\n");
-      /* this only occurs when a Sector is not closed, */
-      /* or if there is only one Sector in the level.  */
-      nodeline = seglist;
-      curseg = seglist;
-      LogMessage( "\t\t%6d\n", curseg->linedef);
-      if (! IsSelected( errld, curseg->linedef))
-	 SelectObject( &errld, curseg->linedef);
-      seglist = seglist->next;
-      StoreInSegList( curseg, &segs2, &lastseg2, node, 2, TRUE);
-      while (seglist)
-      {
-	 curseg = seglist;
-	 LogMessage( "\t\t%6d\n", curseg->linedef);
-	 if (! IsSelected( errld, curseg->linedef))
-	    SelectObject( &errld, curseg->linedef);
-	 seglist = seglist->next;
-	 StoreInSegList( curseg, &segs1, &lastseg1, node, 1, TRUE);
-      }
-      /* warn the user */
-      ShowProgress( -1);
-      LogMessage( "\n");
+      *node_r = NULL;
+      *ssector_r = CreateSSector( seglist) | 0x8000;
+      return FALSE;
    }
 
    /* compute x, y, dx, dy */
    node->x = Vertexes[ nodeline->start].x;
    node->y = Vertexes[ nodeline->start].y;
-   node->dx = Vertexes[ nodeline->end].x - Vertexes[ nodeline->start].x;
-   node->dy = Vertexes[ nodeline->end].y - Vertexes[ nodeline->start].y;
+   node->dx = Vertexes[ nodeline->end].x - node->x;
+   node->dy = Vertexes[ nodeline->end].y - node->y;
 
    /* split seglist in segs1 and segs2 */
+   segs1 = NULL;
+   segs2 = NULL;
    while (seglist)
    {
       curseg = seglist;
@@ -459,7 +362,7 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
 	  || ((a == b) && (c == d) && ((node->dx > 0) == ((Vertexes[ curseg->end].x - Vertexes[ curseg->start].x) > 0)) && ((node->dy > 0) == ((Vertexes[ curseg->end].y - Vertexes[ curseg->start].y) > 0))))
       {
 	 /* the starting Vertex is on the first side (right) of the nodeline */
-	 StoreInSegList( curseg, &segs1, &lastseg1, node, 1, TRUE);
+	 StoreInSegList( curseg, &segs1, &lastseg1);
 	 if (c < d)
 	 {
 	    int newx, newy;
@@ -467,8 +370,8 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
 	    /* the ending Vertex is on the other side: split the Seg in two */
 	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
 	    {
-	       InsertObject( OBJ_VERTEXES, -1, newx, newy);
-	       StoreInSegList( GetFarMemory( sizeof( struct Seg)), &segs2, &lastseg2, node, 2, FALSE);
+	       InsertObject( OBJ_VERTEXES, -2, newx, newy);
+	       StoreInSegList( GetFarMemory( sizeof( struct Seg)), &segs2, &lastseg2);
 	       lastseg2->start = NumVertexes - 1;
 	       lastseg2->end = lastseg1->end;
 	       lastseg2->angle = lastseg1->angle;
@@ -483,7 +386,7 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
       else
       {
 	 /* the starting Vertex is on the second side (left) of the nodeline */
-	 StoreInSegList( curseg, &segs2, &lastseg2, node, 2, TRUE);
+	 StoreInSegList( curseg, &segs2, &lastseg2);
 	 if (c > d)
 	 {
 	    int newx, newy;
@@ -491,8 +394,8 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
 	    /* the ending Vertex is on the other side: split the Seg in two */
 	    if (ComputeIntersection( &newx, &newy, nodeline, curseg))
 	    {
-	       InsertObject( OBJ_VERTEXES, -1, newx, newy);
-	       StoreInSegList( GetFarMemory( sizeof( struct Seg)), &segs1, &lastseg1, node, 1, FALSE);
+	       InsertObject( OBJ_VERTEXES, -2, newx, newy);
+	       StoreInSegList( GetFarMemory( sizeof( struct Seg)), &segs1, &lastseg1);
 	       lastseg1->start = NumVertexes - 1;
 	       lastseg1->end = lastseg2->end;
 	       lastseg1->angle = lastseg2->angle;
@@ -510,32 +413,22 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
    if (segs1 == NULL || segs2 == NULL)
       ProgError("could not split the Segs list (this is a BUG!)");
 
+   /* compute bounding box limits for segs1 */
+   ComputeBoundingBox( segs1, &(node->minx1), &(node->maxx1), &(node->miny1), &(node->maxy1));
+
    /* create Nodes or SSectors from segs1 */
-   if (NeedFurtherDivision( segs1))
-   {
-      node->node1 = CreateNodes( segs1);
-      node->child1 = 0;
-   }
-   else
-   {
-      node->node1 = NULL;
-      node->child1 = CreateSSector( segs1) | 0x8000;
-   }
+   CreateNodes( &(node->node1), &(node->child1), segs1);
+
+   /* compute bounding box limits for segs2 */
+   ComputeBoundingBox( segs2, &(node->minx2), &(node->maxx2), &(node->miny2), &(node->maxy2));
 
    /* create Nodes or SSectors from segs2 */
-   if (NeedFurtherDivision( segs2))
-   {
-      node->node2 = CreateNodes( segs2);
-      node->child2 = 0;
-   }
-   else
-   {
-      node->node2 = NULL;
-      node->child2 = CreateSSector( segs2) | 0x8000;
-   }
+   CreateNodes( &(node->node2), &(node->child2), segs2);
 
    /* this Node is OK */
-   return node;
+   *node_r = node;
+   *ssector_r = 0;
+   return TRUE;
 }
 
 
@@ -590,6 +483,12 @@ NPtr CreateNodes( SEPtr seglist) /* SWAP - needs Vertexes */
    Each time CreateSSector is called, the Segs are put in a global list.
    When there is no more Seg in CreateNodes' list, then they are all in the
    global list and ready to be saved to disk.
+
+   Note: now that the nice guys at Id software have released their algorithm,
+   I have changed the way CreateNodes work.  Instead of checking if the Segs
+   list should be split, I try to find a nodeline.  If I found one, then I
+   split the list of Segs and call CreateNodes on both lists.  Else, I just
+   return a SSector which contains the list of Segs.
 */
 
 

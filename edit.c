@@ -14,6 +14,10 @@
 #include "deu.h"
 #include "levels.h"
 extern Bool InfoShown;		/* should we display the info bar? */
+#ifdef CIRRUS_PATCH
+extern char HWCursor[];		/* Cirrus hardware cursor data */
+#endif /* CIRRUS_PATCH */
+
 int  MoveSpeed = 20;		/* movement speed */
 
 
@@ -188,7 +192,7 @@ void DisplayHelp( int objtype, int grid) /* SWAP! */
    DrawScreenText( -1, -1, "Esc   - Exit without saving changes");
    DrawScreenText( -1, -1, "Tab   - Switch to the next editing mode");
    DrawScreenText( -1, -1, "Space - Change the move/scroll speed");
-   DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", Scale);
+   DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", (int) (1.0 / Scale + 0.5));
    DrawScreenText( -1, -1, "G     - Change the grid scale (cur.: %d)", grid);
    DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
    DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
@@ -237,10 +241,13 @@ void EditorLoop( int episode, int mission) /* SWAP! */
    Bool   DragObject = FALSE;
    int    key, altkey, buttons, oldbuttons;
    int    GridScale = 0;
+   Bool   GridShown = TRUE;
    SelPtr Selected = NULL;
    char   keychar;
    int    SelBoxX = 0;
    int    SelBoxY = 0;
+   int    OldPointerX = 0;
+   int    OldPointerY = 0;
    Bool   StretchSelBox = FALSE;
    Bool   ShowRulers = FALSE;
 
@@ -250,13 +257,20 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       InitialScale = 1;
    else if (InitialScale > 20)
       InitialScale = 20;
-   Scale = InitialScale;
+   Scale = (float) (1.0 / InitialScale);
    CenterMapAroundCoords( (MapMinX + MapMaxX) / 2, (MapMinY + MapMaxY) / 2);
    if (UseMouse)
    {
       ResetMouseLimits();
       SetMouseCoords( PointerX, PointerY);
       ShowMousePointer();
+#ifdef CIRRUS_PATCH
+      if (CirrusCursor == TRUE)
+      {
+	 SetHWCursorMap( HWCursor);
+	 SetHWCursorPos( PointerX, PointerY);
+      }
+#endif /* CIRRUS_PATCH */
       oldbuttons = 0;
    }
    else
@@ -417,7 +431,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
       {
 	 if (UseMouse)
 	    HideMousePointer();
-	 DrawMap( EditMode, GridScale);
+	 DrawMap( EditMode, GridScale, GridShown);
 	 HighlightSelection( EditMode, Selected);
 	 if (UseMouse)
 	    ShowMousePointer();
@@ -445,6 +459,8 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 if (UseMouse)
 	    ShowMousePointer();
       }
+
+      /* redraw the pointer if necessary */
       if (RedrawMap && (FakeCursor || ShowRulers))
       {
 	 if (UseMouse)
@@ -452,6 +468,17 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 DrawPointer( ShowRulers);
 	 if (UseMouse)
 	    ShowMousePointer();
+      }
+
+      /* display the current pointer coordinates */
+      if (RedrawMap || PointerX != OldPointerX || PointerY != OldPointerY)
+      {
+	 SetColor( LIGHTGRAY);
+	 DrawScreenBox( ScrMaxX - 170, 4, ScrMaxX - 50, 12);
+	 SetColor( BLUE);
+	 DrawScreenText( ScrMaxX - 170, 4, "%d, %d", MAPX( PointerX), MAPY( PointerY));
+	 OldPointerX = PointerX;
+	 OldPointerY = PointerY;
       }
 
       /* the map is up to date */
@@ -603,21 +630,23 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 if (keychar == 'Q')
 	 {
 	    ForgetSelection( &Selected);
-	    if (Registered && MadeChanges)
+	    if (CheckStartingPos())
 	    {
-	       char *outfile;
-
-	       outfile = GetWadFileName( episode, mission);
-	       if (outfile)
+	       if (Registered && MadeChanges)
 	       {
-		  SaveLevelData( outfile);
-		  break;
+		  char *outfile;
+
+		  outfile = GetWadFileName( episode, mission);
+		  if (outfile)
+		  {
+		     SaveLevelData( outfile);
+		     break;
+		  }
 	       }
 	       else
-		  RedrawMap = TRUE;
+		  break;
 	    }
-	    else
-	       break;
+	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0x00FF) == 0x001B) /* 'Esc' */
 	 {
@@ -646,9 +675,12 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 {
 	    char *outfile;
 
-	    outfile = GetWadFileName( episode, mission);
-	    if (outfile)
-	       SaveLevelData( outfile);
+	    if (CheckStartingPos())
+	    {
+	       outfile = GetWadFileName( episode, mission);
+	       if (outfile)
+		  SaveLevelData( outfile);
+	    }
 	    RedrawMap = TRUE;
 	 }
 
@@ -660,39 +692,42 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    MDirPtr newLevel, oldl, newl;
 	    char name[ 7];
 
-	    outfile = GetWadFileName( episode, mission);
-	    if (outfile)
+	    if (CheckStartingPos())
 	    {
-	       e = episode;
-	       m = mission;
-	       SelectLevel( &e, &m);
-	       if (e > 0 && m > 0 && (e != episode || m != mission))
+	       outfile = GetWadFileName( episode, mission);
+	       if (outfile)
 	       {
-		  /* horrible but it works... */
-		  episode = e;
-		  mission = m;
-		  sprintf( name, "E%dM%d", episode, mission);
-		  newLevel = FindMasterDir( MasterDir, name);
-		  oldl = Level;
-		  newl = newLevel;
-		  for (m = 0; m < 11; m++)
+		  e = episode;
+		  m = mission;
+		  SelectLevel( &e, &m);
+		  if (e > 0 && m > 0 && (e != episode || m != mission))
 		  {
-		     newl->wadfile = oldl->wadfile;
-		     if (m > 0)
-			newl->dir = oldl->dir;
-		     /*
-		     if (!strcmp( outfile, oldl->wadfile->filename))
+		     /* horrible but it works... */
+		     episode = e;
+		     mission = m;
+		     sprintf( name, "E%dM%d", episode, mission);
+		     newLevel = FindMasterDir( MasterDir, name);
+		     oldl = Level;
+		     newl = newLevel;
+		     for (m = 0; m < 11; m++)
 		     {
-			oldl->wadfile = WadFileList;
-			oldl->dir = lost...
+			newl->wadfile = oldl->wadfile;
+			if (m > 0)
+			   newl->dir = oldl->dir;
+			/*
+			if (!strcmp( outfile, oldl->wadfile->filename))
+			{
+			   oldl->wadfile = WadFileList;
+			   oldl->dir = lost...
+			}
+			*/
+			oldl = oldl->next;
+			newl = newl->next;
 		     }
-		     */
-		     oldl = oldl->next;
-		     newl = newl->next;
+		     Level = newLevel;
 		  }
-		  Level = newLevel;
+		  SaveLevelData( outfile);
 	       }
-	       SaveLevelData( outfile);
 	    }
 	    RedrawMap = TRUE;
 	 }
@@ -758,22 +793,42 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 }
 
 	 /* user wants to change the scale */
-	 else if ((keychar == '+' || keychar == '=') && Scale > 1)
+	 else if ((keychar == '+' || keychar == '=') && Scale < 4.0)
 	 {
-	    OrigX += (PointerX - ScrCenterX) * Scale;
-	    OrigY += (ScrCenterY - PointerY) * Scale;
-	    Scale--;
-	    OrigX -= (PointerX - ScrCenterX) * Scale;
-	    OrigY -= (ScrCenterY - PointerY) * Scale;
+	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    if (Scale < 1.0)
+	       Scale = 1.0 / ((1.0 / Scale) - 1.0);
+	    else
+	       Scale = Scale * 2.0;
+	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
 	    RedrawMap = TRUE;
 	 }
-	 else if ((keychar == '-' || keychar == '_') && Scale < 20)
+	 else if ((keychar == '-' || keychar == '_') && Scale > 0.05)
 	 {
-	    OrigX += (PointerX - ScrCenterX) * Scale;
-	    OrigY += (ScrCenterY - PointerY) * Scale;
-	    Scale++;
-	    OrigX -= (PointerX - ScrCenterX) * Scale;
-	    OrigY -= (ScrCenterY - PointerY) * Scale;
+	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    if (Scale < 1.0)
+	       Scale = 1.0 / ((1.0 / Scale) + 1.0);
+	    else
+	       Scale = Scale / 2.0;
+	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
+	    RedrawMap = TRUE;
+	 }
+
+	 /* user wants to set the scale directly */
+	 else if (keychar >= '0' && keychar <= '9')
+	 {
+	    OrigX += (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY += (int) ((ScrCenterY - PointerY) / Scale);
+	    if (keychar == '0')
+	       Scale = 0.1;
+	    else
+	       Scale = 1.0 / (keychar - '0');
+	    OrigX -= (int) ((PointerX - ScrCenterX) / Scale);
+	    OrigY -= (int) ((ScrCenterY - PointerY) / Scale);
 	    RedrawMap = TRUE;
 	 }
 
@@ -807,25 +862,25 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerX += MoveSpeed;
 	 }
 
-	 /* user wants so scroll the map */
+	 /* user wants to scroll the map (scroll one half page at a time) */
 	 else if ((key & 0xFF00) == 0x4900 && MAPY( ScrCenterY) < MapMaxY)
 	 {
-	    OrigY += MoveSpeed * 2 * Scale;
+	    OrigY += (int) (ScrCenterY / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x5100 && MAPY( ScrCenterY) > MapMinY)
 	 {
-	    OrigY -= MoveSpeed * 2 * Scale;
+	    OrigY -= (int) (ScrCenterY / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x4700 && MAPX( ScrCenterX) > MapMinX)
 	 {
-	    OrigX -= MoveSpeed * 2 * Scale;
+	    OrigX -= (int) (ScrCenterX / Scale);
 	    RedrawMap = TRUE;
 	 }
 	 else if ((key & 0xFF00) == 0x4F00 && MAPX( ScrCenterX) < MapMaxX)
 	 {
-	    OrigX += MoveSpeed * 2 * Scale;
+	    OrigX += (int) (ScrCenterX / Scale);
 	    RedrawMap = TRUE;
 	 }
 
@@ -875,14 +930,20 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  break;
 	       }
 	    }
-	    else if (keychar == 'T')
-	       EditMode = OBJ_THINGS;
-	    else if (keychar == 'V')
-	       EditMode = OBJ_VERTEXES;
-	    else if (keychar == 'L')
-	       EditMode = OBJ_LINEDEFS;
-	    else if (keychar == 'S')
-	       EditMode = OBJ_SECTORS;
+	    else
+	    {
+	       if (keychar == 'T')
+		  EditMode = OBJ_THINGS;
+	       else if (keychar == 'V')
+		  EditMode = OBJ_VERTEXES;
+	       else if (keychar == 'L')
+		  EditMode = OBJ_LINEDEFS;
+	       else if (keychar == 'S')
+		  EditMode = OBJ_SECTORS;
+	       /* unselect all */
+	       ForgetSelection( &Selected);
+	    }
+
 	    /* special cases for the selection list... */
 	    if (Selected)
 	    {
@@ -964,7 +1025,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       else
 		  ForgetSelection( &Selected);
 	    }
-	    if (GetMaxObjectNum( EditMode) >= 0)
+	    if (GetMaxObjectNum( EditMode) >= 0 && Select0 == TRUE)
 	       CurObject = 0;
 	    else
 	       CurObject = -1;
@@ -974,7 +1035,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    RedrawMap = TRUE;
 	 }
 
-	 /* user wants to display or hide the grid */
+	 /* user wants to change the grid scale */
 	 else if (keychar == 'G')
 	 {
 	    if ((altkey & 0x03) == 0x00)  /* no shift keys */
@@ -997,9 +1058,14 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	    }
 	    RedrawMap = TRUE;
 	 }
+
+	 /* user wants to display or hide the grid */
 	 else if (keychar == 'H')
 	 {
-	    GridScale = 0;
+	    if ((altkey & 0x03) != 0x00)  /* shift key pressed */
+	       GridScale = 0;
+	    else
+	       GridShown = !GridShown;
 	    RedrawMap = TRUE;
 	 }
 
@@ -1019,13 +1085,38 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		  if (Selected == NULL && CurObject >= 0)
 		  {
 		     SelectObject( &Selected, CurObject);
-		     if (CheckMergedVertices( &Selected))
+		     if (AutoMergeVertices( &Selected))
 			RedrawMap = TRUE;
 		     ForgetSelection( &Selected);
 		  }
 		  else
-		     if (CheckMergedVertices( &Selected))
+		     if (AutoMergeVertices( &Selected))
 			RedrawMap = TRUE;
+	       }
+	       else if (EditMode == OBJ_LINEDEFS)
+	       {
+		  SelPtr NewSel, cur;
+
+		  ObjectsNeeded( OBJ_LINEDEFS, 0);
+		  NewSel = NULL;
+		  if (Selected == NULL && CurObject >= 0)
+		  {
+		     SelectObject( &NewSel, LineDefs[ CurObject].start);
+		     SelectObject( &NewSel, LineDefs[ CurObject].end);
+		  }
+		  else
+		  {
+		     for (cur = Selected; cur; cur = cur->next)
+		     {
+			if (!IsSelected( NewSel, LineDefs[ cur->objnum].start))
+			   SelectObject( &NewSel, LineDefs[ cur->objnum].start);
+			if (!IsSelected( NewSel, LineDefs[ cur->objnum].end))
+			   SelectObject( &NewSel, LineDefs[ cur->objnum].end);
+		     }
+		  }
+		  if (AutoMergeVertices( &NewSel))
+		     RedrawMap = TRUE;
+		  ForgetSelection( &NewSel);
 	       }
 	    }
 	    else
@@ -1044,10 +1135,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 else if (keychar == 'N' || keychar == '>')
 	 {
 	    if (CurObject < GetMaxObjectNum( EditMode))
-	    {
 	       CurObject++;
-	       GoToObject( EditMode, CurObject);
-	    }
 	    else if (GetMaxObjectNum( EditMode) >= 0)
 	       CurObject = 0;
 	    else
@@ -1057,10 +1145,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	 else if (keychar == 'P' || keychar == '<')
 	 {
 	    if (CurObject > 0)
-	    {
 	       CurObject--;
-	       GoToObject( EditMode, CurObject);
-	    }
 	    else
 	       CurObject = GetMaxObjectNum( EditMode);
 	    RedrawMap = TRUE;
@@ -1326,6 +1411,13 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 		     CurObject = -1;
 		  }
 	       }
+	       else if (EditMode == OBJ_VERTEXES)
+	       {
+		  SelectObject( &Selected, CurObject);
+		  if (AutoMergeVertices( &Selected))
+		     RedrawMap = TRUE;
+		  ForgetSelection( &Selected);
+	       }
 	    }
 	    DragObject = FALSE;
 	    StretchSelBox = FALSE;
@@ -1355,7 +1447,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerY += MoveSpeed;
 	    if (MAPY( ScrCenterY) < MapMaxY)
 	    {
-	       OrigY += MoveSpeed * 2 * Scale;
+	       OrigY += (int) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1365,7 +1457,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerY -= MoveSpeed;
 	    if (MAPY( ScrCenterY) > MapMinY)
 	    {
-	       OrigY -= MoveSpeed * 2 * Scale;
+	       OrigY -= (int) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1375,7 +1467,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerX += MoveSpeed;
 	    if (MAPX( ScrCenterX) > MapMinX)
 	    {
-	       OrigX -= MoveSpeed * 2 * Scale;
+	       OrigX -= (int) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1385,7 +1477,7 @@ void EditorLoop( int episode, int mission) /* SWAP! */
 	       PointerX -= MoveSpeed;
 	    if (MAPX( ScrCenterX) < MapMaxX)
 	    {
-	       OrigX += MoveSpeed * 2 * Scale;
+	       OrigX += (int) (MoveSpeed * 2.0 / Scale);
 	       RedrawMap = TRUE;
 	    }
 	 }
@@ -1399,16 +1491,15 @@ void EditorLoop( int episode, int mission) /* SWAP! */
    draw the actual game map
 */
 
-void DrawMap( int editmode, int grid) /* SWAP! */
+void DrawMap( int editmode, int grid, Bool drawgrid) /* SWAP! */
 {
    int  n, m;
-   char texname[9];
 
    /* clear the screen */
    ClearScreen();
 
    /* draw the grid */
-   if (grid > 0)
+   if (drawgrid == TRUE && grid > 0)
    {
       int mapx0 = MAPX( 0) & ~(grid - 1);
       int mapx1 = (MAPX( ScrMaxX) + grid) & ~(grid - 1);
@@ -1544,11 +1635,19 @@ void DrawMap( int editmode, int grid) /* SWAP! */
    if (InfoShown)
    {
       DrawScreenBox3D( 0, ScrMaxY - 11, ScrMaxX, ScrMaxY);
-      DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
-      DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: 1/%d  Grid: %d", Scale, grid);
-      if (farcoreleft() < 50000)
+      if (MadeMapChanges == TRUE)
+	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s #", GetEditModeName( editmode), Level->dir.name);
+      else if (MadeChanges == TRUE)
+	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s *", GetEditModeName( editmode), Level->dir.name);
+      else
+	 DrawScreenText( 5, ScrMaxY - 8, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
+      if (Scale < 1.0)
+	 DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: 1/%d  Grid: %d", (int) (1.0 / Scale + 0.5), grid);
+      else
+	 DrawScreenText( ScrMaxX - 176, ScrMaxY - 8, "Scale: %d/1  Grid: %d", (int) Scale, grid);
+      if (farcoreleft() < 50000L)
       {
-	 if (farcoreleft() < 20000)
+	 if (farcoreleft() < 20000L)
 	    SetColor( LIGHTRED);
 	 else
 	    SetColor( RED);
@@ -1579,20 +1678,28 @@ void CenterMapAroundCoords( int xpos, int ypos)
 
 void GoToObject( int objtype, int objnum) /* SWAP! */
 {
-   int xpos, ypos;
-   int xpos2, ypos2;
-   int n, oldscale;
-   int sd1, sd2;
+   int   xpos, ypos;
+   int   xpos2, ypos2;
+   int   n;
+   int   sd1, sd2;
+   float oldscale;
 
    GetObjectCoords( objtype, objnum, &xpos, &ypos);
    CenterMapAroundCoords( xpos, ypos);
    oldscale = Scale;
+
    /* zoom in until the object can be selected */
-   while (Scale > 1 && GetCurObject( objtype, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) != objnum)
-      Scale--;
-   /* Special case for Sectors: if several Sectors are one inside another, */
-   /* then zooming in won't help.  So I choose a LineDef that borders the  */
-   /* Sector and move a few pixels towards the inside of the Sector.       */
+   while (Scale < 4.0 && GetCurObject( objtype, MAPX( PointerX - 4), MAPY( PointerY - 4), MAPX( PointerX + 4), MAPY( PointerY + 4)) != objnum)
+   {
+      if (Scale < 1.0)
+	 Scale = 1.0 / ((1.0 / Scale) - 1.0);
+      else
+	 Scale = Scale * 2.0;
+   }
+
+   /* Special case for Sectors: if several Sectors are one inside another, then    */
+   /* zooming in on the center won't help.  So I choose a LineDef that borders the */
+   /* Sector, move a few pixels towards the inside of the Sector, then zoom in.    */
    if (objtype == OBJ_SECTORS && GetCurObject( OBJ_SECTORS, OrigX, OrigY, OrigX, OrigY) != objnum)
    {
       /* restore the Scale */
@@ -1618,8 +1725,13 @@ void GoToObject( int objtype, int objnum) /* SWAP! */
 	 ypos = ypos2 + (ypos - ypos2) / n;
 	 CenterMapAroundCoords( xpos, ypos);
 	 /* zoom in until the sector can be selected */
-	 while (Scale > 1 && GetCurObject( OBJ_SECTORS, OrigX, OrigY, OrigX, OrigY) != objnum)
-	    Scale--;
+	 while (Scale > 4.0 && GetCurObject( OBJ_SECTORS, OrigX, OrigY, OrigX, OrigY) != objnum)
+	 {
+	    if (Scale < 1.0)
+	       Scale = 1.0 / ((1.0 / Scale) - 1.0);
+	    else
+	       Scale = Scale / 2.0;
+	 }
       }
    }
    if (UseMouse)

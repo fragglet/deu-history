@@ -88,10 +88,12 @@ char *GetLineDefTypeName( int type)
       return "W1 Open door (O)";
    case 3:
       return "W1 Close door";
-   /* 4 */
+   case 4:
+      return "W1 Open door";
    case 5:
       return "W1 Raise floor?C"; /* highest floor ? */
-   /* 6 */
+   case 6:
+      return "W1 Fast crushing";
    case 7:
       return "S1 Raise stairs";
    case 8:
@@ -102,15 +104,18 @@ char *GetLineDefTypeName( int type)
       return "W1 Lower lift";
    case 11:
       return "S- End level";
-   /* 12 */
+   case 12:
+      return "W1 Lights max. N";
    case 13:
       return "W1 Lights on!";
    case 14:
       return "S1 Raise floor>N";
-   /* 15 */
+   case 15:
+      return "S1 Raise flr32 T";
    case 16:
       return "W1 Close door 30";
-   /* 17 */
+   case 17:
+      return "W? Blink light";
    case 18:
       return "S1 Raise floor N";
    case 19:
@@ -123,7 +128,10 @@ char *GetLineDefTypeName( int type)
       return "W1 Raise floor T";
    case 23:
       return "S1 Lower floor<?";
-   /* 24 25 */
+   case 24:
+      return "G1 Raise floor C";
+   case 25:
+      return "W1 Crushing ceil";
    case 26:
       return "DR Blue door";
    case 27:
@@ -158,39 +166,64 @@ char *GetLineDefTypeName( int type)
       return "S1 Lower ceiling";
    case 42:
       return "SR Close door";
-   /* 43 */
+   case 43:
+      return "SR Lower ceiling";
    case 44:
       return "W1 Lower ceil. >";
-   /* 45 */
+   case 45:
+      return "SR Raise floor N";
    case 46:
       return "G1 Shoot to open";
-   /* 47 */
+   case 47:
+      return "G1 Raise floor T";
    case 48:
       return "-- Animated wall";
-   /* 49 50 */
+   case 49:
+      return "S1 Lower ceil. >";
+   case 50:
+      return "S1 Open door (O)";
    case 51:
       return "S- Secret level";
    case 52:
       return "W- End level";
-   /* 53 54 55 */
+   case 53:
+      return "W1 Moving floor";
+   case 54:
+      return "W1 Stop Moving f";
+   case 55:
+      return "S1 Raise floor<C";
    case 56:
       return "W1 Raise floor<C";
-   /* 57 */
+   case 57:
+      return "W1 Stop crushing";
    case 58:
       return "W1 Raise floor32";
    case 59:
       return "W1 Raise floor>T";
-   /* 60 */
+   case 60:
+      return "SR Lower floor N";
    case 61:
       return "SR Open door (O)";
    case 62:
-      return "WR Raise lift/SL";
+      return "SR Lower lift";
    case 63:
       return "SR Open door";
-   /* 64 65 66 67 68 69 */
+   case 64:
+      return "SR Raise floor C";
+   case 65:
+      return "SR Raise floor<C";
+   case 66:
+      return "SR Raise flr16 T";
+   case 67:
+      return "SR Raise flr32 T";
+   case 68:
+      return "S? Lower floor T";
+   case 69:
+      return "SR Raise floor N";
    case 70:
-      return "SR Lower floor >";
-   /* 71 72 */
+      return "SR Lower floor>N";
+   case 71:
+      return "S1 Lower floor>N";
    case 73:
       return "WR Crushing ceil";
    case 74:
@@ -201,13 +234,20 @@ char *GetLineDefTypeName( int type)
       return "WR Close door 30";
    case 77:
       return "WR Fast crushing";
-   /* 78 79 */
+   /* 78 */
+   case 79:
+      return "WR Lights out!";
    case 80:
-      return "WR Lights up N";
-   /* 81 */
+      return "WR Lights max. N";
+   case 81:
+      return "WR Lights on!";
    case 82:
-      return "WR Lower floor";
-   /* 83 84 85 */
+      return "WR Lower floor N";
+   case 83:
+      return "WR Lower fl.maxN";
+   case 84:
+      return "WR Lower fl.minN";
+   /* 85 */
    case 86:
       return "WR Open door (O)";
    case 87:
@@ -220,12 +260,23 @@ char *GetLineDefTypeName( int type)
       return "WR Open door";
    case 91:
       return "WR Raise floor C";
-   /* 92 93 94 95 96 */
+   case 92:
+      return "WR Raise floor24";
+   case 93:
+      return "WR Raise flr.24T";
+   case 94:
+      return "WR Raise floor<C";
+   case 95:
+      return "W1 Raise floor T";
+   case 96:
+      return "WR Raise floor72";
    case 97:
       return "WR Teleport";
    case 98:
       return "WR Lower floor >";
-   /* 99 100 101 */
+   /* 99 100 */
+   case 101:
+      return "S1 Raise floor C";
    case 102:
       return "S? Lower floor";
    case 103:
@@ -233,7 +284,7 @@ char *GetLineDefTypeName( int type)
    case 104:
       return "W1 Lights down N";
    }
-   return "?? UNKNOWN ?";
+   return "?? UNKNOWN";
 }
 
 
@@ -249,14 +300,17 @@ char *GetLineDefTypeLongName( int type)
    case 0:
       return "-- Normal";
    case 1:
-      return "DR Open door (closes after 5 seconds)";
+      return "DR Open door (closes after 6 seconds)";
    case 2:
       return "W1 Open door (stays open)";
    case 3:
       return "W1 Close door";
+   case 4:
+      return "W1 Open door (closes after 6 seconds)";
    case 5:
       return "W1 Raise floor to match Ne. ceiling/highest floor ?";
-   /* 6 */
+   case 6:
+      return "W1 Start crushing ceiling (Fast)";
    case 7:
       return "S1 Raise stairs (several sectors 0/999)";
    case 8:
@@ -267,15 +321,18 @@ char *GetLineDefTypeLongName( int type)
       return "W1 Lower lift (rises after 3 seconds)";
    case 11:
       return "S- End level, go to next level";
-   /* 12 */
+   case 12:
+      return "W1 Light level goes to maximum Ne. light level";
    case 13:
       return "W1 Light level goes to 255";
    case 14:
       return "S1 Raise floor to 64 above Ne. floor";
-   /* 15 */
+   case 15:
+      return "S1 Raise floor up 32 and match Ne. texture and type";
    case 16:
       return "W1 Close door for 30 seconds";
-   /* 17 */
+   case 17:
+      return "W? Start blinking lights";
    case 18:
       return "S1 Raise floor to match Ne. floor";
    case 19:
@@ -288,15 +345,18 @@ char *GetLineDefTypeLongName( int type)
       return "W1 Raise floor to match Ne. floor, texture and type";
    case 23:
       return "S1 Lower floor to match lowest Ne. floor ?";
-   /* 24 25 */
+   case 24:
+      return "G1 Raise floor to match Ne. ceiling";
+   case 25:
+      return "W1 Start crushing ceiling (Slow)";
    case 26:
-      return "DR Open door (closes after 5 seconds), Blue key";
+      return "DR Open door (closes after 6 seconds), Blue key";
    case 27:
-      return "DR Open door (closes after 5 seconds), Yellow key";
+      return "DR Open door (closes after 6 seconds), Yellow key";
    case 28:
-      return "DR Open door (closes after 5 seconds), Red key";
+      return "DR Open door (closes after 6 seconds), Red key";
    case 29:
-      return "S1 Open door (closes after 5 seconds)";
+      return "S1 Open door (closes after 6 seconds)";
    case 30:
       return "W1 Raise floor to 100-128 above Ne. floor ?";
    case 31:
@@ -323,39 +383,66 @@ char *GetLineDefTypeLongName( int type)
       return "S1 Lower ceiling to floor";
    case 42:
       return "SR Close door";
-   /* 43 */
+   case 43:
+      return "SR Lower ceiling to floor";
    case 44:
       return "W1 Lower ceiling to 8 above floor";
-   /* 45 */
+   case 45:
+      return "SR Lower floor to match Ne. floor";
    case 46:
       return "G1 Open door (stays open), when shot";
-   /* 47 */
+   case 47:
+      return "G1 Raise floor to match Ne. floor, texture and type ?";
    case 48:
       return "-- Animated wall (scrolls horizontally)";
-   /* 49 50 */
+   case 49:
+      return "S1 Lower ceiling to 8 above floor";
+   case 50:
+      return "S1 Open door (stays open) ?";
    case 51:
       return "S- End level, go to secret level";
    case 52:
       return "W- End level, go to next level";
-   /* 53 54 55 */
+   case 53:
+      return "W1 Start moving floor (up/down every 5 seconds)";
+   case 54:
+      return "W1 Stop moving floor";
+   case 55:
+      return "S1 Raise floor to 8 below Ne. ceiling";
    case 56:
       return "W1 Raise floor to 8 below Ne. ceiling";
-   /* 57 */
+   case 57:
+      return "W1 Stop crushing ceiling";
    case 58:
       return "W1 Raise floor up 32";
    case 59:
       return "W1 Raise floor up 8 and match Ne. texture and type";
-   /* 60 */
+   case 60:
+      return "SR Lower floor to match Ne. floor ?";
    case 61:
       return "SR Open door (stays open)";
    case 62:
-      return "WR Raise lift (also a Switch to Lower the lift)";
+      return "SR Lower lift (rises after 3 seconds)";
    case 63:
-      return "SR Open door (closes after 5 seconds)";
-   /* 64 65 66 67 68 69 */
+      return "SR Open door (closes after 6 seconds)";
+   case 64:
+      return "SR Raise floor to match Ne. ceiling";
+   case 65:
+      return "SR Raise floor to 8 below Ne. ceiling";
+   case 66:
+      return "SR Raise floor up 16 and match Ne. texture and type";
+   case 67:
+      return "SR Raise floor up 32 and match Ne. texture and type";
+   case 68:
+      return "S? Lower floor to match Ne. floor, texture and type";
+   case 69:
+      return "SR Raise floor to match Ne. floor";
    case 70:
       return "SR Lower floor to 8 above Ne. floor";
-   /* 71 72 */
+   case 71:
+      return "S1 Lower floor to 8 above Ne. floor";
+   case 72:
+      return "WR Lower ceiling to 8 above floor";
    case 73:
       return "WR Start crushing ceiling (Slow)";
    case 74:
@@ -366,13 +453,20 @@ char *GetLineDefTypeLongName( int type)
       return "WR Close door for 30 seconds";
    case 77:
       return "WR Start crushing ceiling (Fast)";
-   /* 78 79 */
+   /* 78 */
+   case 79:
+      return "WR Light level goes to 0";
    case 80:
       return "WR Light level goes to maximum Ne. light level";
-   /* 81 */
+   case 81:
+      return "WR Light level goes to 255";
    case 82:
       return "WR Lower floor to match Ne. floor";
-   /* 83 84 85 */
+   case 83:
+      return "WR Lower floor to match Ne. floor ?";
+   case 84:
+      return "WR Lower floor to match lowest Ne. floor ?";
+   /* 85 */
    case 86:
       return "WR Open door (stays open)";
    case 87:
@@ -382,19 +476,30 @@ char *GetLineDefTypeLongName( int type)
    case 89:
       return "WR Stop moving floor";
    case 90:
-      return "WR Open door (closes after 5 seconds)";
+      return "WR Open door (closes after 6 seconds)";
    case 91:
       return "WR Raise floor to match Ne. ceiling";
-   /* 92 93 94 95 96 */
+   case 92:
+      return "WR Raise floor up 24";
+   case 93:
+      return "WR Raise floor up 24 and match Ne. texture and type";
+   case 94:
+      return "WR Raise floor to 8 below Ne. ceiling";
+   case 95:
+      return "W1 Raise floor to match Ne. floor, texture and type ?";
+   case 96:
+      return "WR Raise floor up 72";
    case 97:
       return "WR Teleport to another sector";
    case 98:
       return "WR Lower floor to 8 above Ne. floor";
-   /* 99 100 101 */
+   /* 99 100 */
+   case 101:
+      return "S1 Raise floor to match Ne. ceiling";
    case 102:
       return "S? Lower floor to match Ne. floor";
    case 103:
-      return "S1 Open Door (stays open)";
+      return "S1 Open door (stays open) ?";
    case 104:
       return "W1 Light level goes to minimum Ne. light level";
    }
@@ -409,7 +514,6 @@ char *GetLineDefTypeLongName( int type)
 
 char *GetLineDefFlagsName( int flags)
 {
-   int n;
    static char temp[ 20];
 
    if (flags & 0x0100)

@@ -122,16 +122,21 @@ void huge *SwapIn( SwapHandle handle, unsigned long size)
    file = fopen( oldhandle, "rb");
    data = ptr;
    if (file == NULL)
-      ProgError( "error opening temporary file \"%s\"", handle);
+   {
+#ifdef DEBUG
+      LogMessage( "\nFree memory before crash: %lu bytes.", farcoreleft());
+#endif /* DEBUG */
+      ProgError( "error opening temporary file \"%s\"", oldhandle);
+   }
    while (size > 0x8000)
    {
       if (fread( data, 1, 0x8000, file) != 0x8000)
-	 ProgError( "error reading from temporary file \"%s\"", handle);
+	 ProgError( "error reading from temporary file \"%s\"", oldhandle);
       data = data + 0x8000;
       size -= 0x8000;
    }
    if (fread( data, 1, size, file) != size)
-      ProgError( "error reading from temporary file \"%s\"", handle);
+      ProgError( "error reading from temporary file \"%s\"", oldhandle);
    fclose( file);
    /* delete the file */
    unlink( oldhandle);
@@ -160,7 +165,12 @@ void SwapOut( void huge *ptr, SwapHandle handle, unsigned long size)
    /* get a new (unique) file name */
    tmp = tempnam( NULL, "{DEU}");
    if (tmp == NULL)
+   {
+#ifdef DEBUG
+      LogMessage( "\nFree memory before crash: %lu bytes.", farcoreleft());
+#endif /* DEBUG */
       ProgError( "cannot create a temporary file name (out of memory)");
+   }
    strcpy( handle, tmp);
    free( tmp);
 #ifdef DEBUG
@@ -170,7 +180,12 @@ void SwapOut( void huge *ptr, SwapHandle handle, unsigned long size)
    data = ptr;
    file = fopen( handle, "wb");
    if (file == NULL)
+   {
+#ifdef DEBUG
+      LogMessage( "\nFree memory before crash: %lu bytes.", farcoreleft());
+#endif /* DEBUG */
       ProgError( "error creating temporary file \"%s\"", handle);
+   }
    while (size > 0x8000)
    {
       if (fwrite( data, 1, 0x8000, file) != 0x8000)
@@ -192,7 +207,7 @@ void SwapOut( void huge *ptr, SwapHandle handle, unsigned long size)
    get the objects needed (if they aren't already in memory)
 */
 
-void SwapInObjects()
+void SwapInObjects( void)
 {
    if (NeedThings && NumThings > 0 && Things == NULL)
       Things = SwapIn( ThingsH, (unsigned long) NumThings * sizeof (struct Thing));
@@ -255,7 +270,7 @@ void ObjectsNeeded( int objtype, ...)
    free as much memory as possible by moving some objects out of lower RAM
 */
 
-void FreeSomeMemory()
+void FreeSomeMemory( void)
 {
    /* move everything to secondary storage */
    if (NumSectors > 0 && Sectors != NULL)

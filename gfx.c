@@ -29,13 +29,53 @@ int GfxMode = 0;	/* graphics mode number, or 0 for text */
 			/* positive = 16 colors, negative = 256 colors */
 int OrigX;		/* the X origin */
 int OrigY;		/* the Y origin */
-int Scale;		/* the scale value */
+float Scale;		/* the scale value */
 int PointerX;		/* X position of pointer */
 int PointerY;		/* Y position of pointer */
 int ScrMaxX;		/* maximum X screen coord */
 int ScrMaxY;		/* maximum Y screen coord */
 int ScrCenterX;		/* X coord of screen center */
 int ScrCenterY;		/* Y coord of screen center */
+
+#ifdef CIRRUS_PATCH
+char mp[ 256];
+
+char HWCursor[] =
+{
+   0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00,
+   0x30, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x00, 0x00,
+   0x1F, 0x00, 0x00, 0x00, 0x1F, 0xC0, 0x00, 0x00,
+   0x0F, 0xF0, 0x00, 0x00, 0x0F, 0xE0, 0x00, 0x00,
+   0x07, 0xC0, 0x00, 0x00, 0x07, 0xE0, 0x00, 0x00,
+   0x03, 0x70, 0x00, 0x00, 0x02, 0x38, 0x00, 0x00,
+   0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+   0x3F, 0xFF, 0xFF, 0xFF, 0x0F, 0xFF, 0xFF, 0xFF,
+   0x83, 0xFF, 0xFF, 0xFF, 0x80, 0xFF, 0xFF, 0xFF,
+   0xC0, 0x3F, 0xFF, 0xFF, 0xC0, 0x0F, 0xFF, 0xFF,
+   0xE0, 0x07, 0xFF, 0xFF, 0xE0, 0x0F, 0xFF, 0xFF,
+   0xF0, 0x1F, 0xFF, 0xFF, 0xF0, 0x0F, 0xFF, 0xFF,
+   0xF8, 0x07, 0xFF, 0xFF, 0xF8, 0x83, 0xFF, 0xFF,
+   0xFD, 0xC7, 0xFF, 0xFF, 0xFF, 0xEF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF
+};
+#endif /* CIRRUS_PATCH */
 
 
 /*
@@ -50,6 +90,10 @@ void InitGfx()
    int         errorcode = grNoInitGraph;
 
    printf( "Switching to graphics mode...\n");
+#ifdef CIRRUS_PATCH
+   if (CirrusCursor == TRUE)
+      SetHWCursorMap( HWCursor);
+#endif /* CIRRUS_PATCH */
    if (firsttime)
    {
       if (VideoMode > 0)
@@ -217,10 +261,7 @@ void SetColor( int color)
 
 void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
 {
-   line( (mapXstart - OrigX) / Scale + ScrCenterX,
-	 (OrigY - mapYstart) / Scale + ScrCenterY,
-	 (mapXend - OrigX)   / Scale + ScrCenterX,
-	 (OrigY - mapYend)   / Scale + ScrCenterY);
+   line( SCREENX( mapXstart), SCREENY( mapYstart), SCREENX( mapXend), SCREENY( mapYend));
 }
 
 
@@ -231,9 +272,7 @@ void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
 
 void DrawMapCircle( int mapXcenter, int mapYcenter, int mapRadius)
 {
-   circle( (mapXcenter - OrigX) / Scale + ScrCenterX,
-	   (OrigY - mapYcenter) / Scale + ScrCenterY,
-	   mapRadius / Scale);
+   circle( SCREENX( mapXcenter), SCREENY( mapYcenter), (int) (mapRadius * Scale));
 }
 
 
@@ -244,13 +283,13 @@ void DrawMapCircle( int mapXcenter, int mapYcenter, int mapRadius)
 
 void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
 {
-   int    scrXstart = (mapXstart - OrigX) / Scale + ScrCenterX;
-   int    scrYstart = (OrigY - mapYstart) / Scale + ScrCenterY;
-   int    scrXend   = (mapXend - OrigX)   / Scale + ScrCenterX;
-   int    scrYend   = (OrigY - mapYend)   / Scale + ScrCenterY;
-   double r         = hypot( scrXstart - scrXend, scrYstart - scrYend);
-   int    scrXoff   = (r >= 1.0) ? (scrXstart - scrXend) * 16.0 / r / Scale : 0;
-   int    scrYoff   = (r >= 1.0) ? (scrYstart - scrYend) * 16.0 / r / Scale : 0;
+   int    scrXstart = SCREENX( mapXstart);
+   int    scrYstart = SCREENY( mapYstart);
+   int    scrXend   = SCREENX( mapXend);
+   int    scrYend   = SCREENY( mapYend);
+   double r         = hypot( (double) (scrXstart - scrXend), (double) (scrYstart - scrYend));
+   int    scrXoff   = (r >= 1.0) ? (int) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
+   int    scrYoff   = (r >= 1.0) ? (int) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
 
    line( scrXstart, scrYstart, scrXend, scrYend);
    scrXstart = scrXend + 2 * scrXoff;
@@ -271,15 +310,15 @@ void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
 
 void DrawMapArrow( int mapXstart, int mapYstart, unsigned angle)
 {
-   int    mapXend   = mapXstart + 50 * cos(angle / 10430.37835);
-   int    mapYend   = mapYstart + 50 * sin(angle / 10430.37835);
-   int    scrXstart = (mapXstart - OrigX) / Scale + ScrCenterX;
-   int    scrYstart = (OrigY - mapYstart) / Scale + ScrCenterY;
-   int    scrXend   = (mapXend - OrigX)   / Scale + ScrCenterX;
-   int    scrYend   = (OrigY - mapYend)   / Scale + ScrCenterY;
+   int    mapXend   = mapXstart + (int) (50 * cos(angle / 10430.37835));
+   int    mapYend   = mapYstart + (int) (50 * sin(angle / 10430.37835));
+   int    scrXstart = SCREENX( mapXstart);
+   int    scrYstart = SCREENY( mapYstart);
+   int    scrXend   = SCREENX( mapXend);
+   int    scrYend   = SCREENY( mapYend);
    double r         = hypot( scrXstart - scrXend, scrYstart - scrYend);
-   int    scrXoff   = (r >= 1.0) ? (scrXstart - scrXend) * 16.0 / r / Scale : 0;
-   int    scrYoff   = (r >= 1.0) ? (scrYstart - scrYend) * 16.0 / r / Scale : 0;
+   int    scrXoff   = (r >= 1.0) ? (int) ((scrXstart - scrXend) * 8.0 / r * Scale) : 0;
+   int    scrYoff   = (r >= 1.0) ? (int) ((scrYstart - scrYend) * 8.0 / r * Scale) : 0;
 
    line( scrXstart, scrYstart, scrXend, scrYend);
    scrXstart = scrXend + 2 * scrXoff;
@@ -424,7 +463,7 @@ void DrawPointer( Bool rulers)
    if ( rulers)
    {
       SetColor( MAGENTA);
-      r = 512 / Scale;
+      r = (int) (512 * Scale);
       circle( PointerX, PointerY, r);
       r >>= 1;
       circle( PointerX, PointerY, r);
@@ -432,7 +471,7 @@ void DrawPointer( Bool rulers)
       circle( PointerX, PointerY, r);
       r >>= 1;
       circle( PointerX, PointerY, r);
-      r = 1024 / Scale;
+      r = (int) (1024 * Scale);
       line( PointerX - r, PointerY, PointerX + r, PointerY);
       line( PointerX, PointerY - r, PointerX, PointerY + r);
    }
@@ -583,5 +622,101 @@ void RotateAndScaleCoords( int *x, int *y, double angle, double scale)
    *y = (int) (r * scale * sin( theta + angle) + 0.5);
    /* Yes, I know... etc. */
 }
+
+
+
+#ifdef CIRRUS_PATCH
+/*
+   Cirrus Logic Hardware Mouse Cursor Stuff
+*/
+
+#define CRTC 0x3D4
+#define ATTR 0x3C0
+#define SEQ  0x3C4
+#define GRC  0x3CE
+#define LOBYTE(w)           ((unsigned char)(w))
+#define HIBYTE(w)           ((unsigned char)((unsigned int)(w) >> 8))
+
+unsigned rdinx( unsigned pt, unsigned inx)
+{
+   if (pt == ATTR)
+      inportb( CRTC + 6);
+   outportb( pt, inx);
+   return inportb( pt + 1);
+}
+
+void wrinx( int pt, unsigned inx, unsigned val)
+{
+   if (pt == ATTR)
+   {
+      inportb( CRTC + 6);
+      outportb( pt, inx);
+      outportb( pt, val);
+   }
+   else
+   {
+      outportb( pt, inx);
+      outportb( pt + 1, val);
+   }
+}
+
+void modinx( unsigned pt, unsigned inx, unsigned mask, unsigned nwv)
+{
+   unsigned temp;
+
+   temp = (rdinx( pt, inx) & ~mask) + (nwv & mask);
+   wrinx( pt, inx, temp);
+}
+
+void clrinx( unsigned pt, unsigned inx, unsigned val)
+{
+   unsigned x;
+
+   x = rdinx( pt, inx);
+   wrinx( pt, inx, x & ~val);
+}
+
+void SetHWCursorPos( unsigned x, unsigned y)
+{
+   outport( SEQ, (x << 5) | 0x10);
+   outport( SEQ, (y << 5) | 0x11);
+}
+
+void SetHWCursorCol( long fgcol, long bgcol)
+{
+   modinx( SEQ, 0x12, 3, 2);
+   outportb( 0x3C8, 0xFF);
+   outportb( 0x3C9, LOBYTE( fgcol) >> 2);
+   outportb( 0x3C9, HIBYTE( bgcol) >> 2);
+   outportb( 0x3C8, 0);
+   outportb( 0x3C9, LOBYTE( bgcol) >> 2);
+   outportb( 0x3C9, HIBYTE( bgcol) >> 2);
+   outportb( 0x3C9, bgcol >> 18);
+   modinx( SEQ, 0x12, 3, 1);
+}
+
+void CopyHWCursorMap( unsigned bytes)
+{
+   char    *curmapptr = 0xA000FF00L;
+   unsigned lbank = (1024 / 64) - 1;
+
+   if ((rdinx( GRC, 0x0B) & 32)==0)
+      lbank = lbank << 2;
+   wrinx( GRC, 9, lbank << 2);
+   memmove( curmapptr, &mp, bytes);
+}
+
+void SetHWCursorMap( char *map)
+{
+   memmove( &mp, map, 128);
+   memmove( &mp + 128, &mp, 128);
+   CopyHWCursorMap( 256);
+   SetHWCursorCol( 0xFF00000L, 0xFF);
+   wrinx( SEQ, 0x13, 0x3F);
+}
+
+#endif /* CIRRUS_PATCH */
+
+
 
 /* end of file */

@@ -15,10 +15,23 @@
     ||      //    /        \/       \--------/            /\=====\\ || ||
     ||    //    /                                        /   \\   \\|| ||
     ||  //    /                                           \    \\  \\| ||
-    ||//    /                    DEU 5.1                    \    \\    ||
+    ||//    /                    DEU 5.2                    \    \\    ||
     |/    /                     >-------<                     \    \\  //
     /   /               DOOM(TM) EDITOR UTILITIES               \    \//
      \/                                                           \__/
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -33,14 +46,16 @@
 
      2  Starting DEU
          2.1  Command line parameters
-         2.2  DEU.INI  Initialization files
+         2.2  Preference Settings
+         2.3  Initialization file DEU.INI
 
      3  DEU Main Menu
 
      4  The Level Editor
-         4.1  Keyboard Commands
-         4.2  Mouse Commands
-         4.3  The Menu Bar
+         4.1  Keyboard Quick Reference
+         4.2  Keyboard Commands Full Description
+         4.3  Mouse Commands
+         4.4  The Menu Bar
 
      5  WAD file description, flags, etc...
          5.1  Vertices (description of)
@@ -66,7 +81,7 @@
          8.1  Video problems
          8.2  Pointer problems (mouse, cursor)
          8.3  Hall of mirrors (HOM) effect
-         8.4  Warning Beeps during nodes building
+         8.4  The 'Ruler' cursor leaves garbage on the screen.
          8.x  Coming down off a DOOM rush.
 
      9  Tutorial
@@ -74,8 +89,7 @@
     10  Tips
          10.1  Generic editing tips
          10.2  DOOM/DEU limitations
-
-=====================================================================
+=====================================================================
 [1] Introduction
 =====================================================================
 
@@ -107,13 +121,16 @@ DEU Features
      - Scale and rotate sectors, linedefs, vertices, or things.  
      - Quickly define an area (selection box) and mass select
        everything in it.
+     - Sector floor/ceiling height distributor for easy stairways.
 
 - Diagnostic Tools
      - Detects WAD errors.
+     - Warns you if you've forgotten player start things.
      - Can automatically correct some problems.
-     - Use this to fix those problem wads, even if you created them with other
-       editors.  (Note: if the other editor uses non-standard constructs you
-       may not be able to take the WAD back to the other editor.)
+     - Use this to fix those problem wads, even if you created them with
+       other editors.  (Note: if the other editor uses non-standard
+       constructs you may not be able to take the WAD back to the other
+       editor.)
 
 - WAD File merging capability.
      - Load and Merge multiple levels into a single WAD file.
@@ -123,9 +140,6 @@ DEU Features
 - Renumber Maps to different Episodes and Levels.
 
 - Much Much More!  
-     - Highest percentage of quality WADs posted were made with DEU.
-     - DJ Rob Base says.. "It takes DEU to make a thing go right... It
-       takes DEU to make it outta sight!"  Sing it!
      - Try it and see.  Just DEU it!
 
 =====================================================================
@@ -143,7 +157,7 @@ DEU may be started by typing DEU at a DOS prompt.
      Start DEU with the default IWAD file and the PWAD file(s)
      given.
 
->  DEU [options] -m <IWAD file>
+>  DEU [options] -w <IWAD file>
 
      Start DEU with the specified main IWAD file (DOOM.WAD or
      DOOM1.WAD).
@@ -151,6 +165,9 @@ DEU may be started by typing DEU at a DOS prompt.
 
 [2.1]  Command Line Parameters
 ------------------------------
+
+Note: The effect of the Boolean options (-i, -s0, ...) may be reversed by
+      using a '+' instead of a '-'.  For example, '+i' means 'no info bar'.
 
 -help
      View command line options without entering DEU.
@@ -211,22 +228,70 @@ DEU may be started by typing DEU at a DOS prompt.
      Use a "fake" mouse cursor.  This option is useful is your mouse
      driver is not compatible with SuperVGA resolutions (see [8.2]).
 
+-sf   (-splitfactor)
+     Adjust scale on the nodes builder.  This parameter is for those techie
+     types that like to fiddle with things.  There is no need for the average
+     user to worry about this parameter.  (The default value of 8 is the same
+     value that id software uses.  A number less than 8 means "more balanced"
+     and a number higher than 8 means "least splits".  Use this parameter at
+     your own risk.  We recommend the default value of 8.) 
+
+-s0   (-select0)
+     Select object 0 when switching modes.
+
+
 -config <ini file>
      Specify an alternate DEU configuration file other than
      DEU.INI
 
+
+
+[2.2] Preference Settings
+-------------------------
+
+The following allow you to assign default values for textures when creating
+new areas in your level.
 
 
-[2.2]  DEU.INI
---------------
+-walltexture <texture>
+
+-lowertexture <texture>
+
+-uppertexture <texture>
+
+-floortexture <texture>
+
+-ceiltexture <texture>
+
+-floorheight <units>
+
+-ceilheight <units>
+
+
+
+
+[2.3]  Initialization file DEU.INI
+----------------------------------
 
 Rather than using command line arguments you may wish to 
 save your typical settings in the DEU.INI file.  It's structure
-is pretty basic, pop into edit and check it out.
+is pretty basic.  Use your favorite text editer to check it out.
 
 ALL of the command line options may be used in DEU.INI with the
 exception of "-help" and "-config".  Commands in DEU.INI should
 be completely spelled out (i.e. quiet=true, not q=true)
+
+Also, don't put the "-" in front of commands in the config file.
+
+
+And now your bonus for reading this far...
+
+Add the following line to your DEU.INI file:
+#*****************
+reminder1 = false
+#*****************
+
+This will turn off the opening reminder to read the documentation.
 
 
 =====================================================================
@@ -238,7 +303,7 @@ be completely spelled out (i.e. quiet=true, not q=true)
      valid command syntax.
 
 B <OutIWadFileName> 
-     BUILD new IWAD file (all 10+Megs of it)  with the given file
+     BUILD new IWAD file (all 10+Megs of it) with the given file
      name.  WARNING: Do not name your file DOOM.WAD or you will
      overwrite the existing DOOM.WAD file and you will have to
      re-install DOOM to get back your original file.
@@ -246,7 +311,7 @@ B <OutIWadFileName>
 C [episode] [mission]
      CREATE and edit a new (empty) level.
 
-D    
+D <object name>
      DUMP gives an hex/ascii dump of any object in the main
      directory (WAD file).
 
@@ -256,7 +321,7 @@ E [episode] [mission]
 G <OutPWadFileName>
      GROUP all opened PWAD files in a compound PWAD with the given
      file name.  Using this option, you may put several levels, graphics, 
-     sounds, demos, etc.. in a single file.  
+     sounds, demos, etc.. in a single file.
 
 I <datafile> <wad file name for object>
      INCLUDE a raw binary file in a pwad.  You can use this to replace
@@ -324,7 +389,8 @@ Things Mode
 
 Vertices Mode
 
-     Modify points used to set up other doom structures.
+     Modify points used to set up other doom structures.  The vertices are the
+     lowest level structure in a DOOM map.   
 
 Linedefs & Sidedefs Mode
 
@@ -333,8 +399,57 @@ Linedefs & Sidedefs Mode
 Sectors Mode
 
      Define rooms or areas.
-[4.1] Keyboard Commands
------------------------
+
+[4.1] Keyboard Quick Reference
+==============================
+
+Basic Key Set                           Additional Speed Keys
+~~~~~~~~~~~~~                           ~~~~~~~~~~~~~~~~~~~~~
+
+Q              Quit                     1,2,...,9,0    Direct Zoom setting
+Esc            Exit (no save)           T              Things Mode
+Arrows         Move pointer             V              Vertices Mode
+Scroll Lock    Autoscroll on/off        L              Linedef/Sidedef Mode
+Space          Scroll slow/fast         S              Sector Mode
++,-            ZOOM in or out.          >              Next Object
+Tab            Next mode                <              Previous Object
+Shift Tab      Previous mode            #              Jump to Object #
+N              Next object              Shift-H        Grid Scale = 0
+P              Previous object          I              Info Bar On/Off
+J              Jump to object #         R              Ruler/Normal Cursor
+M              Mark/Unmark object       Shift+Ins      Insert Lines and
+C              Clear all marks                         close sector
+O              Copy Object(s)           Shift          Move Pointer without
+D              Drag mode Toggle                        selecting new object
+G              Set Grid Scale           Shift+[Mark]   Box Object Selection
+H              Hide/Show Grid
+Enter          Edit object(s)
+Ins            Insert object(s)
+Del            Delete object(s)
+F1             Help
+F2             Save
+F3             Save As
+F4             Search
+F5             Preferences
+F8             Miscellaneous Operations
+F9             Insert Predefined objects
+F10            Check consistancy
+
+
+
+Pull Down Menu Keys
+~~~~~~~~~~~~~~~~~~~
+
+ALT-F          File Menu
+ALT-E          Edit Menu
+ALT-S          Search Menu
+ALT-M          Mode Menu
+ALT-I          Misc Menu
+ALT-O          Objects Menu
+ALT-C          Check Menu
+ALT-H          Help Menu
+[4.2] Keyboard Commands Full Description
+----------------------------------------
 
 Q         Quit, saving changes.  You will be asked for the name
           of the PWAD file.
@@ -346,18 +461,27 @@ Q         Quit, saving changes.  You will be asked for the name
                name it the same as the multilevel PWAD.
 
 Esc       Exit without saving.  If you have unsaved changes, a
-          warning message will be displayed.  May also be used to CANCEL        
+          warning message will be displayed.  May also be used to CANCEL
           accidentally selected functions.
 
 Arrows    Move the pointer.
 
-Scroll Lock    Turn on/off the autoscroll feature.
+Scroll Lock
+          Turn on/off the autoscroll feature.
 
 Space     Toggle slow/fast movement speed and the scrolling speed.
 
-+, -      Change the map scale.   ZOOM in or out.
++, -      ZOOM in or out. (Change the map scale.)   ZOOM levels range from
+          1/20 scale (smallest) to 4/1 scale (major magnification).
+
+1,2,...,9,0
+          Set ZOOM level from 1 to 10 directly.   (1/1 - 1/10)
 
 Tab       Switch to the next editing mode.
+
+Shift+Tab
+          Switch to the previous editing mode.  If objects are marked, the
+          objects they are built from remain marked.
 
 T         Switch to the Things editor.
 
@@ -367,29 +491,32 @@ L         Switch to the LineDefs/SideDefs editor.
 
 S         Switch to the Sectors editor.
 
-N, >      Jump to the next object.  (if the object is too small to select, DEU
-          will adjust the map scale so that it can be selected.)
+N, >      Select the next object.  This will only work if the pointer is
+          not on an object.
 
-P, <      Jump to the previous object. (if the object is too small to select,
-          DEU will adjust the map scale so that it can be selected.)
+P, <      Select the previous object.  This will only work if the pointer
+          is not on an object.
 
 J, #      Jump to a specified object (enter number).
 
 M         Mark/Unmark current object.  (See also the 'Shift' key below).
           * Objects stay marked until you un-mark them. *
-
+
 C         Clear all marks.
 
 O         Copy objects.  After pressing O move the copy to where you want it  
             and press Esc to drop it there.
 
 D         Toggle Drag mode.
-
+
 G         Show the grid and change its scale.  Press it again to increase the
           number of grid lines thus decreasing the scale.  Use Shift-G to
           increase the scale.
 
-H         Hide the grid.
+H         Hide/Show Grid.  This only controls whether or not grid lines are
+          displayed.
+
+Shift+H   Set grid scale to 0.
 
 I         Show or hide the info bar at the bottom of the screen.
 
@@ -428,23 +555,23 @@ Del       Delete the current object or group of objects.  All
           LineDefs that used this Vertex).  Except for Things, you
           will be asked for confirmation before the object is
           deleted.
-
+
 Shift     Hold the Shift key while moving the cursor to prevent
           the pointer from selecting a different object.
 
+Shift & Mark
           Hold the Shift key while pressing 'M' (or the left mouse
           button) to drag a selection box around several objects
           and select them all at once.  This is GREAT for mass selection
           of any objects!
 
-
 F1        Help screen.
 
 F2        Save level in a PWAD file.
 
 F3        Save As... (Change Episode and Level Number)
 
-          This will allow you to reassign the episode and level number of a   
+          This will allow you to reassign the episode and level number of a
           map.  Enter a file name, then select the episode/level number.
 
 F4        Search for Object  (Not yet implemented)
@@ -452,8 +579,9 @@ F4        Search for Object  (Not yet implemented)
 F5        Preferences.  
 
           Use this to change the default values for wall, floor, and ceiling
-          textures, and floor and ceiling heights. These defaults are for your
-          current DEU session only.
+          textures, and floor and ceiling heights.  These defaults are for
+          your current DEU session only.  You may change the defaults for all
+          DEU sessions by editing DEU.INI (see [2.2]).
 
 
 F8        Miscellaneous Operations.  
@@ -501,20 +629,20 @@ F8        Miscellaneous Operations.
                     previously connected to it.
 
                4. Merge several vertices into one.
-     
+
                     Same as #3 above, but with multiple vertices.
 
                5. Add linedef & Split Sector.
 
                     You must mark exactly TWO vertices from the SAME sector
                     before calling this command.  This will add a linedef and
-                    a new sector and update sidedefs.
+                    a new sector.
 
 
           Linedefs & Sidedefs Mode
           ------------------------
 
-               2. Rotate and Scale Linedefs
+               2. Rotate and Scale LineDefs
 
                     Move marked linedefs by the degree of rotation and a
                     percentage scale.  This will allow you to rearrange
@@ -522,29 +650,41 @@ F8        Miscellaneous Operations.
                     or moving them closer to each other (scale < 100%) or
                     further apart (scale > 100%).
 
-               3. Split Linedef (Add Vertex)
+               3. Split LineDef (add new Vertex)
 
                     Splits the selected linedef(s).
 
-               4. Split LineDef and Sector
+               4. Split LineDefs and Sector
 
-                    Splits the selected linedefs and the sectors.
+                    Splits the selected linedefs by adding a vertex at the
+                    midpoint, connecting the new vertices with a linedef which
+                    divides the original sector.
 
-               5. Flip Linedef
+               5. Delete LineDefs and join Sectors
+
+                    Removes the selected two-sided linedef(s) that divide
+                    sectors and makes them into a single sector.
+
+               6. Flip Linedef
 
                     Flips the linedef(s) start and endpoints, thus reversing
                     the side the 1st and 2nd sidedefs are on.
              
-               6. Swap Sidedef
+               7. Swap Sidedef
 
                     Swaps the sectors that sidedef(s) 1 and 2 are tied to.
 
-               7. Align Textures
+               8. Align Textures  (Y offset)
 
-                    Align the textures on the Y offset.  This may help with
-                    getting the texture heights looking better.
-                    
+                    Align the textures on the Y offset.  The first linedef
+                    selected is used as the reference point.  This is for
+                    Up/Down alignment.
 
+               9. Align Textures (X Offset)
+
+                    This may be used on a group of linedefs that follow each
+                    other.  The first linedef selected is used as the
+                    reference.  This is for left/right alignment.
 
           Sector Mode
           -----------
@@ -560,7 +700,6 @@ F8        Miscellaneous Operations.
                     you may have to go into things mode and select them and
                     do the same rotation/adjustment on them.
 
-
                3. Make door from sector
 
                     To use this, select a sector that is between two other
@@ -568,12 +707,28 @@ F8        Miscellaneous Operations.
                     Ceiling height, textures, etc... will be modified
                     accordingly.
 
-
                4. Make lift from sector
 
                     To use this, select the sector that is to become the lift 
                     and then activate this function.  The Linedefs, textures,
                     etc... will be modified accordingly.
+
+               5. Distribute Floor heights
+
+                    This function will take the difference in floor heights
+                    between the first and last sector selected, divide it by
+                    the number of sectors in between and then distribute the
+                    result across the floor heights of the in-between sectors.
+                    This is very useful for setting floor heights on stairways.
+
+               6. Distribute Ceiling heights
+
+                    This function will take the difference in ceiling heights
+                    between the first and last sector selected, divide it by
+                    the number of sectors in between and then distribute the
+                    result across the ceiling heights of the in-between
+                    sectors.  This is very useful for setting ceiling heights
+                    on stairways.
 
 
 F9        Insert a predefined object.
@@ -621,7 +776,6 @@ F9        Insert a predefined object.
                be set to the sector they are contained in.  Think of this as
                inserting an N-sided pillar.
 
-
                NOTE: Pressing "Ins" after inserting the polygon will create a
                new sector inside the polygon and cause the walls to be
                changed to transparent.  Use this to define a new area inside
@@ -631,15 +785,12 @@ F9        Insert a predefined object.
                Insert a stairway.
                (Not yet implemented.)
 
-     
           4. Hidden Stairs
                Insert a hidden stairway.
                (Not yet implemented.)
 
 
-  
 F10       Check level consistency (Diagnostics)
-
 
           When using the following diagnostics if an error is reported you can
           press return to continue checking or press Esc to select the problem
@@ -666,20 +817,18 @@ F10       Check level consistency (Diagnostics)
                etc.  This will also remove extraneous LineDefs if there are
                two LineDefs between the same vertices.
 
-
           4. Check for missing textures.
 
                Report any sidedefs that may need to have a Normal/Upper/or
                Lower texture defined.
 
-
           5. Check Texture Names.
 
-               Some other editors will let you enter texture names that are not
-               correct.  This function will help fix their mistakes.
+               Some other editors will let you enter texture names which are
+               not correct.  This function will help fix their mistakes.
 
 
-[4.2] Mouse Commands
+[4.3] Mouse Commands
 --------------------
 
 If you have a mouse, the following actions are available:
@@ -697,15 +846,15 @@ buttons
 
 
 
-[4.3] The Menu Bar
--------------------
+[4.4] The Menu Bar
+------------------
 
 Along the top edge of the Level editing screen there is a Pull-Down menu bar
 with a number of options including File, Edit, Search, Modes, Objects, Misc,
-and Help. These menu options can be pulled down by either pointing and
+and Help.  These menu options can be pulled down by either pointing and
 clicking on them or by holding down the ALT key and pressing the Underlined
-letter from the menu bar. Once the menu is pulled down press the highlighted
-letter of the command to use it.  
+letter from the menu bar.  Once the menu is pulled down press the highlighted
+letter of the command to use it.
 
 The functions on the Pull-Down menus are as follows:
 
@@ -718,7 +867,7 @@ File [ALT-F]
 
      Save As
 
-          This will allow you to reassign the episode and level number of a   
+          This will allow you to reassign the episode and level number of a
           map.  Enter a file name, then select the episode/level number.
 
      Print
@@ -748,8 +897,8 @@ Edit [ALT-E]
      Preferences
 
           Use this to change the default values for wall, floor, and ceiling
-          textures, and floor and ceiling heights. These defaults are for your
-          current DEU session only.
+          textures, and floor and ceiling heights. These defaults are for
+          your current DEU session only.
 
 Search [ALT-S]
 
@@ -784,6 +933,8 @@ Modes [ALT-M]
      Next Mode           Tab
      Last Mode           Shift-TabMisc [ALT-I]
 
+Misc [Alt-I]
+
      (Same as F8 keyboard command.  See description of F8 key above.)
 
 Objects [ALT-O]
@@ -811,7 +962,6 @@ Help [ALT-H]
           Brief information about the DEU programmers and the contributed work
           from the net.
 
-
 =====================================================================
 [5] WAD file description, flags, etc.
 =====================================================================
@@ -867,9 +1017,7 @@ PWAD File:
      enter?)  Sectors are the only structure that "moves" in DOOM.  Lifts,
      Staircases, Doors, are all specially defined sectors.
 
-
 [5.5] Things   (description of)
-
 
      There are many types of Things in DOOM.  Player Start points, Enemies,
      Bonuses, Weapons, Keys, and Decorations.
@@ -922,7 +1070,9 @@ N    Neighbor.  Usually, this means that the floor rises or
      lowers until it reaches the floor height of an adjacent
      sector on its way.  In the menus, I have used "Ne." instead.
 T    Texture and Type change.  Same as above, but the texture and
-     type of the Sector are also changed.
+     type of the Sector are also changed.  The new Sector floor texture
+     and type are copied from the Sector where the switch or walk-though
+     LineDef is, not from the adjacent Sector(s).
 C    Ceiling.  This means that the floor rises until it reaches
      the ceiling height of one adjacent Sector.
 <,>  Used as modifiers for the above letters.  "<N" means that
@@ -933,10 +1083,10 @@ C    Ceiling.  This means that the floor rises until it reaches
 [5.8] Normal/Upper/and Lower Textures
 -------------------------------------
 
-    These are the Three parts of a sidedef.  
+    These are the Three parts of a sidedef.
 
-    Upper Texture is used to account for variations in ceiling height.  
-    The sidedef facing the sector with the higher ceiling must 
+    Upper Texture is used to account for variations in ceiling height.
+    The sidedef facing the sector with the higher ceiling must
     have an upper texture defined.
 
     Lower Texture accounts for variations in floor height.  The sidedef
@@ -946,12 +1096,12 @@ C    Ceiling.  This means that the floor rises until it reaches
     The Normal Texture is used for the surface of the sidedef which is
     below the ceiling height and above the floor height.
 
-    Notice:  The LineDef/SideDef editor displays upper/lower texture 
-    boxes in RED if they are transparent and shouldn't be.  They will 
+    Notice:  The LineDef/SideDef editor displays upper/lower texture
+    boxes in RED if they are transparent and shouldn't be.  They will
     be grey if they are not visible and should be left transparent.
-    If they are visible they will be black (transparent or not).  This 
+    If they are visible they will be black (transparent or not).  This
     is very helpful in eliminating the Hall of Mirrors effect caused by
-    missing texture assignments.  
+    missing texture assignments.
 
 
 
@@ -1032,7 +1182,6 @@ be able to exit from it!
 
 [6.4] Rising Stairs
 -------------------
-
 
 A raising staircase is created by defining a set of adjacent sectors at the
 same elevation. The sector that will be the first (lowest) step is assigned 
@@ -1152,7 +1301,6 @@ Sector inside it.  Just press 'Ins' while the LineDefs are still
 selected.
 
 
-
 
 
 =====================================================================
@@ -1162,12 +1310,12 @@ selected.
      To Run DOOM with your new level:
 
             >     DOOM -FILE E1L1.WAD
-            
+
                 will load the normal doom game and the use the
                 E1L1.WAD file to patch the data base. 
 
      More than one PWAD file can be loaded. E.g.:
-                
+
             >    DOOM -FILE E1L1.WAD E1L2.WAD BRENDON.WAD RAPHAEL.WAD
 
 
@@ -1214,29 +1362,28 @@ Two common causes of this problem are:
 - You have a transparent line which is shared by two sectors,
   but you forgot to set the "two-sided" (2S) flag for the LineDef.
 
-[8.4] Warning beeps during nodes building.
-------------------------------------------
+You should run all tests from the 'F10' menu to check for these errors.
 
-If you are receiving warnings when the nodes are being built
-it is possible that:
+If everything appears to be correct (no warnings during the checks), then
+maybe you have too many two-sided LineDefs in the same room.  There is a
+limit in Doom's graphic engine on the number of two-sided LineDefs that
+can be displayed at the same time.  Solution: delete some of them.  Sigh!
 
-You have a reversed linedef, where the first sidedef is on the
-wrong side.  The "Check if all sectors are closed" function will
-help you find the reversed linedefs.
+But it may also be a problem with DEU's Nodes builder.  You may try to use
+different values for the "splitfactor" command line parameter, and see if
+that solves the problem (use positive values; 8 is the default; 16 or more
+may solve some problems).  If that still doesn't work, you will have to wait
+for the next release of DEU or use the excellent BSP program, available on
+most FTP sites (look for bsp11x.zip).
 
-You may also have some "lost" sidedefs which are not bound to
-a linedef.  A sidedef may become lost if you are editing linedefs and change
-the first or second sidedef number.  The way to fix this is to use the "Check
-cross references" function.  It will delete any lost sidedefs.
 
-[8.5] The 'Ruler' cursor leaves garbage on the screen.
+[8.4] The 'Ruler' cursor leaves garbage on the screen.
 ------------------------------------------------------
 
 This is a bug in the EGAVGA.BGI driver.  It does not support XOR mode for
 circles.  Solutions: use another driver (VESA, for instance) or recompile
 DEU with the symbol NO_CIRCLES defined.  This will draw squares instead of
 circles.
-
 
 
 [8.x] Can't relax after playing DOOM?  (Coming down off a DOOM rush)
@@ -1250,8 +1397,8 @@ Watch a Bob Marley concert video and have a smoke.    8-}'
 [9.0] Tutorial
 =====================================================================
 
-Unzip the file DEUTUTOR.ZIP for a sort of step-by-step instruction
-booklet to creating a level from scratch.
+The /TUTOR directory contains the deu tutorial, a sort of step-by-step
+instruction booklet to creating a level from scratch.
 
 Print the TUTOR.DOC file and follow along with the wad files.
 
@@ -1269,13 +1416,18 @@ Print the TUTOR.DOC file and follow along with the wad files.
         a .BAK file but if things get really messed and you saved twice
         with the same file name you may lose your work.
 
-        
   Inserting Linedefs
 
-        When marking vertices to add linedefs, do so in CLOCKWISE order.  
+        When marking vertices to add linedefs, do so in CLOCKWISE order.
         This will make sure that the Normal (or first) side of the line 
         is on the inside of your sector.  DEU likes this better and 
         so will you!
+
+        Use clockwise order if you want to add a new sector outside (not
+        inside any sector).  This is the case most of the time.
+        Use anti-clockwise order if you want to add an obstacle inside an
+        existing sector (i.e. all first sidedefs will be on the outside of
+        the area you just defined).
 
   Texture Alignment
 
@@ -1284,9 +1436,9 @@ Print the TUTOR.DOC file and follow along with the wad files.
         align the length of linedefs.  You might even try mathematics
         (I know, it's scarier than Doom... ;-)  See the TUTOR.DOC file for 
         an example of using the texture alignment fields.
-  
+
   Tag Numbers  
-  
+
         Sectors may have a Tag number associated with them.  A linedef
         that has the same tag number can be used to activate the 
         sector by walking across it or pressing it like a switch.
@@ -1311,16 +1463,17 @@ Print the TUTOR.DOC file and follow along with the wad files.
 
   Vertices, Linedefs, and Sectors... suggested order to do them in.
 
-
-     First add all major rooms using F9 menu. The use F9 menu to insert
-     obstacles or different areas inside these rooms.  Connect the rooms by
-     selecting two vertices from each (in clockwise order) and press "Ins"
-     twice.  Now go ahead and add more walls or sectors using the vertices
-     method.  Then set the textures of walls and ceilings and height of
-     sectors.  Add a player 1 start thing and compile it and take a walk
-     through it.  Then go back and fix things and add decorations.  Add
-     enemies last so you don't have to deal with them every time.  Remember
-     to add enemies based upon difficulty level.
+        First add all major rooms using F9 menu.  Then use F9 menu to
+        insert obstacles or different areas inside these rooms.  Connect
+        the rooms by selecting two vertices from each (in clockwise order)
+        and press "Ins" twice.  Now go ahead and add more walls or sectors
+        using the vertices method.  Drag some walls on top of some others
+        if you want to join two rooms.  Then set the textures of walls and
+        ceilings and height of sectors.  Add a player 1 start thing and
+        compile it and take a walk through it.  Then go back and fix things
+        and add decorations.  Add enemies last so you don't have to deal
+        with them every time.  Remember to add enemies based upon difficulty
+        level.
 
 
   Stairs
@@ -1343,21 +1496,19 @@ Print the TUTOR.DOC file and follow along with the wad files.
         can start out with a simple level and expand on it as time
         permits.
 
-
         Theme!  Theme I tell you!  And a little continuity wouldn't hurt
         either.  We've made a couple wads without any continuity and
         found that they looked, well... amateur.  The sample levels
         in the tutorial have little continuity and are in no way
         meant to demonstrate what a good level looks like, rather,
-        these were built to show how things work.  
-
-
+        these were built to show how things work.
+
   Including your own demo in a PWAD.
 
-        > doom -devparm -record e1l1 -file E1L1.Wad
+        > doom -devparm -record E1M1 -file E1M1.WAD
         > deu
-            > R E1l1.WAD
-            > I E1l1.LMP DEMO1
+            > R E1M1.WAD
+            > I E1M1.LMP DEMO1
             > R DEMO1.WAD
             > G MYLEVEL.WAD
         > doom -file MYLEVEL.WAD
@@ -1365,12 +1516,12 @@ Print the TUTOR.DOC file and follow along with the wad files.
 
   Special Tag Numbers
 
-        The only special tag number we now of yet is tag number 666.  It
-        is used to lower a sector after all the barons of hell have
+        The only special tag number we know of yet is tag number 666.
+        It is used to lower a sector after all the Barons of Hell have
         been eliminated on E1M8.  We haven't tested to see if that
         works on any other ExMx levels.  Let us know!
 
-        
+
   Death of Bosses ends level
 
         This is only true at the End Levels (ExM8).  When all of the
@@ -1378,13 +1529,35 @@ Print the TUTOR.DOC file and follow along with the wad files.
         ends.
 
 
+  Exits for Single, Coop, and Multiplayer
+
+        It IS possible to create a level suitable for single-player games
+        AND protect the exit in Deathmatch games so that players must
+        cooperate in order to exit.  There are many ways to do this, and
+        most of them are based upon when Things are available (See the When
+        Appears item in Things mode).
+
+        One simple way is to have two doors that lead to the exit.
+        In multiplayer: Door "A" could be blocked by having a lamp in front of
+        it.  Door "B" would require a distant switch to be pulled so that the
+        player pulling the switch couldn't reach it by themselves.
+        In single player (and Cooperative) mode Door "A" would not be blocked
+        by any object nor require any switch to be pulled.  This is just one
+        of many possible ways to make a wad playable by a single player but
+        require cooperation to exit in Deathmatch mode.
+
+
+
 
 
 [10.2]  DEU/DOOM Limits....
 
 
-        Maximum size of a wad file created with DEU 5.1:  Used to be 150k in
-        version 5.0, it should be much larger now.
+        Maximum size of a wad file created with DEU 5.2:  This depends on how
+        much base memory you can free up.  The more free ram, the bigger the
+        WAD can be.  If you are using the GCC version of DEU, you will be able
+        to create a wad as big as your total memory (standard + extended): you
+        can create a huge wad file with this...
         
         X,Y locations of vertices:  somewhere in excess of -10,000 to 
         +10,000.  It could be -32768 to + 32767.  Note however that
@@ -1397,10 +1570,13 @@ Print the TUTOR.DOC file and follow along with the wad files.
         time: Somewhere near 64.  We've seen that when there are too many
         some of them will disappear and reappear.  This looks really bad.  
 
-        Floor/Ceiling heights  MAX 400, MIN -400.
+        The doom engine (v1.2) can handle floors & cielings from -32768 to 
+        +32768 as long as the difference in a sector is not more than 1000.
+        DEU imposes a limit of 16384 as a safety feature and will check for
+        the ceiling/floor difference when you run the 'check textures' test.
 
         The Maximum 2S linedefs that you can see from any point before DOOM
-        engine limit causes HOM (Hall of Mirrors effect): Somewhere near 16. 
+        engine limit causes HOM (Hall of Mirrors effect): Somewhere near 16.
 
         Maximum stair you can climb: 24 units.
 
@@ -1409,8 +1585,8 @@ Print the TUTOR.DOC file and follow along with the wad files.
 
         Minimum wall distance you can squeeze through: 34 units.
 
-        Number of hours playing doom before your spouse (or friend) files a     
-        certificate of your death and claims benefits:  Do you really want to   
+        Number of hours playing doom before your spouse (or friend) files a
+        certificate of your death and claims benefits:  Do you really want to
         find out?  Spend a little quality time with them!
 
 

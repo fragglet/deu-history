@@ -1,0 +1,164 @@
+SOURCE.ZIP README FILE
+======================
+This zip file (SOURCE.ZIP) contains the source files for DEU 5.2.
+
+Please note that DEU 5.2 has been ported to GCC.  The sources for
+the GCC version (which compiles under Borland C too, but have some
+differences) are available in the SOURCE.ZIP file contained in the
+DEU52GCC package.
+
+The average DEU user will not need these source files.  But if you
+want to work on the code and contribute to the DEU effort, or just
+want to have a look at the files and see how some things are done,
+then please read this file.
+
+
+How do I compile DEU?
+=====================
+
+This program has been developped with Turbo C and Borland C++.  You
+should be able to compile it with Turbo C 3.0, Borland C++ 3.1, 4.0
+or higher.
+
+If you are working with the IDE or the command-line compiler, the
+only important thing is to choose the Huge memory model.  You are
+free to choose the other options, such as optimize for speed/optimize
+for size, allow overlays, use a 387 or an emulation, etc.
+
+The executable in the standard DEU distribution has been compiled
+with support for 387 emulation, for greater compatibility.  If you
+re-compile the code using direct 387 code, the program will be 30-40%
+faster in some cases.
+
+
+Conditional #defines
+====================
+
+The code includes some #ifdef's that may be used to change the
+behaviour of the program.  Here are the symbols that may be defined,
+and what they do.
+
+* NO_CIRCLES
+
+  There is a bug in the standard EGAVGA.BGI drivers: it doesn't
+  support XOR mode when drawing circles.  Some other drivers may
+  have this kind of problems too.  If you want to use one of these
+  buggy drivers but don't want to see lots of garbage on your screen
+  when you use the Ruler cursor ('R'), then define this symbol and
+  DEU will draw squares instead of circles.
+
+* CIRRUS_PATCH
+
+  A patch has been added to the 5.2 code.  This patch is only useful
+  for those who have a Cirrus Logic VGA card.  If you use the '-cc'
+  command line option, it will use a hardware cursor for the mouse,
+  instead of the ugly "fake cursor" ('-fc').  But even if the
+  hardware cursor is not activated when you don't use the '-cc'
+  option, the code will still be there.  The standard DEU executable
+  has been compiled with this symbol defined, but you may want to
+  compile DEU without defining it, if you are having some problems
+  with your mouse (or if you want to make the executable smaller).
+
+* DEBUG
+
+  At various times, different parts of the code have been/will be
+  enclosed between "#ifdef DEBUG"/"#endif" statements.  Define this
+  symbol at your own risks...
+
+
+Contributions to the code
+=========================
+
+Since DEU is a Public Domain program, you are free to do whatever you
+want with it.  But please read README.1ST if you want to know what is
+considered polite...
+
+If you changed some parts of the DEU code (to fix a problem, add a
+new feature, or turn it into something completely different), you may
+want to make your patch available to other people.
+
+There are two ways to do that:
+
+* Distribute the new version of the program under a new name.  You
+  should only do that if you (re-)wrote a significant part of the
+  code.  You should give credit to the original DEU (see README.1ST).
+  But you should also use a different name that won't throw people
+  into confusion: please don't name it DEUA, DEUX, MyDEU or anything
+  close.  The name of your editor should be sufficiently different.
+
+* Send the patch to us, so that it will be included in the next
+  release of DEU.  This is the best way to contribute: all DEU users
+  will benefit from your code.  And if you want to really work on the
+  code, you can join our young and dynamic development team. :-)
+  Of course, your name will be added to the 'Credits' list, along
+  with a few lines that describe what great things you did for DEU...
+
+
+Adding new features to DEU
+==========================
+
+If you want to work on some part of the code and send your
+contribution to us, you should first take a look at the 'Future
+Plans' section in README.1ST.  If some things are listed there, then
+there is probably already someone working on it.  The best thing to
+do if you want to work on one of these projects is to get in touch
+with us as soon as possible, so that we all work together instead of
+having several people working independently (which is a waste of
+time).
+
+You should also take a look at the COMMENTS file.  It contains some
+comments about the routines in DEU, and also a TO-DO list.  You might
+find some interesting things there.  But once again, if something is
+in the TO-DO list, there is probably someone working on it.  You'd
+better get in touch with Brendon and Raphael first.
+
+Well, let's suppose that you have added some marvellous new feature
+to DEU and you want to send it to us...  Here are a few important
+things that you should bear in mind:
+
+* DEU is Public Domain, and all contributions must be in the Public
+  Domain too.  That means: no copyrights.  We cannot and will not
+  accept copyrighted contributions.  You will have your name in the
+  credits (and you can also add a line in the header of the source
+  file(s) if you added a new module to DEU), but please don't put a
+  copyright on what you did.
+
+* If your new feature takes several pages of code, it's better to
+  put everything in a single new file that will be linked with DEU.
+  Just tell us what should be added in DEU.H and when (and how) your
+  new function(s) should be called.
+
+* If your routine is a patch for one or more existing source files,
+  the best way to send it is to use the UNIX-style "context diff".
+  The 'diff' and 'patch' programs are also available for DOS and
+  OS/2, so please use them if you can.  Note: use a "context diff"
+  ("diff -c file1 file2"), not a normal diff, because the 'patch'
+  program will fail if there are too many differences in the file to
+  be patched and only a "normal diff" is available.
+
+* Make sure that your code has been fully tested.  Also, try to use
+  the same programming style (name of variables, indentation,
+  spacing between variables and operators, comments, etc.) because
+  we don't want to have to do all these changes by hand.
+
+
+General comments for the code
+=============================
+
+We have tried to keep the code as clean as possible.  Every routine
+should have at least a one-line comment that describes what it does,
+and a few comments inside it to describe obscure parts of the code.
+
+Please try to do the same thing in your own code.  The source files
+will look better if they have the same "style" everywhere.  And if
+you have the time, add some comments for the declarations too (types
+and variables).
+
+A source file wiithout comments is hard to read, but it can also be
+hard to read if there are too many comments.  Try to keep a good
+balance.  If you want to add lots of comments about how your code
+works, please add them in the COMMENTS file, but not in the source
+files.
+
+Thanks in advance!
+

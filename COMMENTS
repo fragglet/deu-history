@@ -1,0 +1,94 @@
+COMMENTS
+========
+
+This file has two purposes: the first part contains a TO-DO list
+for all features that should be added to DEU, or things that need
+to be fixed, or general ideas, etc.  The second part contains
+some informations about the functions that are included in the
+source code.  Some functions have to be explained because they have
+some obscure features.  But if the comments take more than ten lines,
+it's better to put them here instead of adding them to the source
+files.
+
+
+TO-DO LIST, WHISH LIST, ...
+===========================
+
+The TO-DO list is not the same thing as the 'Future Plans' section in
+README.1ST.  The 'Future Plans' section describes some new features
+that will be added to DEU sooner or later, and everyone should be
+able to understand what each feature means.  Here, this is more
+technical stuff: functions that could be improved or added, better
+algorithms for some parts of the code, etc.  Feel free to send your
+suggestions to Brendon and Raphael.  They will be added to this list.
+And, who knows, they may be implemented one day or another...
+
+* Reject builder.  This shouldn't be too hard to do, since Id
+  released their BSP code.  But I didn't have the time to take a look
+  at it and see how their Reject builder works.  [Raphael]
+
+* Better BlockMap builder.  Matt Tagliaferri (author of DoomCAD) and
+  Matt Fell (author of the Doom Specs) have found an algorithm that
+  is faster (and maybe better) than mine.  [Raphael]
+
+* Write the average path length for the BSP tree in the log file, if
+  in debug mode.  This will give useful info for people who want to
+  play with 'SplitFactor'.  This should be computed in SaveNodes.
+  (formula: sum of (depth * number of Segs in SSector) / total
+  number of Segs).  [Raphael]
+
+* Use some of the typedef's from Brendon's code in 5.x, so that the
+  various versions of DEU 5.x (Borland, GCC, ...) will be more
+  similar to DEU 6.0.  [Raphael]
+
+* Better TO-DO list in the COMMENTS file.  :-)
+
+
+COMMENTS ABOUT SOME FUNCTIONS
+=============================
+
+If you wrote a function that is hard to understand, it's better to
+add your comments here.  A code without comments is hard to
+understand, but a code with too many comments is hard to read.  So
+put one or two lines of comments in the source files, and put the
+rest here.
+
+---------------------------------------------------------------------
+* Comments on the Nodes builder by Raphael Quinet:
+
+Most of the algorithm is explained in NODES.C, and I won't put the
+text here because it was in that file since the first version.  But
+one thing is not explained in the file: how I choose the "best
+nodeline".
+
+The BSP tree is used to tell in what order the planes should be
+displayed on the screen, and the program will be faster if the
+average path in the tree is smaller.  This average path depends on
+two things: the total number of Segs and the way the tree is
+balanced.  If we minimize the number of splits, there will be less
+Segs, but the tree may not be well balanced (some path will be much
+longer than some others).  If we try to keep the tree as balanced as
+possible (by having the same number of Segs on each side of the
+nodeline), we may have to do more splits.
+
+The algorithm in the Nodes builder is a compromise.  In order to pick
+the best nodeline, I used brute force: try with all possible
+nodelines, that means all Segs.  For each candidate, I compute the
+number of Segs on each side (num1 and num2) and the number of splits
+(splits).  Then I try to minimize the following formula:
+'max(num1, num2) + SplitFactor * splits'.  The nodeline which has the
+lowest result for this expression will be selected.  'SplitFactor' is
+a weighting factor: if it has a low value (0, 1, 2,...), then the
+tree will be well balanced, but there may be a lot of splits.  If it
+has a high value (greater than 10-20), there will be less splits, but
+maybe a lack of balance in the tree.  I could also use
+'abs(min1 - min2)' instead of 'max(num1, num2)'.  That would roughly
+give the same results, since 'num1 + num2 - splits' is constant.
+
+---------------------------------------------------------------------
+* Comments for function FFF by XXX:
+(insert your text here)
+
+---------------------------------------------------------------------
+
+

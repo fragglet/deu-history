@@ -62,7 +62,6 @@ void DisplayMenuText( int x0, int y0, int line, char *text, int highlightnum, Bo
 
 int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys, char *menustr[ 30], int highlight[ 30])
 {
-   va_list args;
    int     maxlen, line, oldline;
    Bool    ok;
    int     key, buttons, oldbuttons;
@@ -339,7 +338,8 @@ int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
 	 break; /* return "val", even if not valid */
       else if ((key & 0x00FF) == 0x001B)
       {
-	 val = -32768; /* return a value out of range */
+         neg = FALSE;
+	 val = -32767; /* return a value out of range */
 	 break;
       }
       else
@@ -698,7 +698,6 @@ Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
 
 void Notify( int x0, int y0, char *prompt1, char *prompt2)
 {
-   int key;
    int maxlen = 30;
 
    if (UseMouse)
