@@ -1,8 +1,11 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    WSTRUCTS.H - WAD files data structures.
 */

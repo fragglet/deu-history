@@ -1,15 +1,18 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    DEU.C - Main program execution routines.
 
    Compile with command
-      tcc -Z -ml -r -G -O -f -edeu *.c \tc\lib\graphics.lib
+      tcc -Z -mh -r -G -O -f -edeu *.c \tc\lib\graphics.lib
 
-   Be sure to use the Large memory model when you compile...
+   Be sure to use the Huge memory model when you compile...
 
 */
 
@@ -26,22 +29,27 @@ char *CfgFile = DEU_CONFIG_FILE;/* name of the configuration file */
 int  InitialScale = 10;		/* initial zoom factor for map */
 int  VideoMode = 2;		/* default video mode for VESA/SuperVGA */
 char *BGIDriver = "VESA";	/* default extended BGI driver */
+Bool FakeCursor = FALSE;	/* use a "fake" mouse cursor */
+Bool Colour2 = FALSE;		/* use the alternate set for things colors */
 char *MainWad = "DOOM.WAD";	/* name of the main wad file */
 char **PatchWads = NULL;	/* list of patch wad files */
 OptDesc options[] =		/* description of the command line options */
 {
-   { "d", "debug", OPT_BOOLEAN, "Debug mode ON.  Useless now..", "Debug mode OFF", &Debug },
-   { "q", "quiet", OPT_BOOLEAN, "Quiet mode ON", "Quiet mode OFF", &Quiet },
-   { "e", "expert", OPT_BOOLEAN, "Expert mode ON", "Expert mode OFF", &Expert },
-   { "sb", "swapbuttons", OPT_BOOLEAN, "Mouse buttons swapped", "Mouse buttons restored", &SwapButtons },
-   { "w", "main", OPT_STRING, "Main WAD file", NULL, &MainWad },
-   { NULL, "file", OPT_STRINGLIST, "Patch WAD file", NULL, &PatchWads },
-   { "pw", "pwad", OPT_STRINGACC, "Patch WAD file", NULL, &PatchWads },
-   { NULL, "config", OPT_STRING, "Config file", NULL, &CfgFile },
-   { "z", "zoom", OPT_INTEGER, "Initial zoom factor", NULL, &InitialScale },
-   { "v", "video", OPT_INTEGER, "Default video mode", NULL, &VideoMode },
-   { NULL, "bgi", OPT_STRING, "Default video driver", NULL, &BGIDriver },
-   { NULL, NULL, OPT_NONE, NULL, NULL, NULL }
+/*   short & long names   type            message if true/changed          message if false           where to store the value */
+   { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON.  Useless now..", "Debug mode OFF",          &Debug        },
+   { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",                 "Quiet mode OFF",          &Quiet        },
+   { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",                "Expert mode OFF",         &Expert       },
+   { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",         "Mouse buttons restored",  &SwapButtons  },
+   { "w",  "main",        OPT_STRING,     "Main WAD file",                 NULL,                      &MainWad      },
+   { NULL, "file",        OPT_STRINGLIST, "Patch WAD file",                NULL,                      &PatchWads    },
+   { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",                NULL,                      &PatchWads    },
+   { NULL, "config",      OPT_STRING,     "Config file",                   NULL,                      &CfgFile      },
+   { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",           NULL,                      &InitialScale },
+   { "v",  "video",       OPT_INTEGER,    "Default video mode",            NULL,                      &VideoMode    },
+   { NULL, "bgi",         OPT_STRING,     "Default video driver",          NULL,                      &BGIDriver    },
+   { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",                "Fake cursor OFF",         &FakeCursor   },
+   { "c",  "color2",      OPT_BOOLEAN,    "Alternate Things color set",    "Normal Things color set", &Colour2      },
+   { NULL, NULL,          OPT_NONE,       NULL,                            NULL,                      NULL          }
 };
 
 
@@ -339,14 +347,16 @@ void ParseConfigFileOptions( char *filename)
 void Usage( FILE *where)
 {
    fprintf( where, "Usage:\n");
-   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-q] [-e] [-config <ini_file>] [-z <zoom>] [-v <mode>] [-pw <pwad_file>] [-file <pwad_files>...]\n");
+   fprintf( where, "DEU [-w <main_wad_file>] [-d] [-sb] [-c] [-q] [-e] [-config <ini_file>] [-z <zoom>] [-bgi <driver>] [-v <mode>] [-fc] [-pw <pwad_file>] [-file <pwad_files>...]\n");
    fprintf( where, "   -w    Gives the name of the main wad file. (also -main)  Default is DOOM.WAD\n");
    fprintf( where, "   -d    Enter debug mode. (also -debug)\n");
+   fprintf( where, "   -c    Use the alternate Things color set (also -color2)\n");
    fprintf( where, "   -q    Suppresses sounds. (also -quiet)\n");
    fprintf( where, "   -e    Stops prompts for confirmation. (also -expert)\n");
    fprintf( where, "   -z    Set the initial zoom factor for the editors. (also -zoom)\n");
    fprintf( where, "   -v    Set the default video mode number (also -video)\n");
    fprintf( where, "   -bgi  Set the default video driver (*.BGI file)\n");
+   fprintf( where, "   -fc   Use a \"fake\" mouse cursor (also -fakecursor)\n");
    fprintf( where, "   -sb   Swaps the mouse buttons. (also -swapbuttons)\n");
    fprintf( where, "   -pw   To add one patch wad file to be loaded (may be repeated). (also -pwad)\n");
    fprintf( where, "   -file To add a list of patch wad files to be loaded.\n");
@@ -364,10 +374,6 @@ void Credits( FILE *where)
    fprintf( where, "DEU: Doom Editor Utilities, ver %s.\n", DEU_VERSION);
    fprintf( where, " By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be),\n");
    fprintf( where, "and Brendon J Wyber (b.wyber@csc.canterbury.ac.nz).\n\n");
-
-   fprintf( where, "| This is a temporary version, because I won't have the time |\n");
-   fprintf( where, "| to add all missing options until Monday.  But you can play |\n");
-   fprintf( where, "| with this one and even distribute it...                    |\n\n");
 }
 
 
@@ -502,6 +508,7 @@ void MainLoop()
 	 printf( "D[ump] <DirEntry> [outfile]       -- to dump a directory entry in hex\n");
 	 printf( "E[dit] [episode [level]]          -- to edit a game level saving results to\n");
 	 printf( "                                          a patch wad file\n");
+	 printf( "G[roup] <WadFile>                 -- to group all patch wads in a file\n");
 	 printf( "L[ist] <WadFile> [outfile]        -- to list the directory of a wadfile\n");
 	 printf( "M[aster] [outfile]                -- to list the master directory\n");
 	 printf( "Q[uit]                            -- to quit\n");
@@ -584,7 +591,32 @@ void MainLoop()
 	    printf( "[File \"%s\" is opened and cannot be overwritten.]\n", com);
 	    continue;
 	 }
-	 BuildNewMainWad( com);
+	 BuildNewMainWad( com, FALSE);
+      }
+
+      /* user asked to build a compound patch WAD file */
+      else if (!strcmp( com, "GROUP") || !strcmp( com, "G"))
+      {
+	 if (WadFileList->next == NULL || WadFileList->next->next == NULL)
+	 {
+	    printf( "[You need at least two open wad files if you want to group them.]\n");
+	    continue;
+	 }
+	 com = strtok( NULL, " ");
+	 if (com == NULL)
+	 {
+	    printf( "[Wad file name argument missing.]\n");
+	    continue;
+	 }
+	 for (wad = WadFileList; wad; wad = wad->next)
+	    if (!stricmp( com, wad->filename))
+	       break;
+	 if (wad)
+	 {
+	    printf( "[File \"%s\" is opened and cannot be overwritten.]\n", com);
+	    continue;
+	 }
+	 BuildNewMainWad( com, TRUE);
       }
 
       /* user ask for a listing of a WAD file */

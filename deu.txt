@@ -1,0 +1,627 @@
+
+  _______________     ___________    _____     _____ ___________________
+   \ ------------\\  //---------\\  //----|    |----\\\ --------------//
+    ||           ||\|| ===========\||    ||    ||   || ||             ||
+    ||  =======  || || ||\_________||    ||    ||   || ||  ============|
+    ||  ||   ||  || || || |        ||    ||    ||   || ||  ||__________|
+    ||  ||   ||  || || ||========/\||    ||    ||   || ||  ||
+    ||  ||   ||  || ||         // /||    ||    ||   || ||  ||
+    ||  ||   ||  || || ||=====// / ||    ||    ||   || ||  ||=========\
+    ||  ||   ||  || || ||\------/  ||    ||   //   //  ||             \\
+    ||  ||  //    \\||  \\| /===/\ ||    || //   //  / ||              ||
+    ||  ||//      //\\\  \\////   ||\\   \\//  //  / |//============\\ ||
+    ||  |/      //   / \\  //   / /  \\      //  /   //------------ || ||
+    ||        //    /    \/   /    \  \======/ /                  | || ||
+    ||      //    /        \/       \--------/            /\=====\\ || ||
+    ||    //    /                                        /   \\   \\|| ||
+    ||  //    /                                           \    \\  \\| ||
+    ||//    /                    DEU 5.0                    \    \\    ||
+    |/    /                     >-------<                     \    \\  //
+    /   /               DOOM(TM) EDITOR UTILITIES               \    \//
+     \/                                                           \__/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                INDEX
+
+     1  Introduction
+     2  Starting DEU
+        2.1 Command line parameters
+        2.2 DEU.INI  Initialization files
+     3  DEU Main Menu
+     4  The Level Editor
+        4.1 Keyboard Commands
+        4.2 Mouse Commands
+     5  WAD file description, flags, etc...
+        5.1 LineDefs attributes     
+        5.2 LineDefs types
+     6  Special DOOM Areas.  Lifts, Doors, and more!
+        6.1 Doors
+        6.2 Lifts
+        6.3 Teleporters
+        6.4 Stairs
+        6.5 Secret Areas
+        6.6 Standard Rooms
+     7  How to try out your new level(s)
+     8  Troubleshooting
+     9  Tutorial
+
+
+
+
+
+=====================================================================
+[1] Introduction
+=====================================================================
+
+DEU allows you to add your creativity to one of the most exciting
+PC games on the market...
+
+     D   O   O   M
+
+     (c) id software
+
+Please read the file README.1ST first.  It contains important
+informations about copyrights and trademarks.
+
+
+
+
+=====================================================================
+[2]  Starting DEU
+=====================================================================
+
+DEU may be started by typing DEU at a DOS prompt.
+
+>  DEU [options]
+
+     Start DEU with the default IWAD file, DOOM.WAD and no PWADs.
+
+>  DEU [options] -file <PWAD file> [<PWAD file>...]
+
+     Start DEU with the default IWAD file and the PWAD file(s)
+     given.
+
+>  DEU [options] -m <IWAD file>
+
+     Start DEU with the specified main IWAD file (DOOM.WAD or
+     DOOM1.WAD).
+
+
+
+[2.1]  Command Line Parameters
+------------------------------
+
+-help
+     View command line options without entering DEU.
+
+-d
+     Debug mode.  Obsolete.
+
+-e
+     Expert mode.  Doesn't ask for confirmation of some
+     operations (e.g. deleting an object).
+
+-sb
+     Swaps the left and middle mouse buttons.
+
+-q
+     QUIET! suppresses the sound made when you select or 
+     mark an object.  Use it if your in a library. :-)
+
+-z <zoom>
+     ZOOM.  Specify initial zoom setting.
+
+-c
+     Use the alternate color set for displaying the Things.
+
+-m <main wad file>
+     Specify name of main wad file (e.g. DOOM.WAD).
+
+-file <pwad, pwad, ...>
+     Load patch WAD file(s), just like with DOOM.   Note: Patch
+     wad files may also be loaded from the main menu.
+
+-pw <pwad>
+     Add ONE patch file to be loaded.
+
+-bgi <video driver name>
+     Use another BGI video driver for hi-res modes (default = "VESA").
+
+-v <video mode number>
+     Set the default video mode for the extended video driver.
+     (default = 2, this is 640x480x256 colors for the VESA driver).
+
+-fc
+     Use a "fake" mouse cursor.  This option is useful is your mouse
+     driver is not compatible with SuperVGA resolutions (see [8.2]).
+
+-config <ini file>
+     Specify an alternate DEU configuration file other than
+     DEU.INI
+
+[2.2]  DEU.INI
+--------------
+
+Rather than using command line arguments you may wish to 
+save your typical settings in the DEU.INI file.  It's structure
+is pretty basic, pop into edit and check it out.
+
+ALL of the command line options may be used in DEU.INI with the
+exception of "-help" and "-config".  Commands in DEU.INI should
+be completely spelled out (i.e. quiet=true, not q=true)
+
+
+
+
+=====================================================================
+[3] DEU Main Menu
+=====================================================================
+?
+     HELP. This command displays a list of commands with their
+     valid command syntax.
+
+B <OutIWadFileName> 
+     BUILD new IWAD file (all 10+Megs of it)  with the given file
+     name.  WARNING: Do not name your file DOOM.WAD or you will
+     overwrite the existing DOOM.WAD file and you will have to
+     re-install DOOM to get back your original file.
+
+C [episode] [mission]
+     CREATE and edit a new (empty) level.
+
+D    
+     DUMP gives an hex/ascii dump of any object in the main
+     directory (WAD file).
+
+E [episode] [mission]
+     EDIT a level.
+
+G <OutPWadFileName>
+     GROUP all opened PWAD files in a compound PWAD with the given
+     file name.  Using this option, you may put several levels in a
+     single file.
+
+L <OpenedWadFileName> [OutputFile]
+     LIST the structure of the directory of a opened file.
+     If an output file is given it will write the list to that
+     file.
+
+M [OutputFile]
+     List the MASTER directory of the IWAD and any PWAD files,
+     all mixed together.  If an output file is given it will
+     write the list to that file.
+
+Q    QUIT to DOS.
+
+R [file]
+     READ a previously saved patch WAD file.
+
+S <DirEntry> <WadFile>
+     SAVE one object to a separate file.
+
+V [Spritename]
+     VIEW Sprites.  Spritename is optional.  Use arrow keys to
+     scroll through sprite list.  Scroll through the bosses
+     fast and see them dance for you!!!
+
+WADS
+     List all the opened wad files. 
+
+
+
+
+=====================================================================
+[4] The Level Editor
+=====================================================================
+
+The level editor displays a graphical "map" of the level showing
+lines where walls are, x's where things are (Red one are enemies,
+green ones are player start positions, and the rest are white.) 
+There is a title bar which displays information about the mode
+you are in.  There are windows to let you know what thing is
+selected and windows that let you know what you can do to it.
+
+
+[4.1] Keyboard Commands
+-----------------------
+
+F1        Help screen.
+
+F2        Save level in a PWAD file.
+
+F9        Insert a predefined object.
+          (*new* feature not yet fully implemented.)
+
+F10       Miscellaneous operations.  One of the options can be
+          used to verify the integrity of the level and help locate
+          possible problem areas.
+          (*new* feature not yet fully implemented.)
+
+Q         Quit, saving changes.  You will be asked for the name
+          of the PWAD file.
+
+Esc       Exit without saving.  If you have unsaved changes, a
+          warning message will be displayed.
+
+Arrows    Move the pointer.
+
+Scroll Lock    Turn on/off the autoscroll feature.
+
+Space     Toggle slow/fast movement speed and the scrolling speed.
+
++, -      Change the map scale.   ZOOM in or out.
+
+Tab       Switch to the next editing mode.
+
+T         Switch to the Things editor.
+
+V         Switch to the Vertexes (vertices) editor.
+
+L         Switch to the LineDefs/SideDefs editor.
+
+S         Switch to the Sectors editor.
+
+N, >      Jump to the next object.
+
+P, <      Jump to the previous object.
+
+J, #      Jump to a specified object (enter number).
+
+M         Mark/Unmark current object.
+          (See also the 'Shift' key below).
+
+C         Clear all marks and redraw map.
+
+D         Toggle Drag mode.
+
+G         Show the grid and change its scale.
+
+H         Hide the grid.
+
+I         Show or hide the info bar at the bottom of the screen.
+
+Enter     Edit current object or group of selected objects.  A
+          menu will pop up and you will be allowed to change
+          attributes in the object(s).
+
+Ins       Insert a new object at the current cursor position.
+
+          This will copy the last selected object or insert a
+          default object.
+
+          There are two special cases:
+
+          When a group of vertices are selected and you press
+          "Ins": the editor will add new LineDefs between the
+          vertices and will put you in the LineDefs editor.
+
+          When a group of LineDefs are selected and you press
+          "Ins" a new Sector will be created and one SideDef in
+          each LineDef will be bound to this Sector and the edit
+          mode will switch to the Sector editor.
+
+Del       Delete the current object or group of objects.  All
+          objects bound to the current object will also be deleted.
+          (i.e. if you delete one Vertex, this will also delete the
+          LineDefs that used this Vertex).  Except for Things, you
+          will be asked for confirmation before the object is
+          deleted.
+
+Shift     Hold the Shift key while moving the cursor to prevent
+          the pointer from selecting a different object.
+          Hold the Shift key while pressing 'M' (or the left mouse
+          button) to drag a selection box and select several objects
+          at once.
+
+
+[4.2] Mouse Commands
+--------------------
+
+If you have a mouse, you will have the following actions bound to
+the buttons:
+
+Left button    : Mark/Unmark object (same as "M").
+Middle button  : Edit object (same as "Enter").
+Right button   : Drag object (like "D" when you press or release
+                    the button).
+
+You can change the buttons using the -sb (swapbuttons) switch
+when starting DEU or in the DEU.INI file.  Swaps the left and middle 
+buttons
+
+
+
+
+=====================================================================
+[5] WAD file description, flags, etc.
+=====================================================================
+
+
+The DEU works by editing the database that DOOM uses to store its
+information about each of the levels.  These database files are called
+WAD files.  There are two types of WAD files.
+
+IWAD File:
+
+        This is the main data base file. It contains all the
+        information about the graphics, sound, level maps, etc of the
+        game.  There is only one IWAD file called DOOM.WAD and it
+        must be in the current directory when DOOM is run.
+
+PWAD File:
+
+        This is a special patch of the IWAD file.  It contains
+        updates about the IWAD file.  PWAD files created by DEU will
+        contain an updated map of a game level. PWAD files can be called
+        anything.  When running DOOM, DOOM must be told to load a PWAD
+        file.  This is done with the -FILE parameter.  PWAD files are 
+        small so they can be easily shared.
+
+[5.1] LineDefs attributes
+-------------------------
+
+Some abbreviations have been used for the LineDef attributes:
+
+Im (bit0)      Impassible by players and monsters.
+Mo (bit1)      Monsters cannot cross this line.
+2S (bit2)      Two-sided wall/may shoot through.
+Up (bit3)      Upper texture is "unpegged".  Try it with moving 
+               ceilings or doors.
+Lo (bit4)      Lower texture is "unpegged".  Try it with moving
+               floors or lifts.
+Se (bit5)      Secret.  This line appears as normal on the map.
+So (bit6)      Blocks sound.  The sounds won't travel past this
+               line.
+In (bit7)      Invisible on the map.  Even with the "computer
+               map" power-up.
+Ma (bit8)      Already on the map at startup.
+
+[5.2] LineDef types
+-------------------
+
+The first two letters in each LineDef type give its features.
+The first letter may be:
+
+D    Door.     Press the spacebar to open it.
+S    Switch.   Press the spacebar to activate this LineDef.
+W    Walk.     Walk across this LineDef to activate it.
+G    Gun.      You need to shoot that LineDef to activate it.
+
+Except for doors ("D") and the "end level" LineDefs, all types
+need a "Sector tag" number and at least one Sector with the same
+tag number to operate.
+
+The second letter may be:
+
+R    Repeatable.
+1    Works only once.
+
+Abbreviations are also used in the type name.  They refer to
+what happens to the Sector when triggered by this LineDef:
+
+O    Stays Open.  Used only for doors.
+N    Neighbor.  Usually, this means that the floor rises or
+     lowers until it reaches the floor height of an adjacent
+     sector on its way.  In the menus, I have used "Ne." instead.
+T    Texture and Type change.  Same as above, but the texture and
+     type of the Sector are also changed.
+C    Ceiling.  This means that the floor rises until it reaches
+     the ceiling height of one adjacent Sector.
+<,>  Used as modifiers for the above letters.  "<N" means that
+     the floor will stop just below a neighboring floor.
+
+
+
+
+=====================================================================
+[6] Special DOOM Areas.  Lifts, Doors, and more!
+=====================================================================
+
+Tag numbers are used to uniquely identity a structure within the
+level.  There are tag numbers for both sectors and for linedefs.
+For example, if a switch is used to activate a Sector, then both
+this Sector and the LineDef with the switch will have the same
+tag number.
+
+[6.1] Doors
+-----------
+
+A door is a Sector which usually starts with its ceiling at that
+same height as its floor (door closed).  When the player presses
+the spacebar, the ceiling will rise, opening the door.  On both
+sides of the door, you need one of the "D" LineDefs types.  You
+don't need to give a tag number to the Sector or the LineDefs.
+
+If you want to be able to open this door with a switch, then you
+need to give the same tag number to the Sector and the switch.
+Pick any number that is not used by another LineDef or Sector.
+
+Front and Back sides of Door:
+
+The lines that you walk through on the door should be "passable"
+(not Impassable), and two-sided (flags = 4).
+
+The Sidedefs that are on the outside of the door should NOT have
+a Normal or Lower texture.  They should have an Upper Texture.
+The Sidedefs on the inside of the door should not have any
+textures (Normal, Upper, or Lower).
+
+Left and Right side of Door:
+
+Nothing special here.  You may want to pick a Door-like texture
+for the sidedefs like "DOORTRAK".
+
+[6.2] Lifts
+-----------
+
+A lift is a sector surrounded by LineDefs with the "Lower lift"
+or "Raise lift" type.  All LineDefs between the upper floor and
+the lift will have the "Lower lift" type.  All LineDefs between
+the lower floor and the lift will have the "Raise lift" type.
+Usually, you also have some "Lower lift" LineDefs on the 
+lower floor, a few steps away from the lift.
+
+The "Raise lift" type is a special case: when you cross this
+line, the lift will go up.  If the lift is already up, it 
+will act as a switch that lowers the lift.  
+
+In the editor, you will see a short line on one side of the LineDef
+when you select it (this is the normal vector).  In the game, the
+player must come from this side or else the lift won't work.
+
+Don't forget to give a tag number to the Sector and the LineDefs!
+
+[6.3] Teleporters
+-----------------
+
+You need two things to make a teleporter:
+
+- One LineDef with the "Teleport" type and a Sector with the same
+  tag number.
+- A special Thing in this sector, called "Teleport exit"/
+  "Teleport landing".
+
+You may have several LineDefs that point to the same Sector, but
+you must have one and only one Sector with the same tag number.
+
+This only works if the line is crossed from the right side (see [6.2]).
+If the teleporter worked on the two sides of the LineDef, you wouldn't 
+be able to exit from it!
+
+[6.4] Stairs
+------------
+
+Raising staircases are activated by some LineDef.  The first step (Sector)
+needs to have the same tag number as the LineDef.  The following 
+steps alternate between 0 and any unused tag number.  Most stairs use 
+the "special" values 99, 999 or sometimes the original tag number.  
+
+[6.5] Secret areas
+------------------
+
+All you need to create a "secret" area is to give the special
+type "Secret" to some Sector.  When the player steps on that 
+Sector, the players secret ratio will be credited.
+
+If the secret sector is behind a secret door (one that has nearly
+the same color as the other walls), you probably don't want the door to be
+shown on the map (the automap uses different colors for walls and doors).
+You will need to toggle the "Secret" flag in the LineDef attribute.  Then
+the door will be shown as a normal wall on the map.
+
+[6.6] Standard Rooms
+--------------------
+
+We already hear you say: "All this stuff about doors, lifts and so
+on is great, but how do I create a new room in my level?"...
+
+Each room consists in one or several Sectors surrounded by impassable
+LineDefs.  If you want to have dark and bright zones in your room,
+then you will need to divide the area into several Sectors.  The
+LineDefs between these Sectors should have the "two-sided" bit set
+and have a transparent texture ("-").
+
+The easiest way to add a new sector is with the 'F9' key.  Select
+the kind of shape that you want to insert, then enter its dimensions.
+Note that the position of the pointer is important when you press 'F9'.
+If the pointer is inside an existing Sector, then you will add an
+obstacle (i.e. the new object won't have a Sector inside it - only
+walls).  If the pointer is outside, then you will add a real room (with
+a new Sector inside it).  You can use the "obstacle" type and add a new
+Sector inside it.  Just press 'Ins' while the LineDefs are still
+selected.
+
+
+
+
+
+=====================================================================
+[7] How to try out your new level(s)
+=====================================================================
+
+     To Run DOOM with your new level:
+
+            >     DOOM -FILE E1L1.WAD
+            
+                will load the normal doom game and the use the
+                E1L1.WAD file to patch the data base. 
+
+     More than one PWAD file can be loaded. E.g.:
+                
+            >    DOOM -FILE E1L1.WAD E1L2.WAD BRENDON.WAD RAPHAEL.WAD
+
+
+
+=====================================================================
+[8] Troubleshooting
+=====================================================================
+
+[8.1] Cannot switch to graphics mode.
+-------------------------------------
+
+If the program crashes with the following error: "mode not supported
+on this card", or simply hangs after having displayed the message
+"switching to graphics mode", then you have a problem with your
+video driver.
+
+If your card's BIOS is not VESA-compatible, then you will need the
+UNIVESA driver, available on many FTP sites.  This TSR provides a
+good VESA emulation for the most common VGA and SuperVGA cards.
+
+If that still doesn't work, try using a different BGI driver or
+video mode (the command line parameter "-v 0" forces DEU to use
+the standard VGA modes only).
+
+[8.2] Pointer is not displayed.
+-------------------------------
+
+Your mouse driver is not compatible with SuperVGA resolutions.
+
+Try the following, in that order:
+1) Upgrade your mouse driver, if possible.
+2) Add "fakecursor = true" to the DEU.INI file (or whatever
+   config file you use).
+3) Add "video = 0" to the DEU.INI file.
+
+[8.3] Hall of mirrors effect.
+-----------------------------
+
+The hall of mirrors effect is an indication that something 
+is wrong with your map.
+
+Two common causes of this problem are:
+- You forgot to give a texture to one part of a wall.
+- You have a transparent line which is shared by two sectors,
+  but you forgot to set the "two-sided" (2S) flag for the LineDef.
+
+[8.x] Can't relax after playing DOOM
+-------------------------------------
+
+Watch a Bob Marley concert video and have a smoke.    8-}'
+
+
+
+=====================================================================
+[9.0] Tutorial
+=====================================================================
+
+You can unzip DEUTUTOR.ZIP for a sort of step-by-step instruction
+booklet to creating a level from scratch.
+
+Print the TUTOR.TXT file and follow along with the wad files.
+
+
+

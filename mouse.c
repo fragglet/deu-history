@@ -1,9 +1,11 @@
 /*
    Mouse interface by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
-   Put a credit notice somewhere with my name on it.  Thanks!  ;-)
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    MOUSE.C - Mouse driver routines.
 */
@@ -131,11 +133,11 @@ void ResetMouseLimits()
 
    regs.x.ax = 0x0007;
    regs.x.cx = (unsigned) 0;
-   regs.x.dx = (unsigned) 639;
+   regs.x.dx = (unsigned) ScrMaxX;
    int86(MOUSE, &regs, &regs);
    regs.x.ax = 0x0008;
    regs.x.cx = (unsigned) 0;
-   regs.x.dx = (unsigned) 479;
+   regs.x.dx = (unsigned) ScrMaxY;
    int86(MOUSE, &regs, &regs);
 }
 

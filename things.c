@@ -1,8 +1,11 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    THINGS.C - Thing name and type routines.
 */
@@ -18,61 +21,188 @@
 
 int GetThingColour( int type)
 {
-   switch( type)
+   if (Colour2)
    {
-   case THING_PLAYER1:
-   case THING_PLAYER2:
-   case THING_PLAYER3:
-   case THING_PLAYER4:
-   case THING_DEATHMATCH:
-      return GREEN;
-   case THING_SARGEANT:
-   case THING_TROOPER:
-   case THING_IMP:
-   case THING_DEMON:
-   case THING_SPECTOR:
-   case THING_BARON:
-   case THING_LOSTSOUL:
-   case THING_CACODEMON:
-   case THING_SPIDERBOSS:
-   case THING_CYBERDEMON:
-      return LIGHTRED;
-   case THING_BLUECARD:
-   case THING_YELLOWCARD:
-   case THING_REDCARD:
-   case THING_BLUESKULLKEY:
-   case THING_YELLOWSKULLKEY:
-   case THING_REDSKULLKEY:
-   case THING_ARMBONUS1:
-   case THING_HLTBONUS1:
-   case THING_GREENARMOR:
-   case THING_BLUEARMOR:
-   case THING_SOULSPHERE:
-   case THING_MEDKIT:
-   case THING_STIMPACK:
-   case THING_RADSUIT:
-   case THING_MAP:
-   case THING_BLURSPHERE:
-   case THING_BESERK:
-   case THING_INVULN:
-   case THING_LITEAMP:
-      return LIGHTGREEN;
-   case THING_SHOTGUN:
-   case THING_CHAINSAW:
-   case THING_CHAINGUN:
-   case THING_LAUNCHER:
-   case THING_PLASMAGUN:
-   case THING_BFG9000:
-   case THING_AMMOCLIP:
-   case THING_AMMOBOX:
-   case THING_SHELLS:
-   case THING_SHELLBOX:
-   case THING_ROCKET:
-   case THING_ROCKETBOX:
-   case THING_ENERGYCELL:
-   case THING_ENERGYPACK:
-   case THING_BACKPACK:
-      return BROWN;
+      switch( type)
+      {
+      case THING_PLAYER1:
+      case THING_PLAYER2:
+      case THING_PLAYER3:
+      case THING_PLAYER4:
+	 return GREEN;
+      case THING_DEATHMATCH:
+	 return LIGHTGREEN;
+
+      case THING_SARGEANT:
+      case THING_TROOPER:
+      case THING_IMP:
+      case THING_DEMON:
+      case THING_SPECTOR:
+      case THING_LOSTSOUL:
+	 return RED;
+      case THING_BARON:
+      case THING_CACODEMON:
+      case THING_SPIDERBOSS:
+      case THING_CYBERDEMON:
+	 return LIGHTRED;
+
+      /* Things you can always pick up */
+      case THING_BLUECARD:
+      case THING_YELLOWCARD:
+      case THING_REDCARD:
+      case THING_ARMBONUS1:
+      case THING_HLTBONUS1:
+	 return MAGENTA;
+      case THING_BLUESKULLKEY:
+      case THING_YELLOWSKULLKEY:
+      case THING_REDSKULLKEY:
+      case THING_SOULSPHERE:
+      case THING_RADSUIT:
+      case THING_MAP:
+      case THING_BLURSPHERE:
+      case THING_BESERK:
+      case THING_INVULN:
+      case THING_LITEAMP:
+      case THING_BACKPACK:
+	 return LIGHTMAGENTA;
+
+      /* Guns */
+      case THING_SHOTGUN:
+      case THING_CHAINSAW:
+      case THING_CHAINGUN:
+	 return BLUE;
+      case THING_LAUNCHER:
+      case THING_PLASMAGUN:
+      case THING_BFG9000:
+	 return LIGHTBLUE;
+
+      /* Things you can't always pick up */
+      case THING_AMMOCLIP:
+      case THING_SHELLS:
+      case THING_ROCKET:
+      case THING_ENERGYCELL:
+      case THING_GREENARMOR:
+      case THING_STIMPACK:
+	 return CYAN;
+      case THING_AMMOBOX:
+      case THING_SHELLBOX:
+      case THING_ROCKETBOX:
+      case THING_ENERGYPACK:
+      case THING_BLUEARMOR:
+      case THING_MEDKIT:
+	 return LIGHTCYAN;
+
+      /* Decorations, et al */
+      case THING_TECHCOLUMN:
+      case THING_TGREENPILLAR:
+      case THING_TREDPILLAR:
+      case THING_SGREENPILLAR:
+      case THING_SREDPILLAR:
+      case THING_PILLARHEART:
+      case THING_PILLARSKULL:
+      case THING_EYEINSYMBOL:
+      case THING_GREYTREE:
+      case THING_BROWNSTUB:
+      case THING_BROWNTREE:
+      case THING_LAMP:
+      case THING_CANDLE:
+      case THING_CANDELABRA:
+      case THING_TBLUETORCH:
+      case THING_TGREENTORCH:
+      case THING_TREDTORCH:
+      case THING_SBLUETORCH:
+      case THING_SGREENTORCH:
+      case THING_SREDTORCH:
+      case THING_DEADPLAYER:
+      case THING_DEADTROOPER:
+      case THING_DEADSARGEANT:
+      case THING_DEADIMP:
+      case THING_DEADDEMON:
+      case THING_DEADCACODEMON:
+      case THING_DEADLOSTSOUL:
+      case THING_BONES:
+      case THING_BONES2:
+      case THING_POOLOFBLOOD:
+      case THING_SKULLTOPPOLE:
+      case THING_HEADSKEWER:
+      case THING_PILEOFSKULLS:
+      case THING_IMPALEDBODY:
+      case THING_IMPALEDBODY2:
+      case THING_SKULLSINFLAMES:
+      case THING_HANGINGSWAYING:
+      case THING_HANGINGARMSOUT:
+      case THING_HANGINGONELEG:
+      case THING_HANGINGTORSO:
+      case THING_HANGINGLEG:
+      case THING_HANGINGSWAYING2:
+      case THING_HANGINGARMSOUT2:
+      case THING_HANGINGONELEG2:
+      case THING_HANGINGTORSO2:
+      case THING_HANGINGLEG2:
+	return BROWN;
+      case THING_BARREL:
+      case THING_TELEPORT:
+	 return YELLOW;
+      }
+   }
+   else
+   {
+      switch( type)
+      {
+      case THING_PLAYER1:
+      case THING_PLAYER2:
+      case THING_PLAYER3:
+      case THING_PLAYER4:
+      case THING_DEATHMATCH:
+	 return GREEN;
+      case THING_SARGEANT:
+      case THING_TROOPER:
+      case THING_IMP:
+      case THING_DEMON:
+      case THING_SPECTOR:
+      case THING_BARON:
+      case THING_LOSTSOUL:
+      case THING_CACODEMON:
+      case THING_SPIDERBOSS:
+      case THING_CYBERDEMON:
+	 return LIGHTRED;
+      case THING_BLUECARD:
+      case THING_YELLOWCARD:
+      case THING_REDCARD:
+      case THING_BLUESKULLKEY:
+      case THING_YELLOWSKULLKEY:
+      case THING_REDSKULLKEY:
+      case THING_ARMBONUS1:
+      case THING_HLTBONUS1:
+      case THING_GREENARMOR:
+      case THING_BLUEARMOR:
+      case THING_SOULSPHERE:
+      case THING_MEDKIT:
+      case THING_STIMPACK:
+      case THING_RADSUIT:
+      case THING_MAP:
+      case THING_BLURSPHERE:
+      case THING_BESERK:
+      case THING_INVULN:
+      case THING_LITEAMP:
+	 return LIGHTGREEN;
+      case THING_SHOTGUN:
+      case THING_CHAINSAW:
+      case THING_CHAINGUN:
+      case THING_LAUNCHER:
+      case THING_PLASMAGUN:
+      case THING_BFG9000:
+      case THING_AMMOCLIP:
+      case THING_AMMOBOX:
+      case THING_SHELLS:
+      case THING_SHELLBOX:
+      case THING_ROCKET:
+      case THING_ROCKETBOX:
+      case THING_ENERGYCELL:
+      case THING_ENERGYPACK:
+      case THING_BACKPACK:
+	 return BROWN;
+      }
    }
    return WHITE;
 }
@@ -307,6 +437,73 @@ char *GetThingName( int type)
 
 
 /*
+   get the size of a thing
+*/
+
+int GetThingRadius( int type)
+{
+   switch (type)
+   {
+   case THING_SPIDERBOSS:
+      return 128;
+   case THING_CYBERDEMON:
+      return 40;
+   case THING_BROWNTREE:
+      return 32;
+   case THING_CACODEMON:
+      return 31;
+   case THING_DEMON:
+   case THING_SPECTOR:
+      return 30;
+   case THING_BARON:
+      return 24;
+   case THING_SARGEANT:
+   case THING_TROOPER:
+   case THING_IMP:
+   case THING_BLUECARD:
+   case THING_YELLOWCARD:
+   case THING_REDCARD:
+   case THING_BLUESKULLKEY:
+   case THING_YELLOWSKULLKEY:
+   case THING_REDSKULLKEY:
+   case THING_ARMBONUS1:
+   case THING_HLTBONUS1:
+   case THING_GREENARMOR:
+   case THING_BLUEARMOR:
+   case THING_SOULSPHERE:
+   case THING_MEDKIT:
+   case THING_STIMPACK:
+   case THING_RADSUIT:
+   case THING_MAP:
+   case THING_BLURSPHERE:
+   case THING_BESERK:
+   case THING_INVULN:
+   case THING_LITEAMP:
+   case THING_SHOTGUN:
+   case THING_CHAINSAW:
+   case THING_CHAINGUN:
+   case THING_LAUNCHER:
+   case THING_PLASMAGUN:
+   case THING_BFG9000:
+   case THING_AMMOCLIP:
+   case THING_AMMOBOX:
+   case THING_SHELLS:
+   case THING_SHELLBOX:
+   case THING_ROCKET:
+   case THING_ROCKETBOX:
+   case THING_ENERGYCELL:
+   case THING_ENERGYPACK:
+   case THING_BACKPACK:
+      return 20;
+   case THING_BARREL:
+      return 10;
+   default:
+      return 16;
+   }
+}
+
+
+/*
    get the name of the angle
 */
 
@@ -350,12 +547,14 @@ char *GetWhenName( int when)
    if (when & 0x02)
       strcat( temp, "D3 ");
    if (when & 0x04)
-      strcat( temp, "D4 ");
+      strcat( temp, "D45 ");
    if (when & 0x08)
       strcat( temp, "Deaf ");
    if (when & 0x10)
       strcat( temp, "Multi ");
    return temp;
 }
+
+
 
 /* end of file */

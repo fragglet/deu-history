@@ -1,9 +1,12 @@
 /*
    Menu utilities by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>
+   Drop-down menus by Dewi Morgan <d.morgan@bradford.ac.uk>
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
-   Put a credit notice somewhere with my name on it.  Thanks!  ;-)
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    MENUS.C - Simple menus for DEU (or other programs).
 */
@@ -16,14 +19,19 @@
    draws a line of text in a menu
 */
 
-void DisplayMenuText( int x0, int y0, int line, char *text)
+void DisplayMenuText( int x0, int y0, int line, char *text, Bool shownumbers)
 {
    if (UseMouse)
       HideMousePointer();
-   if (line < 9)
-      DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
+   if (shownumbers)
+   {
+      if (line < 9)
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%d - %s", line + 1, text);
+      else
+	 DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
+   }
    else
-      DrawScreenText( x0 + 10, y0 + 8 + line * 10, "%c - %s", line + 56, text);
+      DrawScreenText( x0 + 10, y0 + 8 + line * 10, text);
    if (UseMouse)
       ShowMousePointer();
 }
@@ -34,7 +42,7 @@ void DisplayMenuText( int x0, int y0, int line, char *text)
    display and execute a menu
 */
 
-int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menustr[ 30])
+int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, int *okkeys, char *menustr[ 30])
 {
    va_list args;
    int     maxlen, line, oldline;
@@ -43,7 +51,7 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 
    /* compute maxlen */
    if (menutitle)
-      maxlen = strlen( menutitle) - 4;
+      maxlen = strlen( menutitle) - 2;
    else
       maxlen = 1;
    for (line = 0; line < numitems; line++)
@@ -54,10 +62,10 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
    if (UseMouse)
       HideMousePointer();
    if (x0 < 0)
-      x0 = (getmaxx() - maxlen * 8 - 53) / 2;
+      x0 = (ScrMaxX - maxlen * 8 - 53) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - numitems * 10 - (menutitle ? 28 : 12)) / 2;
-   DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + 53, y0 + numitems * 10 + (menutitle ? 28 : 12));
+      y0 = (ScrMaxY - numitems * 10 - (menutitle ? 28 : 12)) / 2;
+   DrawScreenBox3D( x0, y0, x0 + maxlen * 8 + (okkeys ? 19 : 53), y0 + numitems * 10 + (menutitle ? 28 : 12));
    SetColor( YELLOW);
    if (menutitle)
       DrawScreenText( x0 + 10, y0 + 8, menutitle);
@@ -65,7 +73,7 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
       ShowMousePointer();
    SetColor( BLACK);
    for (line = 0; line < numitems; line++)
-      DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line]);
+      DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[ line], !okkeys);
 
    oldline = -1;
    line = 0;
@@ -104,22 +112,6 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	    line = -1;
 	    ok = TRUE;
 	 }
-	 /* number or alphabetic key = enter selection */
-	 else if ((key & 0x00FF) >= '1' && (key & 0x00FF) <= '9' && ((key & 0x00FF) - '1') < numitems)
-	 {
-	    line = (key & 0x00FF) - '1';
-	    ok = TRUE;
-	 }
-	 else if ((key & 0x00FF) >= 'A' && (key & 0x00FF) <= 'Z' && ((key & 0x00FF) - 'A' + 9) < numitems)
-	 {
-	    line = (key & 0x00FF) - 'A' + 9;
-	    ok = TRUE;
-	 }
-	 else if ((key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z' && ((key & 0x00FF) - 'a' + 9) < numitems)
-	 {
-	    line = (key & 0x00FF) - 'a' + 9;
-	    ok = TRUE;
-	 }
 	 /* up arrow = select previous line */
 	 else if ((key & 0xFF00) == 0x4800)
 	 {
@@ -136,6 +128,58 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	    else
 	       line = 0;
 	 }
+	 /* home = select first line */
+	 else if ((key & 0xFF00) == 0x4700)
+	    line = 0;
+	 /* end = select last line */
+	 else if ((key & 0xFF00) == 0x4F00)
+	    line = numitems - 1;
+	 /* pgup = select line - 5 */
+	 else if ((key & 0xFF00) == 0x4900)
+	 {
+	    if (line >= 5)
+	       line -= 5;
+	    else
+	       line = 0;
+	 }
+	 /* pgdn = select line + 5 */
+	 else if ((key & 0xFF00) == 0x5100)
+	 {
+	    if (line < numitems - 5)
+	       line += 5;
+	    else
+	       line = numitems - 1;
+	 }
+	 /* number or alphabetic key = enter selection */
+	 else if ((key & 0x00FF) >= '1' && (key & 0x00FF) <= '9' && ((key & 0x00FF) - '1') < numitems)
+	 {
+	    line = (key & 0x00FF) - '1';
+	    ok = TRUE;
+	 }
+	 else if ((key & 0x00FF) >= 'A' && (key & 0x00FF) <= 'Z' && ((key & 0x00FF) - 'A' + 9) < numitems)
+	 {
+	    line = (key & 0x00FF) - 'A' + 9;
+	    ok = TRUE;
+	 }
+	 else if ((key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z' && ((key & 0x00FF) - 'a' + 9) < numitems)
+	 {
+	    line = (key & 0x00FF) - 'a' + 9;
+	    ok = TRUE;
+	 }
+	 /* check the list of "hot keys" */
+	 else if (okkeys)
+	 {
+	    for (line = 0; line < numitems; line++)
+	       if (toupper( key) == okkeys[ line])
+		  break;
+	    if (line < numitems)
+	       ok = TRUE;
+	    else
+	    {
+	       line = oldline;
+	       Beep();
+	    }
+	 }
 	 /* other key */
 	 else
 	    Beep();
@@ -145,12 +189,12 @@ int DisplayMenuArray( int x0, int y0, char *menutitle, int numitems, char *menus
 	 if (oldline >= 0 && oldline < numitems)
 	 {
 	    SetColor( BLACK);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[oldline]);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), oldline, menustr[oldline], !okkeys);
 	 }
 	 if (line >= 0 && line < numitems)
 	 {
 	    SetColor( WHITE);
-	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[line]);
+	    DisplayMenuText( x0, y0 + (menutitle ? 16 : 0), line, menustr[line], !okkeys);
 	 }
 	 oldline = line;
       }
@@ -181,7 +225,42 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
    va_end( args);
 
    /* display the menu */
-   return DisplayMenuArray( x0, y0, menutitle, num, menustr);
+   return DisplayMenuArray( x0, y0, menutitle, num, NULL, menustr);
+}
+
+
+
+/*
+   display and execute a dropdown menu (returns a key code)
+*/
+
+int PullDownMenu( int x0, int y0, ...)
+{
+   va_list args;
+   int     num;
+   char   *menustr[ 30];
+   int     retnkeys[ 30];
+   int     permkeys[ 30];
+
+   /* put the va_args in the menustr table and the two strings */
+   num = 0;
+   va_start( args, y0);
+   while ((num < 30) && ((menustr[ num] = va_arg( args, char *)) != NULL))
+   {
+      if ((retnkeys[ num] = va_arg( args, int)) == NULL)
+	 ProgError("PullDownMenu() called with invalid arguments (BUG!)");
+      if ((permkeys[ num] = va_arg( args, int)) == NULL)
+	 ProgError("PullDownMenu() called with invalid arguments (BUG!)");
+      num++;
+   }
+   va_end( args);
+
+   /* display the menu */
+   num = DisplayMenuArray( x0, y0, NULL, num, permkeys, menustr);
+   if (num >= 1)
+      return retnkeys[ num - 1]; /* return a valid key */
+   else
+      return 0; /* return an invalid key */
 }
 
 
@@ -263,9 +342,9 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
       HideMousePointer();
    sprintf( prompt, "Enter a decimal number between %d and %d:", minv, maxv);
    if (x0 < 0)
-      x0 = (getmaxx() - 25 - 8 * strlen( prompt)) / 2;
+      x0 = (ScrMaxX - 25 - 8 * strlen( prompt)) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - 55) / 2;
+      y0 = (ScrMaxY - 55) / 2;
    DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
    SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt);
@@ -311,19 +390,19 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
    else
       n = 85;
    if (x0 < 0)
-      x0 = (getmaxx() - l) / 2;
+      x0 = (ScrMaxX - l) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - n) / 2;
+      y0 = (ScrMaxY - n) / 2;
    x1 += x0;
    y1 += y0;
-   if (x1 + width - 1 < getmaxx())
+   if (x1 + width - 1 < ScrMaxX)
       x2 = x1 + width - 1;
    else
-      x2 = getmaxx();
-   if (y1 + height - 1 < getmaxy())
+      x2 = ScrMaxX;
+   if (y1 + height - 1 < ScrMaxY)
       y2 = y1 + height - 1;
    else
-      y2 = getmaxy();
+      y2 = ScrMaxY;
    /* draw the dialog box */
    DrawScreenBox3D( x0, y0, x0 + l, y0 + n);
    DrawScreenBoxHollow( x0 + 10, y0 + 28, x0 + 101, y0 + 41);
@@ -362,7 +441,7 @@ void InputNameFromListWithFunc( int x0, int y0, char *prompt, int listsize, char
 	 setviewport( x1, y1, x2, y2, TRUE);
 	 clearviewport();
 	 hookfunc( 0, 0, name);
-	 setviewport( 0, 0, getmaxx(), getmaxy(), TRUE);
+	 setviewport( 0, 0, ScrMaxX, ScrMaxY, TRUE);
       }
       key = bioskey( 0);
       if (firstkey && (key & 0x00FF) > ' ')
@@ -457,9 +536,9 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
    else
       l = boxlen;
    if (x0 < 0)
-      x0 = (getmaxx() - 26 - 8 * l) / 2;
+      x0 = (ScrMaxX - 26 - 8 * l) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - 50) / 2;
+      y0 = (ScrMaxY - 50) / 2;
    /* draw the dialog box */
    DrawScreenBox3D( x0, y0, x0 + 26 + 8 * l, y0 + 50);
    DrawScreenBoxHollow( x0 + 10, y0 + 28, x0 + 15 + 8 * boxlen, y0 + 41);
@@ -541,6 +620,7 @@ void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
 /*
    ask for confirmation (prompt2 may be NULL)
 */
+
 Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
 {
    int key;
@@ -553,9 +633,9 @@ Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
    if (prompt2 != NULL && strlen( prompt2) > maxlen)
       maxlen = strlen( prompt2);
    if (x0 < 0)
-      x0 = (getmaxx() - 22 - 8 * maxlen) / 2;
+      x0 = (ScrMaxX - 22 - 8 * maxlen) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - (prompt2 ? 53 : 43)) / 2;
+      y0 = (ScrMaxY - (prompt2 ? 53 : 43)) / 2;
    DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 53 : 43));
    SetColor( WHITE);
    DrawScreenText( x0 + 10, y0 + 8, prompt1);
@@ -572,8 +652,42 @@ Bool Confirm( int x0, int y0, char *prompt1, char *prompt2)
 
 
 /*
+   display a notification and wait for a key (prompt2 may be NULL)
+*/
+
+void Notify( int x0, int y0, char *prompt1, char *prompt2)
+{
+   int key;
+   int maxlen = 30;
+
+   if (UseMouse)
+      HideMousePointer();
+   if (strlen( prompt1) > maxlen)
+      maxlen = strlen( prompt1);
+   if (prompt2 != NULL && strlen( prompt2) > maxlen)
+      maxlen = strlen( prompt2);
+   if (x0 < 0)
+      x0 = (ScrMaxX - 22 - 8 * maxlen) / 2;
+   if (y0 < 0)
+      y0 = (ScrMaxY - (prompt2 ? 53 : 43)) / 2;
+   DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 53 : 43));
+   SetColor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt1);
+   if (prompt2 != NULL)
+      DrawScreenText( x0 + 10, y0 + 18, prompt2);
+   SetColor( YELLOW);
+   DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press any key to continue...");
+   bioskey( 0);
+   if (UseMouse)
+      ShowMousePointer();
+}
+
+
+
+/*
    clear the screen and display a message
 */
+
 void DisplayMessage( int x0, int y0, char *msg, ...)
 {
    char prompt[ 120];
@@ -587,9 +701,9 @@ void DisplayMessage( int x0, int y0, char *msg, ...)
       HideMousePointer();
    ClearScreen();
    if (x0 < 0)
-      x0 = (getmaxx() - 40 - 8 * strlen( prompt)) / 2;
+      x0 = (ScrMaxX - 40 - 8 * strlen( prompt)) / 2;
    if (y0 < 0)
-      y0 = (getmaxy() - 40) / 2;
+      y0 = (ScrMaxY - 40) / 2;
    DrawScreenBox3D( x0, y0, x0 + 40 + 8 * strlen( prompt), y0 + 40);
    DrawScreenText( x0 + 20, y0 + 17, prompt);
    if (UseMouse)
@@ -601,6 +715,7 @@ void DisplayMessage( int x0, int y0, char *msg, ...)
 /*
    let's make the user angry...
 */
+
 void NotImplemented()
 {
    if (UseMouse)

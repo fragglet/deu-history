@@ -1,8 +1,11 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    DEU.H - Main doom defines.
 */
@@ -22,7 +25,7 @@
    the version information
 */
 
-#define DEU_VERSION	"5.00 BETA4"	/* the version number */
+#define DEU_VERSION	"5.00"	/* the version number */
 
 
 
@@ -126,8 +129,8 @@ typedef struct
 #define DEU_CONFIG_FILE		"DEU.INI"
 
 /* convert pointer coordinates to map coordinates */
-#define MAPX(x)			(OrigX + (x - 319) * Scale)
-#define MAPY(y)			(OrigY + (239 - y) * Scale)
+#define MAPX(x)			(OrigX + (x - ScrCenterX) * Scale)
+#define MAPY(y)			(OrigY + (ScrCenterY - y) * Scale)
 
 /* object types */
 #define OBJ_THINGS		1
@@ -154,24 +157,29 @@ typedef struct
 */
 
 /* from deu.c */
-extern Bool Registered;		/* registered or shareware WAD file? */
-extern Bool Debug;		/* are we debugging? */
-extern Bool SwapButtons;	/* swap right and middle mouse buttons */
-extern Bool Quiet;		/* don't play a sound when an object is selected */
-extern Bool Expert;		/* don't ask for confirmation for some operations */
-extern int  InitialScale;	/* initial zoom factor for map */
-extern int  VideoMode;		/* default video mode for VESA cards */
+extern Bool  Registered;	/* registered or shareware WAD file? */
+extern Bool  Debug;		/* are we debugging? */
+extern Bool  SwapButtons;	/* swap right and middle mouse buttons */
+extern Bool  Quiet;		/* don't play a sound when an object is selected */
+extern Bool  Expert;		/* don't ask for confirmation for some operations */
+extern int   InitialScale;	/* initial zoom factor for map */
+extern int   VideoMode;		/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
+extern Bool  FakeCursor;	/* use a "fake" mouse cursor */
+extern Bool  Colour2;		/* use the alternate set for things colors */
+extern char *MainWad;		/* name of the main wad file */
 
 /* from wads.c */
 extern WadPtr  WadFileList;	/* list of wad files */
 extern MDirPtr MasterDir;	/* the master directory */
 
-/* from edit.c */
-extern int NumWTexture;		/* number of wall textures */
+/* from levels.c */
+extern int    NumWTexture;	/* number of wall textures */
 extern char **WTexture;		/* wall texture names */
-extern int NumFTexture;		/* number of floor/ceiling textures */
+extern int    NumFTexture;	/* number of floor/ceiling textures */
 extern char **FTexture;		/* floor/ceiling texture names */
+
+/* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
 
 /* from gfx.c */
@@ -181,6 +189,10 @@ extern int OrigX;		/* the X origin */
 extern int OrigY;		/* the Y origin */
 extern int PointerX;		/* X position of pointer */
 extern int PointerY;		/* Y position of pointer */
+extern int ScrMaxX;		/* maximum X screen coord */
+extern int ScrMaxY;		/* maximum Y screen coord */
+extern int ScrCenterX;		/* X coord of screen center */
+extern int ScrCenterY;		/* Y coord of screen center */
 
 /* from mouse.c */
 extern Bool UseMouse;		/* is there a mouse driver? */
@@ -216,15 +228,13 @@ void BasicWadSeek( WadPtr, long);
 MDirPtr FindMasterDir( MDirPtr, char *);
 void ListMasterDirectory( FILE *);
 void ListFileDirectory( FILE *, WadPtr);
-void BuildNewMainWad( char *);
+void BuildNewMainWad( char *, Bool);
 void WriteBytes( FILE *, void huge *, long);
 int Exists( char *);
 void DumpDirectoryEntry( FILE *, char *);
 void SaveDirectoryEntry( FILE *, char *);
 
-/* from edit.c */
-void EditLevel( int, int, Bool);
-void SelectLevel( int *, int *);
+/* from levels.c */
 void ReadLevelData( int, int);
 void ForgetLevelData( void);
 void SaveLevelData( char *);
@@ -232,13 +242,12 @@ void ReadWTextureNames( void);
 void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
 void ForgetWTextureNames( void);
+
+/* from edit.c */
+void EditLevel( int, int, Bool);
+void SelectLevel( int *, int *);
 void EditorLoop( int, int);
 void DrawMap( int, int);
-void HighlightSelection( int, SelPtr);
-Bool IsSelected( SelPtr, int);
-void SelectObject( SelPtr *, int);
-void UnSelectObject( SelPtr *, int);
-void ForgetSelection( SelPtr *);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -248,6 +257,7 @@ void TermGfx( void);
 void ClearScreen( void);
 void SetColor( int);
 void DrawMapLine( int, int, int, int);
+void DrawMapCircle( int, int, int);
 void DrawMapVector( int, int, int, int);
 void DrawMapArrow( int, int, unsigned);
 void DrawScreenLine( int, int, int, int);
@@ -257,6 +267,8 @@ void DrawScreenBoxHollow( int, int, int, int);
 void DrawScreenMeter( int, int, int, int, float);
 void DrawScreenText( int, int, char *, ...);
 void DrawPointer( void);
+void SetDoomPalette( int);
+int TranslateToDoomColor( int);
 unsigned ComputeAngle( int, int);
 unsigned ComputeDist( int, int);
 void InsertPolygonVertices( int, int, int, int);
@@ -264,46 +276,9 @@ void InsertPolygonVertices( int, int, int, int);
 /* from things.c */
 int GetThingColour( int);
 char *GetThingName( int);
+int GetThingRadius( int);
 char *GetAngleName( int);
 char *GetWhenName( int);
-
-/* from mouse.c */
-void CheckMouseDriver( void);
-void ShowMousePointer( void);
-void HideMousePointer( void);
-void GetMouseCoords( int *, int *, int *);
-void SetMouseCoords( int, int);
-void SetMouseLimits( int, int, int, int);
-void ResetMouseLimits( void);
-
-/* from menus.c */
-int DisplayMenuArray( int, int, char *, int, char *[ 30]);
-int DisplayMenu( int, int, char *, ...);
-int InputInteger( int, int, int *, int, int);
-int InputIntegerValue( int, int, int, int, int);
-void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, char *));
-void InputNameFromList( int, int, char *, int, char **, char *);
-void InputFileName( int, int, char *, int, char *);
-Bool Confirm( int, int, char *, char *);
-void DisplayMessage( int, int, char *, ...);
-void NotImplemented( void);
-
-/* from objects.c */
-int GetCurObject( int, int, int, int, int);
-void HighlightObject( int, int, int);
-void DisplayObjectInfo( int, int);
-void DeleteObject( int, int);
-void InsertObject( int, int, int, int);
-void InsertStandardObject( int, int);
-int DisplayThingsMenu( int, int, char *, ...);
-int DisplayLineDefTypeMenu( int, int, char *, ...);
-int InputObjectNumber( int, int, int, int);
-int InputObjectXRef( int, int, int, Bool, int);
-int Input2VertexNumber( int, int, char *, int *, int *);
-void EditObjectInfo( int, SelPtr);
-void MoveObjectToCoords( int, SelPtr, int, int);
-Bool IsLineDefInside( int, int, int, int, int);
-void ShowProgress(int);
 
 /* from names.c */
 char *GetObjectTypeName( int);
@@ -315,9 +290,59 @@ char *GetLineDefFlagsLongName( int);
 char *GetSectorTypeName( int);
 char *GetSectorTypeLongName( int);
 
+/* from mouse.c */
+void CheckMouseDriver( void);
+void ShowMousePointer( void);
+void HideMousePointer( void);
+void GetMouseCoords( int *, int *, int *);
+void SetMouseCoords( int, int);
+void SetMouseLimits( int, int, int, int);
+void ResetMouseLimits( void);
+
+/* from menus.c */
+int DisplayMenuArray( int, int, char *, int, int *, char *[ 30]);
+int DisplayMenu( int, int, char *, ...);
+int PullDownMenu( int, int, ...);
+int InputInteger( int, int, int *, int, int);
+int InputIntegerValue( int, int, int, int, int);
+void InputNameFromListWithFunc( int, int, char *, int, char **, int, char *, int, int, void (*hookfunc)(int, int, char *));
+void InputNameFromList( int, int, char *, int, char **, char *);
+void InputFileName( int, int, char *, int, char *);
+Bool Confirm( int, int, char *, char *);
+void Notify( int, int, char *, char *);
+void DisplayMessage( int, int, char *, ...);
+void NotImplemented( void);
+
+/* from objects.c */
+void HighlightSelection( int, SelPtr);
+Bool IsSelected( SelPtr, int);
+void SelectObject( SelPtr *, int);
+void UnSelectObject( SelPtr *, int);
+void ForgetSelection( SelPtr *);
+int GetCurObject( int, int, int, int, int);
+SelPtr SelectObjectsInBox( int, int, int, int, int);
+void HighlightObject( int, int, int);
+void DeleteObject( int, int);
+void DeleteObjects( int, SelPtr *);
+void InsertObject( int, int, int, int);
+Bool IsLineDefInside( int, int, int, int, int);
+
+/* from editobj.c */
+void DisplayObjectInfo( int, int);
+int DisplayThingsMenu( int, int, char *, ...);
+int DisplayLineDefTypeMenu( int, int, char *, ...);
+int InputObjectNumber( int, int, int, int);
+int InputObjectXRef( int, int, int, Bool, int);
+int Input2VertexNumber( int, int, char *, int *, int *);
+void EditObjectsInfo( int, int, int, SelPtr);
+Bool MoveObjectsToCoords( int, SelPtr, int, int, int);
+void InsertStandardObject( int, int, int, int);
+void MiscOperations( int, int, int, SelPtr);
+
+/* from nodes.c */
+void ShowProgress( int);
+
 /* from textures.c */
-void SetDoomPalette( int);
-int TranslateToDoomColor( int);
 void ChooseFloorTexture( int, int, char *, int, char **, char *);
 void ChooseWallTexture( int, int, char *, int, char **, char *);
 void ChooseSprite( int, int, char *, char *);

@@ -1,8 +1,11 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    WAD.C - Wad files routines.
 */
@@ -323,7 +326,7 @@ void ListMasterDirectory( FILE *file)
 	 lines = 0;
          printf( "[Q to abort, any other key to continue]");
          key = getch();
-         printf( "\r                                       \r");
+	 printf( "\r                                       \r");
          if (key == 'Q' || key == 'q')
             break;
       }
@@ -370,7 +373,7 @@ void ListFileDirectory( FILE *file, WadPtr wad)
    build a new wad file from master dictionary
 */
 
-void BuildNewMainWad( char *filename)
+void BuildNewMainWad( char *filename, Bool patchonly)
 {
    FILE *file;
    long counter = 12;
@@ -381,19 +384,27 @@ void BuildNewMainWad( char *filename)
    long dirnum;
 
    /* open the file and store signatures */
-   printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
+   if (patchonly)
+      printf( "Building a compound Patch Wad file \"%s\".\n", filename);
+   else
+      printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
    if (FindMasterDir( MasterDir, "E2M4") == NULL)
       ProgError( "You were warned: you are not allowed to do this.");
    if ((file = fopen( filename, "wb")) == NULL)
       ProgError( "unable to open file \"%s\"", filename);
-   WriteBytes( file, "IWAD", 4);
-   WriteBytes( file, &(WadFileList->dirsize), 4L);
+   if (patchonly)
+      WriteBytes( file, "PWAD", 4);
+   else
+      WriteBytes( file, "IWAD", 4);
+   WriteBytes( file, &counter, 4L);      /* put true value in later */
    WriteBytes( file, &counter, 4L);      /* put true value in later */
 
    /* output the directory data chuncks */
    data = GetFarMemory( 0x8000 + 2);
    for (cur = MasterDir; cur; cur = cur->next)
    {
+      if (patchonly && cur->wadfile == WadFileList)
+	 continue;
       size = cur->dir.size;
       counter += size;
       BasicWadSeek( cur->wadfile, cur->dir.start);
@@ -415,8 +426,11 @@ void BuildNewMainWad( char *filename)
    /* output the directory */
    dirstart = counter;
    counter = 12;
-   for (cur = MasterDir, dirnum = 0; cur; cur = cur->next, dirnum++)
+   dirnum = 0;
+   for (cur = MasterDir; cur; cur = cur->next)
    {
+      if (patchonly && cur->wadfile == WadFileList)
+	 continue;
       if (dirnum % 100 == 0)
 	 printf( "Outputting directory %04d...\r", dirnum);
       if (cur->dir.start)
@@ -426,11 +440,13 @@ void BuildNewMainWad( char *filename)
       WriteBytes( file, &(cur->dir.size), 4L);
       WriteBytes( file, &(cur->dir.name), 8L);
       counter += cur->dir.size;
+      dirnum++;
    }
 
-   /* fix up the directory start information */
-   if (fseek( file, 8L, 0))
+   /* fix up the number of entries and directory start information */
+   if (fseek( file, 4L, 0))
       ProgError( "error writing to file");
+   WriteBytes( file, &dirnum, 4L);
    WriteBytes( file, &dirstart, 4L);
 
    /* close the file */

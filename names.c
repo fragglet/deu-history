@@ -437,7 +437,7 @@ char *GetLineDefFlagsName( int flags)
    else
       strcat( temp, "-");
    if (flags & 0x04)
-      strcat( temp, "2S"); /* Two-sided & shoot through */
+      strcat( temp, "2S"); /* Two-sided */
    else
       strcat( temp, "-");
    if (flags & 0x02)
@@ -477,7 +477,7 @@ char *GetLineDefFlagsLongName( int flags)
    if (flags & 0x08)
       return "Upper texture is \"unpegged\"";
    if (flags & 0x04)
-      return "Two-sided & shoot through";
+      return "Two-sided (may be transparent)";
    if (flags & 0x02)
       return "Monsters cannot cross this line";
    if (flags & 0x01)

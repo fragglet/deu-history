@@ -1,0 +1,462 @@
+               =======================
+                         DEU
+
+                DOOM EDITOR UTILITIES
+
+                     Version 5.0
+               =======================
+
+CONTENTS
+========
+
+What is DEU?
+
+Distribution
+
+Legalese
+   Copyright
+   Disclaimers
+   Copyleft
+
+Running DEU.
+   Requirements
+   Installation
+   Quickstart
+
+Revision History
+
+Future Plans
+
+Contacting the Authors
+   Contributions to the DEU effort
+   Updates to the Program
+   Updates to the Manual
+
+Credits
+
+
+
+
+WHAT IS DEU?
+============
+
+DEU is a WAD file editor.  Use it to edit one level, then save it in a 
+patch WAD file (PWAD), or in the main WAD file.
+
+You may use it with both the registered and the shareware versions of 
+DOOM, but you won't be allowed to save your changes if you are using the 
+shareware version (this is ID's will, since it might otherwise discourage 
+people from registering).
+
+You can do almost anything to any level: move, add or remove monsters and 
+powerups, change the wall colours and positions, create new lifts, doors, 
+acid pools, crushing ceilings... or even create a new level from scratch!
+
+
+
+DISTRIBUTION
+============
+
+The latest version of DEU is available at the following FTP sites:
+
+For European users:
+       bear.montefiore.ulg.ac.be (139.165.8.25)
+       /pub/doom/deu/deu??.zip
+
+For other countries:
+       ocf.unt.edu (129.120.9.151)
+       /pub/doom/deu/deu??.zip
+
+You will probably also find it on other FTP sites, such as ftp.uwp.edu,
+wuarchive.wustl.edu, doom.hope.edu...
+
+
+
+
+
+
+LEGALESE...
+===========
+
+Copyright
+~~~~~~~~~
+DOOM is a trademark of id Software.
+
+DEU has been created by Brendon Wyber and Rapha‰l Quinet
+DEU is NOT an id Software product.
+
+Disclaimers
+~~~~~~~~~~~
+id Software cannot and will not provide support for DEU.
+
+id Software will not provide support for ANY file that has been modified 
+or created by DEU.
+
+DEU will not allow you to modify the shareware version of DOOM.  It is 
+illegal to alter DEU to operate on the shareware version of DOOM.
+
+The authors of DEU will not provide support or be liable for damage caused 
+by the use of DEU.
+
+It is illegal to distribute the registered version of the DOOM.WAD file in 
+any form, original or modified.
+
+The authors of DEU reserve the right to add or remove any functionality of 
+the DEU software.
+
+Copyleft...
+~~~~~~~~~~~
+
+DEU is a public domain program.  This means you can do anything you want 
+with it.  However, it would be considered polite if you did the following 
+things:
+
+     * If you alter this executable, call it something else.
+       We would like to be the only people to release DEU named programs.
+
+     * ... and... Give us credit. E.g.
+       Bob's Amazing Doom Editor, Version 1.00.
+       Copyright 1994 Bob Bobbingbob. All rights reserved.
+       [Derived from DEU v5.00 by Brendon Wyber and Rapha‰l Quinet.]
+       This credit notice should appear when you start the program, or in
+       an "about" box (if your program has a graphical interface).
+
+     * Refrain from distributing pwads that work with the shareware
+       version of the game.  You only need to use one object or texture
+       from the registered version and this will do the trick.
+
+     * Do NOT use the source to make an editor for the shareware
+       version.  ID doesn't want shareware editors around.
+
+
+
+
+
+
+RUNNING DEU
+===========
+
+Requirements:
+~~~~~~~~~~~~~
+You need a PC with a VGA screen and enough memory to load the levels data.  
+If you can play DOOM, you will probably be able to run DEU.  A mouse is 
+not required,  but editing will be easier if you have some plastic rodent.
+
+Installation:
+~~~~~~~~~~~~~
+Unzip it into any directory on your hard drive using commands like:
+
+       mkdir \games\doom\deu                [create a directory for it.]
+
+       pkunzip a:deu50.zip \games\doom\deu  [unzip from your a: drive.]
+
+Quickstart:
+~~~~~~~~~~~
+(for a more complete list of available commands, see DEU.TXT)
+
+
+To run DEU just type:
+
+    DEU
+
+
+You should then be presented with the prompt.  Use the following basic 
+commands:
+
+    ?   This displays a list of commands and their valid syntax.
+
+    EDIT [<episode> <level> ]
+       This  command calls up the editor for the given map.  The edited
+       level is then saved into a PWAD file of the given name.  If you
+       don't enter any parameters you will be presented with a menu to
+       choose from.
+
+    QUIT
+       This quits the program.
+
+For starters, type:
+
+    E 1 1      [Edit episode 1, mission 1 ]
+
+When the editor starts up, it should display the map.  The editor will now 
+let you insert, delete and edit objects in the map.  In the centre of the 
+map is a crosshair (or your mouse pointer) which marks your current 
+position.  Little x's represent the Things. Different colours represent 
+different types of Things.
+
+Then press F1 for help, or just play around.
+
+
+
+
+
+
+REVISION HISTORY
+================
+
+By Rapha‰l Quinet:
+
+5.00   30 Mar 94
+       Automatic Nodes builder!.
+       Drop-down menus with menu bar.
+       Selection box to select a group of objects.
+       Smart add/delete for Vertices to split/join LineDef(s).
+       New "insert common shapes" and "misc. ops." menu.
+       VESA and SuperVGA support.
+       Removed the Nodes and Segs editors (obsolete).
+       The Things editor shows the size of the objects.
+       Sprite and texture viewers (256 colors).
+       New arguments "-help", "-bgi", "-fakecursor", "-color2",...
+       Added a config file for DEU.
+       New keys: 
+           F2 Save
+           Scroll Lock to turn of auto scrolling.
+           F9 Insert complex objects.
+           F10 Error checker and miscellaneous operations.
+       New commands (main menu):
+           G[roup] to create a compound wad file with all open pwads.
+           V[iew] to view a sprite.
+           S[ave] to save one object in a separate wad file.
+       MANUAL.DOC renamed to DEU.TXT, DEU.TXT renamed to README.1ST
+       DEUTUTOR.ZIP contains a step-by-step tutorial for DEU.
+
+4.31   8 Mar 94
+       New mouse interface.
+       Object detection algorithm improved slightly.
+       Mark/unmark any object and edit/move all marked objects at once.
+       New command line parameters.
+       May now add or delete ANY type of object.
+       Most LineDef types are now recognized.
+       Different colors are used for special LineDefs or Sectors.
+       New "snap to grid" and "zoom on pointer" features.
+       New keyboard shortcuts: "T", "V", "L" & "S".
+       Many bug fixes.  BlockMap builder bug has been fixed.
+       The "-debug" bug (!) has been fixed.
+       A manual file, "MANUAL.DOC".  Read this to find how to use DEU.
+
+4.20   25 Feb 94
+       Improved selection method for Sectors and LineDefs.
+       New dialog box asks for a WAD file name after editing a level.
+       New Thing, LineDef and Sector types are recognized.
+       Using the "large" memory model, as the code is becoming... large.
+       "Read" command.
+       "EDIT" command parameters now optional.
+
+4.10   17 Feb 94
+       Can change wall, floor and ceiling textures.
+       Total control over the LineDef and Sector attributes.
+       Lots of improvements in the editors.
+       The keyboard arrows may be used to move the mouse pointer.
+       'Ins' duplicates the last Thing selected.
+       'Tab' key now documented in the help screen.
+       'DUMP' command now documented in the main DEU menu.
+       'N','P' (or '<','>') keys to jump to the Next/Previous object.
+
+
+
+
+4.00   16 Feb 94
+       Mouse support. Pointer may now move around the screen.
+       Map scrolls if the pointer reaches the edge of the screen.
+       User interface totally revamped.
+       Can use the mouse buttons to manipulate objects.
+       More Things recognized (DeathMatch starts, lamps, candles...).
+       New editing modes: Vertexes, LineDefs, SideDefs, Sectors...
+       Some keyboard commands changed.
+       Saving disabled for the shareware version.
+
+By Brendon Wyber:
+
+3.01   29 Jan 94
+       Bug fix, can now edit levels higher than 3.
+
+3.00   29 Jan 94
+       Second Release. Merged DDIR and DEDT into one program.
+       Replaced THING DATA files with PWAD files.
+       Released with source code.
+
+2.00   26 Jan 94
+       First release. Had two programs DDIR and DEDT and used
+       text THING DATA files.
+
+1.00   Never
+Really sucked!
+
+
+
+FUTURE PLANS
+============
+
+********
+Beavis and Butthead viewing a Boy George video...
+
+Butthead:       ...This must be what people look like in the future...
+Beavis:         "The future sucks!  Change it!"
+Butthead:       "I may be cool Beavis, but I can't change the future."
+********
+
+* Port to Linux and X Window.
+
+* 3D previewer with hidden line removal.
+
+* Add scrollbars to some dialog boxes.
+
+* Bitmap editor.
+
+* New graphical interface instead of the text-only main menu.
+
+* Get rid of a few nasty little bugs.
+
+
+
+
+
+
+CONTACTING THE AUTHORS
+======================
+
+* Rapha‰l's E-mail address is: quinet@montefiore.ulg.ac.be
+
+* Brendon's E-mail address is: b.wyber@csc.canterbury.ac.nz
+
+
+Contributions to the DEU effort...
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you would like to make a contribution to the DEU effort, please use the 
+following guidelines.
+
+The authors reserve the right to accept or reject any submissions (even if 
+all submissions have been accepted so far...).  All submissions must be to 
+the Public Domain and any ownership is forfeited.  Credit for useful 
+information will be given in the "Credits..." section of this file.
+
+Updates to the Program
+~~~~~~~~~~~~~~~~~~~~~~
+Contact Brendon and/or Rapha‰l before submitting code.
+
+If you write an extension to DEU, try keeping all of it in a separate 
+file.  This will facilitate the integration in the version under 
+development.
+
+If you send a bug fix or a small patch to the code, the favourite format 
+is a Un*x "diff -c" file (context diff).
+
+Updates to the Manual
+~~~~~~~~~~~~~~~~~~~~~~
+Send Updates for manual to Brendon, Rapha‰l, and/or Steve Bareman.
+
+Please send ONLY the sections you wish to update, complete with Section 
+numbers.  Each section should be sent as a separate section.  If you 
+contribute a *NEW* section please preceed it with the text "*** NEW 
+SECTION # ***".
+
+The subject header of your message should include "DEU DOC's".
+
+Bug Reports
+~~~~~~~~~~~
+Send bug reports to Brendon and/or Rapha‰l.
+
+Read the docs thoroughly before reporting any bugs.  Some of them are 
+features, not bugs...
+
+Please include the version number of DEU you are running and be as 
+specific as possible in your description.  I you want us to fix your
+problem, you'd better help us reproduce it easily.
+
+The subject header of your message should include "DEU BUG REPORT".
+
+Suggestions for Enhancements to DEU program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Send your suggestions to Brendon and/or Raphal.
+
+Thanks for your support!
+
+
+
+
+
+
+CREDITS
+=======
+
+Many thanks go to the following people.  We won't speak in superlatives,
+because we would then need a few more pages to write this...  Let's just 
+say that these people did great things for DOOM or DEU:
+
+* Everybody at id software for making such great games!
+
+* Brendon Wyber                   (b.wyber@csc.canterbury.ac.nz)
+     The first version of this program was written by Brendon Wyber.
+     Map display, Things editor.
+
+* Rapha‰l Quinet                  (quinet@montefiore.ulg.ac.be)
+     Much of this program was written by Rapha‰l Quinet.
+     New interface (mouse, menus, etc).
+     Ability to edit Vertices, Linedefs, Sidedefs, Sectors, and last
+     but certainly not least an AUTOMATIC NODES BUILDER.
+     Even if I rewrote nearly 90% of the code, this editor still has its
+     strong DEU roots... :-)
+     I appreciate comments and suggestions about this program.
+
+* Matt Fell                       (matt.burnett@acebbs.com)
+     Author of the great Unofficial Doom Specs.  Making this program
+     would have been impossible if the Specs didn't exist.
+     You should take this file as a technical reference and companion
+     manual for DEU.  Get the file "dmspec13.txt" by anonymous FTP on
+     "wuarchive.wustl.edu" (/incoming/MSDOS_UPLOADS/games/doomstuff).
+
+* Steve Bareman                   (bareman@hope.cit.hope.edu)
+     Rewrote the documentation (this file and MANUAL.DOC)
+     Author of the DEU tutorial (look in DEUTUTOR.ZIP).
+     Constant promoter of including source code with the editor.
+     For a good FTP...
+         anonymous @ doom.hope.edu (198.110.98.2)
+        (Registered DOOM patches, DEU, and various doom utils for
+         Registered DOOMers only.)
+
+* Trevor Phillips                 (rphillip@cc.curtin.edu.au)
+     Textures viewer in 256 colors
+     Many, many suggestions and improvements to the DEU code.
+
+* Alistair Brown                  (A.D.Brown@bradford.ac.uk)
+* Chris Phillips                  (chrisp@halcyon.com)
+* Colin Reed and Dylan Cuthbert   (dyl@cix.compulink.co.uk)
+     Lots of infos about the Nodes objects.
+     They fixed the bug(s) in my Nodes builder.
+
+* Dewi Morgan                     (D.Morgan@bradford.ac.uk)
+     Drop-down menus and menu bar.
+     Rewrote and reorganized part of this file.
+     Numerous improvements and suggestions.
+
+* Will Ellett                     (wellet@cs.uah.edu)
+     Configuration file (DEU.INI) and better command line parsing.
+     Lots of suggestions for DEU.
+
+* Barry Bloom                     (barry@noc.unt.edu)
+     Maintainer of the official DEU distribution site for the USA:
+          the DOOM-only FTP server: ocf.unt.edu (129.120.9.151)
+          (DOOM add-ons and utils, collection of WAD files, ...)
+     Also sent some useful suggestions and bug reports.
+
+
+* Sven Neuhaus                    (sven@lilly.ping.de)
+* Billy Chow                      (billy.chow@engineering.oxford.ac.uk)
+     The most efficient beta-testers!  They keep on finding bugs that
+     most other people never see...
+
+* Jeremy Blackman                 (wraven@helser51.res.iastate.edu)
+* Brian Downing                   (bdowning@ncsa.uiuc.edu)
+* Ted Vessenes                    (tedv@geom.umn.edu)
+* Ed Boling                       (edb9140@tamsun.tamu.edu)
+* Greg Grimsby                    (stu_gwgrimsb@vax1.acs.jmu.edu)
+* Michael Emmons                  (ie78hc0z@solix.fiu.edu)
+     Numerous comments, suggestions for improvements, and bug reports.
+     They were amongst the first to have faith in DEU and support it.
+
+* Dietrich Hempelmann             (avatar@uni-paderborn.de)
+     Designed the "DEU 5" logo in DEU.TXT.  Great ascii-art... 
+
+We certainly forgot one or two heroes of the DEU quest...  Apologies if 
+your name is not here and you deserve it.  Just drop us a note and we
+will change that for the next release.  Have a nice DOOM!  

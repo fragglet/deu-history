@@ -2,94 +2,17 @@
    Texture display by Rapha‰l Quinet <quinet@montefiore.ulg.ac.be>
 		  and Trevor Phillips <rphillip@cc.curtin.edu.au>
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
-   Put a credit notice somewhere with our names on it.  Thanks!  ;-)
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    TEXTURES.C - Textures in 256 colors.
 */
 
 /* the includes */
 #include "deu.h"
-#include <dos.h>
-
-
-/*
-   load one "playpal" palette and change all palette colours
-*/
-
-void SetDoomPalette( int playpalnum)
-{
-   MDirPtr             dir;
-   unsigned char huge *dpal;
-   int                 n;
-
-   if (playpalnum < 0 && playpalnum > 13)
-      return;
-   dir = FindMasterDir( MasterDir, "PLAYPAL");
-   if (dir)
-   {
-      dpal = GetFarMemory( 768 * sizeof( char));
-      BasicWadSeek( dir->wadfile, dir->dir.start);
-      for (n = 0; n <= playpalnum; n++)
-	 BasicWadRead( dir->wadfile, dpal, 768L);
-      _AX = 0x1012;
-      _BX = 0;
-      _CX = 256;
-      _ES = FP_SEG(dpal);
-      _DX = FP_OFF(dpal);
-      __int__(0x10);
-      farfree( dpal);
-    }
-}
-
-
-
-/*
-   translate a standard color to Doom palette 7 (approx.)
-*/
-
-int TranslateToDoomColor( int color)
-{
-   if (GfxMode < 0)
-      switch (color)
-      {
-      case BLACK:
-	 return 0;
-      case BLUE:
-	 return 202;
-      case GREEN:
-	 return 118;
-      case CYAN:
-	 return 194;
-      case RED:
-	 return 183;
-      case MAGENTA:
-	 return 253;
-      case BROWN:
-	 return 144;
-      case LIGHTGRAY:
-	 return 88;
-      case DARKGRAY:
-	 return 96;
-      case LIGHTBLUE:
-	 return 197;
-      case LIGHTGREEN:
-	 return 112;
-      case LIGHTCYAN:
-	 return 193;
-      case LIGHTRED:
-	 return 176;
-      case LIGHTMAGENTA:
-	 return 250;
-      case YELLOW:
-	 return 231;
-      case WHITE:
-	 return 4;
-      }
-   return color;
-}
-
 
 
 /*

@@ -1,8 +1,11 @@
 /*
    Doom Editor Utility, by Brendon Wyber and Rapha‰l Quinet.
 
-   If you use any part of this code in one of your programs,
-   please make it clear that you borrowed it from here...
+   You are allowed to use any parts of this code in another program, as
+   long as you give credits to the authors in the documentation and in
+   the program itself.  Read the file README.1ST for more information.
+
+   This program comes with absolutely no warranty.
 
    GFX.C - Graphics routines.
 */
@@ -10,19 +13,21 @@
 /* the includes */
 #include "deu.h"
 #include <math.h>
+#include <dos.h>
 
 /* the global variables */
-int GfxMode = 0;        /* graphics mode number, or 0 for text */
+int GfxMode = 0;	/* graphics mode number, or 0 for text */
 			/* 1 = 320x200, 2 = 640x480, 3 = 800x600, 4 = 1024x768 */
 			/* positive = 16 colors, negative = 256 colors */
-int OrigX;              /* the X origin */
-int OrigY;              /* the Y origin */
-int Scale;              /* the scale value */
-int PointerX;           /* X position of pointer */
-int PointerY;           /* Y position of pointer */
-int CenterX;		/* X coord of screen center */
-int CenterY;		/* Y coord of screen center */
-
+int OrigX;		/* the X origin */
+int OrigY;		/* the Y origin */
+int Scale;		/* the scale value */
+int PointerX;		/* X position of pointer */
+int PointerY;		/* Y position of pointer */
+int ScrMaxX;		/* maximum X screen coord */
+int ScrMaxY;		/* maximum Y screen coord */
+int ScrCenterX;		/* X coord of screen center */
+int ScrCenterY;		/* Y coord of screen center */
 
 
 /*
@@ -64,14 +69,16 @@ void InitGfx()
    else
    {
       GfxMode = -gmode; /* 640x480x256, 800x600x256, or 1024x768x256 */
-      SetDoomPalette( 7);
+      SetDoomPalette( 0);
    }
    setlinestyle( 0, 0, 1);
    setbkcolor( TranslateToDoomColor( BLACK));
    settextstyle( 0, 0, 1);
    firsttime = FALSE;
-   CenterX = getmaxx() / 2;
-   CenterY = getmaxy() / 2;
+   ScrMaxX = getmaxx();
+   ScrMaxY = getmaxy();
+   ScrCenterX = ScrMaxX / 2;
+   ScrCenterY = ScrMaxY / 2;
 }
 
 
@@ -126,9 +133,11 @@ Bool SwitchToVGA256()
       if (UseMouse)
 	 ShowMousePointer();
       GfxMode = -1 /* 320x200x256 */;
-      SetDoomPalette( 7);
-      CenterX = getmaxx() / 2;
-      CenterY = getmaxy() / 2;
+      SetDoomPalette( 0);
+      ScrMaxX = getmaxx();
+      ScrMaxY = getmaxy();
+      ScrCenterX = ScrMaxX / 2;
+      ScrCenterY = ScrMaxY / 2;
       return TRUE;
    }
    return FALSE;
@@ -158,8 +167,10 @@ Bool SwitchToVGA16()
       if (UseMouse)
 	 ShowMousePointer();
       GfxMode = 2; /* 640x480x16 */
-      CenterX = getmaxx() / 2;
-      CenterY = getmaxy() / 2;
+      ScrMaxX = getmaxx();
+      ScrMaxY = getmaxy();
+      ScrCenterX = ScrMaxX / 2;
+      ScrCenterY = ScrMaxY / 2;
       return TRUE;
    }
    return FALSE;
@@ -198,11 +209,23 @@ void SetColor( int color)
 
 void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
 {
-   int scrXstart = (mapXstart - OrigX) / Scale + CenterX;
-   int scrYstart = (OrigY - mapYstart) / Scale + CenterY;
-   int scrXend   = (mapXend - OrigX)   / Scale + CenterX;
-   int scrYend   = (OrigY - mapYend)   / Scale + CenterY;
-   line( scrXstart, scrYstart, scrXend, scrYend);
+   line( (mapXstart - OrigX) / Scale + ScrCenterX,
+	 (OrigY - mapYstart) / Scale + ScrCenterY,
+	 (mapXend - OrigX)   / Scale + ScrCenterX,
+	 (OrigY - mapYend)   / Scale + ScrCenterY);
+}
+
+
+
+/*
+   draw a circle on the screen from map coords
+*/
+
+void DrawMapCircle( int mapXcenter, int mapYcenter, int mapRadius)
+{
+   circle( (mapXcenter - OrigX) / Scale + ScrCenterX,
+	   (OrigY - mapYcenter) / Scale + ScrCenterY,
+	   mapRadius / Scale);
 }
 
 
@@ -213,10 +236,10 @@ void DrawMapLine( int mapXstart, int mapYstart, int mapXend, int mapYend)
 
 void DrawMapVector( int mapXstart, int mapYstart, int mapXend, int mapYend)
 {
-   int    scrXstart = (mapXstart - OrigX) / Scale + CenterX;
-   int    scrYstart = (OrigY - mapYstart) / Scale + CenterY;
-   int    scrXend   = (mapXend - OrigX)   / Scale + CenterX;
-   int    scrYend   = (OrigY - mapYend)   / Scale + CenterY;
+   int    scrXstart = (mapXstart - OrigX) / Scale + ScrCenterX;
+   int    scrYstart = (OrigY - mapYstart) / Scale + ScrCenterY;
+   int    scrXend   = (mapXend - OrigX)   / Scale + ScrCenterX;
+   int    scrYend   = (OrigY - mapYend)   / Scale + ScrCenterY;
    double r         = hypot( scrXstart - scrXend, scrYstart - scrYend);
    int    scrXoff   = (r >= 1.0) ? (scrXstart - scrXend) * 16.0 / r / Scale : 0;
    int    scrYoff   = (r >= 1.0) ? (scrYstart - scrYend) * 16.0 / r / Scale : 0;
@@ -242,10 +265,10 @@ void DrawMapArrow( int mapXstart, int mapYstart, unsigned angle)
 {
    int    mapXend   = mapXstart + 50 * cos(angle / 10430.37835);
    int    mapYend   = mapYstart + 50 * sin(angle / 10430.37835);
-   int    scrXstart = (mapXstart - OrigX) / Scale + CenterX;
-   int    scrYstart = (OrigY - mapYstart) / Scale + CenterY;
-   int    scrXend   = (mapXend - OrigX)   / Scale + CenterX;
-   int    scrYend   = (OrigY - mapYend)   / Scale + CenterY;
+   int    scrXstart = (mapXstart - OrigX) / Scale + ScrCenterX;
+   int    scrYstart = (OrigY - mapYstart) / Scale + ScrCenterY;
+   int    scrXend   = (mapXend - OrigX)   / Scale + ScrCenterX;
+   int    scrYend   = (OrigY - mapYend)   / Scale + ScrCenterY;
    double r         = hypot( scrXstart - scrXend, scrYstart - scrYend);
    int    scrXoff   = (r >= 1.0) ? (scrXstart - scrXend) * 16.0 / r / Scale : 0;
    int    scrYoff   = (r >= 1.0) ? (scrYstart - scrYend) * 16.0 / r / Scale : 0;
@@ -389,10 +412,90 @@ void DrawPointer()
    setwritemode( XOR_PUT);
    /* draw the pointer */
    SetColor( YELLOW);
-   DrawScreenLine( PointerX - 15, PointerY - 15, PointerX + 15, PointerY + 15);
-   DrawScreenLine( PointerX - 15, PointerY + 15, PointerX + 15, PointerY - 15);
+   DrawScreenLine( PointerX - 15, PointerY - 13, PointerX + 15, PointerY + 13);
+   DrawScreenLine( PointerX - 15, PointerY + 13, PointerX + 15, PointerY - 13);
    /* restore normal write mode */
    setwritemode( COPY_PUT);
+}
+
+
+
+/*
+   load one "playpal" palette and change all palette colours
+*/
+
+void SetDoomPalette( int playpalnum)
+{
+   MDirPtr             dir;
+   unsigned char huge *dpal;
+   int                 n;
+
+   if (playpalnum < 0 && playpalnum > 13)
+      return;
+   dir = FindMasterDir( MasterDir, "PLAYPAL");
+   if (dir)
+   {
+      dpal = GetFarMemory( 768 * sizeof( char));
+      BasicWadSeek( dir->wadfile, dir->dir.start);
+      for (n = 0; n <= playpalnum; n++)
+	 BasicWadRead( dir->wadfile, dpal, 768L);
+      for (n = 0; n < 768; n++)
+	 dpal[n] /= 4;
+      _AX = 0x1012;
+      _BX = 0;
+      _CX = 256;
+      _ES = FP_SEG(dpal);
+      _DX = FP_OFF(dpal);
+      __int__(0x10);
+      farfree( dpal);
+    }
+}
+
+
+
+/*
+   translate a standard color to Doom palette 0 (approx.)
+*/
+
+int TranslateToDoomColor( int color)
+{
+   if (GfxMode < 0)
+      switch (color)
+      {
+      case BLACK:
+	 return 0;
+      case BLUE:
+	 return 202;
+      case GREEN:
+	 return 118;
+      case CYAN:
+	 return 194;
+      case RED:
+	 return 183;
+      case MAGENTA:
+	 return 253;
+      case BROWN:
+	 return 144;
+      case LIGHTGRAY:
+	 return 88;
+      case DARKGRAY:
+	 return 96;
+      case LIGHTBLUE:
+	 return 197;
+      case LIGHTGREEN:
+	 return 112;
+      case LIGHTCYAN:
+	 return 193;
+      case LIGHTRED:
+	 return 176;
+      case LIGHTMAGENTA:
+	 return 250;
+      case YELLOW:
+	 return 231;
+      case WHITE:
+	 return 4;
+      }
+   return color;
 }
 
 
@@ -432,7 +535,7 @@ void InsertPolygonVertices( int centerx, int centery, int sides, int radius)
    int n;
 
    for (n = 0; n < sides; n++)
-      InsertObject( OBJ_VERTEXES, -1, centerx + (int) ((double) radius * cos( 6.28 * (double) n / (double) sides)), centery + (int) ((double) radius * sin( 6.28 * (double) n / (double) sides)));
+      InsertObject( OBJ_VERTEXES, -1, centerx + (int) ((double) radius * cos( 6.28 * (double) n / (double) sides)), centery + (int) ((double) radius * sin( 6.2832 * (double) n / (double) sides)));
    /* Yes, I know... etc. */
 }
 
