@@ -8,7 +8,7 @@
    This program comes with absolutely no warranty.
    
    MOUSE.C - Mouse driver routines.
-*/
+   */
 
 /* the includes */
 #include "deu.h"

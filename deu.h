@@ -17,6 +17,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+/* SO 24/4/95 */
+#include <unistd.h>
+
 
 #if defined(__TURBOC__)
 
@@ -35,7 +38,7 @@ typedef unsigned int   UBCINT;
 typedef short int            BCINT;
 typedef unsigned short int   UBCINT;
 
-#define DETH_VERSION	"2.1 - The Configurable Release"
+#define DETH_VERSION	"2.2 - A Bugfix Release"
 
 #endif
 
@@ -133,12 +136,12 @@ typedef struct
     char *long_name;		/* command line arg. or keyword */
     enum                        /* type of this option */
 	    {
-		OPT_BOOLEAN,                     /* boolean (toggle) */
-		OPT_INTEGER,                     /* integer number */
-		OPT_STRING,                      /* character string */
-		OPT_STRINGACC,                   /* character string, but store in a list */
-		OPT_STRINGLIST,                  /* list of character strings */
-		OPT_END                          /* end of the options description */
+			OPT_BOOLEAN,                     /* boolean (toggle) */
+			OPT_INTEGER,                     /* integer number */
+			OPT_STRING,                      /* character string */
+			OPT_STRINGACC,                   /* character string, but store in a list */
+			OPT_STRINGLIST,                  /* list of character strings */
+			OPT_END                          /* end of the options description */
 	    } opt_type;                    
     char *msg_if_true;		/* message printed if option is true */
     char *msg_if_false;		/* message printed if option is false */
@@ -257,7 +260,9 @@ extern char *MainWad;		/* name of the main wad file */
 extern FILE *logfile;		/* filepointer to the error log */
 extern Bool square_circles;
 extern Bool ThingAngle;		/* draw things with arrow */
-extern Bool Doom2;		/* Is this Doom 2 ?? */
+extern char LevelName[];		/* what level we are editing */
+extern Bool UseOwnBSP;      /* whether to use the built-in node builder */
+extern SList LevelNameFormat;
 extern char *RegTest;
 extern Bool Registered;		/* registered or shareware WAD file? */
 
@@ -265,6 +270,7 @@ extern Bool Registered;		/* registered or shareware WAD file? */
 extern WadPtr  WadFileList;	/* list of wad files */
 extern MDirPtr MasterDir;	/* the master directory */
 extern SList LevelNames;
+int isalev(char *);
 
 /* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
@@ -321,6 +327,7 @@ void huge *ResizeFarMemory( void huge *old, unsigned long size);
 void FreeFarMemory( void huge *);
 
 /* from wads.c */
+int isalev(char *);
 void OpenMainWad( char *);
 void OpenPatchWad( char *);
 void CloseWadFiles( void);
@@ -341,9 +348,9 @@ void SaveEntryToRawFile( FILE *, char *);
 void SaveEntryFromRawFile( FILE *, FILE *, char *);
 
 /* from levels.c */
-void ReadLevelData( BCINT , BCINT ); /* SWAP! */
-void ForgetLevelData( void); /* SWAP! */
-void SaveLevelData( char *); /* SWAP! */
+void ReadLevelData();
+void ForgetLevelData( void);
+void SaveLevelData( char *); 
 void ReadWTextureNames( void);
 void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
@@ -351,12 +358,16 @@ void ReadFTextureNamesIn( char *);
 void ForgetWTextureNames( void);
 
 /* from edit.c */
-void EditLevel( BCINT , BCINT , Bool);
-void SelectLevel( BCINT  *, BCINT  *);
-void EditorLoop( BCINT , BCINT ); /* SWAP! */
+void MakeLevelName(SList);
+void EditLevel(Bool);
+void SelectLevel();
+void EditorLoop();
 void DrawMap( BCINT , BCINT, Bool ); /* SWAP! */
 void CenterMapAroundCoords( BCINT , BCINT );
 void GoToObject( BCINT , BCINT ); /* SWAP! */
+void FindThing(int);
+void SaveAs(int);
+void CopyFile(const char *, const char *);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -385,6 +396,8 @@ void InsertPolygonVertices( BCINT , BCINT , BCINT , BCINT );
 void RotateAndScaleCoords( BCINT  *, BCINT  *, double, double);
 
 /* from things2.c */
+int BCINT_lessp(const void *, const void *);
+void index_things(void);
 BCINT  GetThingColour( BCINT );
 char *GetThingName( BCINT );
 BCINT  GetThingRadius( BCINT );
@@ -400,7 +413,6 @@ char *GetLineDefFlagsName( BCINT );
 char *GetLineDefFlagsLongName( BCINT );
 char *GetSectorTypeName( BCINT );
 char *GetSectorTypeLongName( BCINT );
-Bool LinedefIsDoom2Only(BCINT);
 void index_ld_types();
 
 /* from mouse.c */
@@ -419,7 +431,7 @@ BCINT PullDownMenu( BCINT , BCINT , ...);
 BCINT InputInteger( BCINT , BCINT , BCINT  *, BCINT , BCINT );
 BCINT InputIntegerValue( BCINT , BCINT , BCINT , BCINT , BCINT );
 void InputNameFromListWithFunc( BCINT , BCINT , char *, BCINT , char **, BCINT , char *, BCINT , BCINT , void (*hookfunc)(BCINT , BCINT , BCINT , BCINT , char *));
-
+	 
 void InputNameFromList( BCINT , BCINT , char *, BCINT , char **, char *);
 void InputFileName( BCINT , BCINT , char *, BCINT , char *);
 Bool Confirm( BCINT , BCINT , char *, char *);
@@ -481,6 +493,7 @@ Bool CheckStartingPos( void); /* SWAP! */
 void InsertStandardObject( BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
 void MiscOperations( BCINT , BCINT , BCINT , SelPtr *); /* SWAP! */
 void Preferences( BCINT , BCINT );
+BCINT SelectThingType(void);
 
 /* from nodes.c */
 void ShowProgress( BCINT );
@@ -498,6 +511,7 @@ void ForgetAllResources(void);
 
 /* from readcfg.c */
 void readcfg(char *);
+SList SList_append(SList, char *);
 
 /* from swapmem.c */
 

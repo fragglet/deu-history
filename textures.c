@@ -100,10 +100,10 @@ void DisplayPic( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *picname)
 	BCINT x, y;
 	BYTE *pixels;
 	long p_resource;
-
+	
 	if(bioskey(1))
 		return;
-
+	
 	p_resource = (long)GetResource(picname);
 	if(!p_resource)
 		return;
@@ -119,7 +119,7 @@ void DisplayPic( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *picname)
 		while(c->yofs != 255) {
 			pixels = (BYTE *)((long)c + (long)sizeof(PColumn) +
 							  (long)c->npixels + 1L);
-
+			
 			for(y = c->npixels; y >= 0; y--) {
 				if((y + c->yofs) > (y1 - y0))
 					pixels--;
@@ -129,7 +129,7 @@ void DisplayPic( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *picname)
 			c = (PColumn *)((long)c + (long)(c->npixels) + 4L);
 		} 
 	}
-
+	
 	if(ForgetAfter)
 		ForgetResource(picname);
 }
@@ -139,7 +139,7 @@ void *GetResource(char *name)
 	void *t = NULL;
 	resource *p, *new = (resource *)NULL;
 	MDirPtr r;
-
+	
 	for(p = ResourceList; p; p = p->next)
 		if(!strcmp(name, p->name))
 			return p->data;
@@ -148,7 +148,7 @@ void *GetResource(char *name)
 	if(r && (t = GetMemory(r->dir.size))) {
 		BasicWadSeek(r->wadfile, r->dir.start);
 		BasicWadRead(r->wadfile, t, r->dir.size);
-
+		
 		new = (resource *)GetMemory(sizeof(resource));
 		assert(new);
 		new->data = t;
@@ -163,7 +163,7 @@ void *GetResource(char *name)
 void ForgetResource(char *name)
 {
 	resource *p, *q = NULL;
-
+	
 	for(p = ResourceList; p->next; q = p, p = p->next) {
 		if(!strcmp(p->name, name)) {
 			if(p == ResourceList)
@@ -174,7 +174,7 @@ void ForgetResource(char *name)
 			FreeMemory(p->data);
 			FreeMemory(p->name);
 			FreeMemory(p);
-
+			
 			return;
 		}
 	}
@@ -189,6 +189,7 @@ void ForgetAllResources()
 		FreeMemory(p->name);
 		FreeMemory(p);
 	}
+	ResourceList = (resource *)NULL;
 }
 
 
@@ -196,7 +197,7 @@ Texture *FindTexture(char *name)
 {
 	Texture *t;
 	SList p;
-
+	
 	for(p = Texture_sections; p; p = p->next) {
 		t = FindTextureIn(name, GetResource(p->string));
 		if(t)
@@ -209,14 +210,14 @@ Texture *FindTextureIn(char *name, void *tblock)
 {
 	long i, *offsets = tblock;
 	Texture *t;
-
+	
 	if(tblock)
 		for(i = 1; i <= offsets[0]; i++) {
 			t = (Texture *)((long)offsets[i] + (long)tblock);
 			if(!strncmp(t->name, name, 8))
 				return t;
 		}
-
+	
 	return NULL;
 }
 
@@ -234,19 +235,19 @@ void DisplayWallTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname) 
 	
 	if (bioskey( 1) != 0)
 		return; /* speedup */
-
+	
 	Pnames = GetResource("PNAMES");
-
+	
 	/* clear the box where the texture size will be drawn - see below */
 	SetColor(DARKGRAY);
 	DrawScreenBox( x0 - 171, y0 + 40, x0 - 82, y0 + 70);
-
+	
 	if (!(tinfo = FindTexture(texname)))
 		return;
-
+	
 	/* read the info for this texture */
-		xsize = tinfo->width;
-		ysize = tinfo->height;
+	xsize = tinfo->width;
+	ysize = tinfo->height;
 	
 	SetColor( BLACK);
 	DrawScreenText( x0 - 171, y0 + 40, "%dx%d", xsize, ysize);
@@ -255,7 +256,7 @@ void DisplayWallTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname) 
 		DrawScreenText( x0 - 171, y0 + 60, "Transparent");
 	else
 		DrawScreenText( x0 - 171, y0 + 60, "%d Patches", tinfo->nPatches);
-
+	
 	if (bioskey( 1) != 0)
 		return; /* speedup */
 	
@@ -263,23 +264,23 @@ void DisplayWallTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname) 
 		x1 = x0 + xsize;
 	if (y1 - y0 > ysize)
 		y1 = y0 + ysize;
-
+	
 	/* not really necessary, except when xofs or yofs < 0 */
 	setviewport( x0, y0, x1, y1, TRUE);
-
+	
 	/* display the texture */
 	pinfo = (PatchDesc *)((long)tinfo + sizeof(Texture));
 	ForgetAfter = FALSE;
 	for (n = 0; n < tinfo->nPatches; n++, pinfo++) {
-
+		
 		/* OK, now look up the pic's name in Pnames. */
 		patchname = (long)Pnames + 4L + ((long)(pinfo->PatchNumber) * 8);
-
+		
 		strncpy(picname, (char *)patchname, 8);
 		picname[ 8] = '\0';
 		/* coords changed because of the "setviewport" */
 		DisplayPic( pinfo->xOffset, pinfo->yOffset,
-					x1 - x0, y1 - y0, strupr( picname));
+				   x1 - x0, y1 - y0, strupr( picname));
 	}
 	
 	/* de-allocate all patches */
@@ -305,7 +306,7 @@ void DisplayWallTexture( BCINT x0, BCINT y0, BCINT x1, BCINT y1, char *texname) 
 void GetWallTextureSize( BCINT *xsize_r, BCINT *ysize_r, char *texname)
 {
 	Texture *t = FindTexture(texname);
-
+	
 	if(t) {
 		*xsize_r = t->width;
 		*ysize_r = t->height;

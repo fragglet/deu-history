@@ -153,8 +153,7 @@ typedef struct {
 } Texture;
 
 typedef struct {
-    BCINT
-	xOffset,
+    BCINT xOffset,
 	yOffset,
 	PatchNumber,
 	One,

@@ -1,4 +1,4 @@
-"Using GO32 for DETH 1.2 and What to Do If It Doesn't Work"
+"Using GO32 for DETH 2.2 and What to Do If It Doesn't Work"
  by Dr Sleep
 
 To use the GO32 environment with DETH you'll probably need to add
@@ -19,7 +19,7 @@ Also, if you're using a memory manager such as QEMM, you'll need to
   SET GO32=NODPMI EMU D:\DOOM2\DETH\EMU\EMU387 DRIVER
       D:\DOOM2\DETH\DRIVERS\CIRRUS54.GRN
 
-DETH 1.2 is a DOS extended program (GCC) which takes advantage of
+DETH 2.2 is a DOS extended program (GCC) which takes advantage of
  expanded memory. If you can use DEU 5.21GCC, you can use DETH. A 
  batch file is included with DETH called runme.bat, which you may
  want to edit as per the above (or to your own tastes) and run 
@@ -31,7 +31,7 @@ If you have any other problems, contact the author of DETH,
 =======================================================================
 
 This file provided by Dr Sleep, who is not affiliated with the author
- of DETH 1.2, but did beta test the thing, so I think I know what I'm
+ of DETH 2.2, but did beta test the thing, so I think I know what I'm
  talking about<g>.
 
 E-mail: 76132.3415@compuserve.com EOF

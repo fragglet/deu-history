@@ -12,10 +12,51 @@
 
 /* the includes */
 #include "deu.h"
+#include <assert.h>
 
 #define _WHITE	15
 
 thing_class *Thing_classes;
+
+typedef struct {
+	BCINT type;
+	thing_type *thing;
+} thing_arr;
+
+thing_arr *Thing_type_array;
+int maxThing;
+
+int BCINT_lessp(const void *x, const void *y)
+{
+	return (int)(*((BCINT *)x) - *((BCINT *)y));
+}
+
+void index_things()
+{
+	thing_class *c;
+	thing_type *t;
+	thing_arr *p;
+	int nThingTypes = 0;
+	
+	for(c = Thing_classes; c; c = c->next)
+		for(t = c->types; t; t = t->next)
+			nThingTypes++;
+	
+	p = Thing_type_array = (thing_arr *)malloc(nThingTypes * sizeof(thing_arr));
+	assert(Thing_type_array);
+	
+	for(c = Thing_classes; c; c = c->next)
+		for(t = c->types; t; t = t->next) {
+			p->type = t->type;
+			p->thing = t;
+			p++;
+		}
+	
+	qsort(Thing_type_array, nThingTypes, sizeof(thing_arr),
+		  BCINT_lessp);
+	maxThing = nThingTypes - 1;
+}
+
 
 /*
    get the colour of a thing
@@ -23,19 +64,28 @@ thing_class *Thing_classes;
 
 BCINT GetThingColour( BCINT type)
 {
-    thing_class *c;
-    thing_type *t;
-	BCINT col;
-
-    for(c = Thing_classes; c; c = c->next)
-    	for(t = c->types; t; t = t->next)
-    		if(t->type == type) {
-    			col = t->col1;
-    			goto found_it;
-    		}
+	BCINT col = _WHITE, t;
+	int lowbound = 0, highbound = maxThing;
+	int middle;
+	
+	do {
+		middle = (lowbound + highbound) / 2;
+		t = Thing_type_array[middle].type;
+		if(t == type) {
+			if(Colour2)
+				col = (Thing_type_array[middle].thing)->col2;
+			else
+				col = (Thing_type_array[middle].thing)->col1;
+			
+			goto found_it;
+		}
+		
+		if(t > type)
+			highbound = middle - 1;
+		else
+			lowbound = middle + 1;
+	} while(lowbound <= highbound);
     
-    /* fall through */
-    col = _WHITE;
     
  found_it:
     return((col == _WHITE) ? WHITE : col);
@@ -49,16 +99,24 @@ BCINT GetThingColour( BCINT type)
 
 char *GetThingName( BCINT type)
 {
-    thing_class *c;
-    thing_type *t;
-
-    for(c = Thing_classes; c; c = c->next)
-    	for(t = c->types; t; t = t->next)
-    		if(t->type == type)
-    			return t->name;
+   	int lowbound = 0, highbound = maxThing, middle;
+	BCINT t;
+	
+	do {
+		middle = (lowbound + highbound) / 2;
+		t = Thing_type_array[middle].type;
+		
+		if(t == type)
+			return Thing_type_array[middle].thing->name;
+		
+		if(t > type)
+			highbound = middle - 1;
+		else
+			lowbound = middle + 1;
+	} while(lowbound <= highbound);
     
     /* fall through */
-    return("Unknown Thing Type");
+    return("Unknown thing type");
 }
 
 
@@ -69,13 +127,21 @@ char *GetThingName( BCINT type)
 
 BCINT GetThingRadius( BCINT type)
 {
-    thing_class *c;
-    thing_type *t;
-
-    for(c = Thing_classes; c; c = c->next)
-    	for(t = c->types; t; t = t->next)
-    		if(t->type == type)
-    			return t->radius;
+   	int lowbound = 0, highbound = maxThing, middle;
+	BCINT t;
+	
+	do {
+		middle = (lowbound + highbound) / 2;
+		t = Thing_type_array[middle].type;
+		
+		if(t == type)
+			return Thing_type_array[middle].thing->radius;
+		
+		if(t > type)
+			highbound = middle - 1;
+		else
+			lowbound = middle + 1;
+	} while(lowbound <= highbound);
     
     /* fall through */
     return(16);
@@ -90,21 +156,21 @@ char *GetAngleName( BCINT angle)
 {
     switch (angle) {
     case 0:
-	return "East";
+		return "East";
     case 45:
-	return "NorthEast";
+		return "NorthEast";
     case 90:
-	return "North";
+		return "North";
     case 135:
-	return "NorthWest";
+		return "NorthWest";
     case 180:
-	return "West";
+		return "West";
     case 225:
-	return "SouthWest";
+		return "SouthWest";
     case 270:
-	return "South";
+		return "South";
     case 315:
-	return "SouthEast";
+		return "SouthEast";
     }
     return "<ILLEGAL ANGLE>";
 }
@@ -121,15 +187,15 @@ char *GetWhenName( BCINT when)
     
     temp[ 0] = '\0';
     if (when & 0x01)
-	strcat( temp, "Easy ");
+		strcat( temp, "Easy ");
     if (when & 0x02)
-	strcat( temp, "Medium ");
+		strcat( temp, "Medium ");
     if (when & 0x04)
-	strcat( temp, "Hard ");
+		strcat( temp, "Hard ");
     if (when & 0x08)
-	strcat( temp, "Deaf ");
+		strcat( temp, "Deaf ");
     if (when & 0x10)
-	strcat( temp, "Multi ");
+		strcat( temp, "Multi ");
     return temp;
 }
 

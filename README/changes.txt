@@ -167,8 +167,22 @@ Could escape properly from LineDef sub-menus.
 
 Additions
 ---------
-LineDef descriptions now resemble descriptions in lndfs2.zip (Lib 18, ACTION, cserve)
+LineDef descriptions now resemble descriptions in lndfs2.zip (CompuServe,
+ACTION, LIB 18).
 
+
+Changes from DETH 2.1 --> DETH 2.2
+----------------------------------
+
+Bugs Fixed
+----------
+Major MAP01 Load/save bug now fixed.
+Texture hangup fixed.
+
+Additions
+---------
+Find (F4) added for finding Things, use in conjunction with A(gain) and M(ark).
+Can now disable the internal node builder from the ini file.
 
 
 
@@ -180,5 +194,5 @@ User definable Node rebuilder i.e you tell DETH what program to use.
 Optional showing of sprite when selecting Thing from menu.
 More Short Cut Keys.
 Mass re-numbering of LineDefs to the highest in the wad - useful for triggers.
-Re-numbering of sectors - so you dont have to renumber the individual SideDefs.
+Re-numbering of sectors - so you don't have to renumber the individual SideDefs.
 I.T.A - Interactive Texture Alignment (no thanks to Dr. Sleep!!!)

@@ -49,11 +49,6 @@ void OpenMainWad( char *filename)
         lastp = newp;
     }
     
-    if(FindMasterDir( MasterDir, "MAP01"))
-        Doom2 = TRUE;
-    else
-        Doom2 = FALSE;
-    
     /* check if registered version */
     Registered = FALSE; /* If you remove this, bad things will happen to you... */
     if ( RegTest && FindMasterDir( MasterDir, RegTest))
@@ -72,11 +67,11 @@ void OpenMainWad( char *filename)
 int isalev(char *s)
 {
 	SList p;
-
+	
 	for(p = LevelNames; p; p = p->next)
 		if(!strcmp(p->string, s))
 			return 1;
-
+	
 	return 0;
 }
 
@@ -92,21 +87,22 @@ void OpenPatchWad( char *filename)
     MDirPtr mdir = NULL;
     BCINT n, l;
     char entryname[9];
-    
+
     /* ignore the file if it doesn't exist */
     if (! Exists( filename)) {
         printf( "Warning: patch WAD file \"%s\" doesn't exist.  Ignored.\n", filename);
         return;
     }
-
+	
     /* if we have loaded the TEXTURE1 & TEXTURE2 resources, now 
        would be a good time to get rid of them, in case the
        wad we are now opening contains its own versions of them */
-
+	
     ForgetAllResources();
     
     /* open the wad file */
     printf( "Loading patch WAD file: %s...\n", filename);
+    LogMessage( "Loading patch WAD file: %s...\n", filename);
     wad = BasicWadOpen( filename);
     if (strncmp( wad->type, "PWAD", 4))
         ProgError( "\"%s\" is not a patch WAD file", filename);
@@ -131,7 +127,9 @@ void OpenPatchWad( char *filename)
             /* if this is a level, then copy this entry and the next 10 */
             else if (isalev(wad->directory[ n].name)) {
                 printf( "   [Updating level %s]\n", entryname);
+                LogMessage( "   [Updating level %s] from %s\n", entryname, wad->filename);
                 l = 10;
+				mdir->wadfile = wad;
             }
             else
                 printf( "   [Updating entry %s]\n", entryname);
@@ -202,6 +200,7 @@ void CloseUnusedWadFiles()
             prevw = curw;
         else {
             /* if this wad file is never used, close it */
+            LogMessage("closing wad file %s\n", curw->filename);
             if (prevw)
                 prevw->next = curw->next;
             else
@@ -209,6 +208,7 @@ void CloseUnusedWadFiles()
             fclose( curw->fileinfo);
             FreeMemory( curw->directory);
             FreeMemory( curw);
+            free(curw->filename);
         }
         curw = prevw->next;
     }
@@ -244,7 +244,8 @@ WadPtr BasicWadOpen( char *filename)
         else
             prevw->next = curw;
         curw->next = NULL;
-        curw->filename = filename;
+        /* SO 26/4/95 */
+        curw->filename = strdup(filename);
     }
     
     /* open the file */
@@ -398,7 +399,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
         printf( "Building a compound Patch Wad file \"%s\".\n", filename);
     else
         printf( "Building a new Main Wad file \"%s\" (size approx 10000K)\n", filename);
-    if (!(Doom2 || Registered))
+    if (!Registered)
         ProgError( "You were warned: you are not allowed to do this.");
     if ((file = fopen( filename, "wb")) == NULL)
         ProgError( "unable to open file \"%s\"", filename);
@@ -458,7 +459,7 @@ void BuildNewMainWad( char *filename, Bool patchonly)
 
 void WriteBytes( FILE *file, void huge *addr, long size)
 {
-    if (!(Registered || Doom2))
+    if (!Registered)
         return;
     while (size > 0x8000) {
         if (fwrite( addr, 1, 0x8000, file) != 0x8000)
@@ -480,7 +481,7 @@ void CopyBytes( FILE *dest, FILE *source, long size)
 {
     void huge *data;
     
-    if (!(Registered || Doom2))
+    if (!Registered)
         return;
     data = GetFarMemory( 0x8000 + 2);
     while (size > 0x8000) {

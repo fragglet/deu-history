@@ -1,4 +1,4 @@
-files included in deth.zip:
+Files included in deth.zip:
 
 .\
 bsp.exe		- node builder for those large wads you're going to make!
@@ -9,10 +9,12 @@ readme.1st	- this file
 runme.bat	- batch file to setup go32 for use with DETH
 
 .\readme\
-bsp12x.txt	- stuff about Colin Reeds node builder
+bsp12x.txt	- stuff about Colin Reed's node builder
 changes.txt	- history of versions complete with bugs removed and additions
 dethgo32.txt	- info on getting DETH started, written by Dr. Sleep
 texture.txt	- information on how our Intelligent Texture Aligning works
+copying		- Copyright stuff for GNU GCC
+copying.dj	- go32.exe Copyright information
 
 .\config\
 doom.cfg	- configuration file for Doom, includes path to main IWAD
@@ -48,20 +50,22 @@ It now edits Doom2 and Heretic as well as Doom.
 A lot of the Texture and Sprite handling routines have been re-written for
 extra stability and lightning speed.
 
-The main display has also be greatly improved both cosmetically and in speed.
+The main display has also been greatly improved both cosmetically and in speed.
 
 Lots of bugs that were present in DEU have also been removed.
 
-Both the X and Y alignment routines have been completely changed, they now
-including intelligent routines to align either SideDef regardless of what is
-or isn't present, you will not get any messages returned to you just because
+Both the X and Y alignment routines have been completely changed: they now
+include intelligent routines to align either SideDef, regardless of what is
+or isn't present. You will not get any messages returned to you just because
 a texture is missing.
 
 With the addition of config, things and linedef files we can almost guarantee
 that DETH is future proof - meaning that, if Heretic 2 is released (or any
-other Doom clone), just by adding/changing the files, DETH should quiet happily
-edit them. obviously this depends upon how far from the track the game creators
-have wandered! - WARNING - unless you are absolutely sure in what you are doing
+other Doom clone), just by adding/changing the files, DETH should quite happily
+edit them. Obviously this depends upon how far from the track the game creators
+have wandered!
+
+- WARNING - Unless you are absolutely sure in what you are doing,
 do not change any part of the config files except the [wad] entry.
 
 
@@ -81,7 +85,7 @@ Everyone currently using and supporting DETH.
 If you have any suggestion for future releases or have any bugs to report then
 you can reach us at either antony@seetru.demon.co.uk or
 E-Mail Antony Burden at 100141.277@compuserve.com or just leave a message in
-the Action forum of compuserve.
+the Action forum [GO ACTION] of CompuServe.
 
 
 Antony Burden & Simon Oke.

@@ -15,8 +15,7 @@ deth.exe: deth
 deth: $(OBJS)
 	gcc $(OPTIONS) -o deth $(OBJS) -lm -lpc -lbcc -lgrx
 
-debug: $(OBJS)
-	gcc -g $(OPTIONS) -o deth $(OBJS) -lm -lpc -lbcc -lgrx
+debug: deth
 
 clean:
 	del *.o
@@ -26,8 +25,10 @@ clean:
 zip:
 	zip -u source.zip *.c *.h makefile *.cfg *.dm? *.her *.dm
 
-tags:
-	ctags -r *.c *.h
+tags: dummy
+	ctags -r -v *.c *.h
+
+dummy:
 
 # dependencies produced by 'gcc -MM' 
 
