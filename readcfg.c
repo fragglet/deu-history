@@ -64,11 +64,13 @@ char *header[NUM_SECTIONS] = {
 	"[colors]"
 };
 
-char *colours[23] = {
+char *colours[32] = {
 	"BLACK", "BLUE", "GREEN", "CYAN", "RED", "MAGENTA", "BROWN", "LIGHTGRAY",
 	"DARKGRAY", "LIGHTBLUE", "LIGHTGREEN", "LIGHTCYAN", "LIGHTRED",
 	"LIGHTMAGENTA", "YELLOW", "WHITE", "DARKBLUE", "DARKGREEN", "DARKRED",
-	"DARKMAGENTA", "GRAY", "DARKERGRAY", "ORANGE"
+	"DARKMAGENTA", "GRAY", "DARKERGRAY", "ORANGE", "SECTORTAGGED", "SECTORSECRET",
+	"SECTORPAINFUL", "SECTORLIGHT", "LINEDEFTAGGED", "LINEDEFSECRET",
+	"LINEDEFNOSOUND", "LINEDEFNOPASS", "LINEDEFNOMAP"
 };
 
 ld_class *linedef_class = (ld_class *)NULL;
@@ -89,7 +91,7 @@ BCINT getcol(char *str)
 		return (BCINT)i;
 	
 	/* check it against the colour names */
-	for(i = 0; i < 23; i++)
+	for(i = 0; i < 32; i++)
 		if(!stricmp(str, colours[i]))
 			return (BCINT)i;
 	
@@ -181,6 +183,7 @@ void readcfg(char *file)
 		}
 		
 	nextline:
+		;
 	}
 	
 	fclose(thefile);

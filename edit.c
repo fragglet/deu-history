@@ -16,8 +16,10 @@
 
 void DrawMapQuick();
 
-extern Bool InfoShown;				/* should we display the info bar? */
+extern Bool InfoShown;		/* should we display the info bar? */
 BCINT MoveSpeed;
+
+int tff = TF_EASY | TF_MEDIUM | TF_HARD | TF_DM | TF_NOT_DM;
 
 /* use LevelNameFormat & the token list to make a
    valid level name */
@@ -26,30 +28,30 @@ void MakeLevelName(SList tokens)
 	char *format, scratch[10];
 	SList flist, tlist;
 	int arg;
-
+	
 	LevelName[0] = 0;
-
+	
 	flist = LevelNameFormat;
 	if(!flist)
 		return;
-
+	
 	format = flist->string;
-
+	
 	while(*format) {
 		if(*format == '%') {
 			format++;
 			/* move pointer on to the width specifier */
-
+			
 			flist = flist->next;
 			if(!flist)
 				ProgError("cannot make level name");
-
+			
 			if(flist->string[0] != '%')
 				ProgError("garbage in level name format");
-
+			
 			sscanf((flist->string) + 1, "%d", &arg);
 			/* now we know which of the tokens from the list we want */
-
+			
 			tlist = tokens;
 			while(arg > 1) {
 				arg--;
@@ -57,12 +59,12 @@ void MakeLevelName(SList tokens)
 				if(!tlist)
 					ProgError("level name format specifies too many args");
 			}
-
+			
 			arg = atoi(tlist->string);
 			
 			sprintf(scratch, "%0*d", (*format - '0'), arg); 
 			format++;
-
+			
 			/* actually add it to LevelName */
 			strcat(LevelName, scratch);
 		}
@@ -124,10 +126,10 @@ void EditLevel( Bool newlevel)
 void SelectLevel()
 {
     MDirPtr dir;
-    char *levels[32];
+    char *levels[36];
     char name[9];
     int n = 0;
-
+	
 	name[8] = 0;
     for(dir = MasterDir; dir; dir = dir->next) {
     	strncpy(name, dir->dir.name, 8);
@@ -136,8 +138,8 @@ void SelectLevel()
     }
     strcpy(name, levels[0]);
     
-    InputNameFromList( -1, -1, "Select a Level to Edit:", n, levels, name);
-
+    InputNameFromList( -1, -1, "Select A Level To Edit:", n, levels, name);
+	
 	strcpy(LevelName, name);
 }
 
@@ -153,7 +155,7 @@ char *GetWadFileName()
     char *dotp;
 	static char outfile[80];
     WadPtr wad;
-
+	
     /* get the file name */
     if (! strcmp(Level->wadfile->filename, MainWad))
     	sprintf(outfile, "%s.WAD", LevelName);
@@ -161,12 +163,12 @@ char *GetWadFileName()
 		strcpy( outfile, Level->wadfile->filename);
     
     do {
-		InputFileName( -1, -1, "Name of the new WAD file:", 79, outfile);
+		InputFileName( -1, -1, "Name Of The New WAD File:", 79, outfile);
 		/* escape */
 		if (outfile[ 0] == '\0')
 			return NULL;
     } while (!strcmp(outfile, MainWad));
-
+	
     /* if the WAD file already exists, rename it to "*.BAK" */
     for (wad = WadFileList; wad; wad = wad->next)
 		if (!stricmp( outfile, wad->filename)) {
@@ -175,15 +177,15 @@ char *GetWadFileName()
 				strcat( wad->filename, ".BAK");
 			else
 				strcpy( dotp, ".BAK");
-
+			
 			/* need to close, then reopen: problems with SHARE.EXE */
 			fclose( wad->fileinfo);
-
+			
 			CopyFile(outfile, wad->filename);
-
+			
 			wad->fileinfo = fopen( wad->filename, "rb");
 			if (wad->fileinfo == NULL)
-				ProgError( "could not reopen file \"%s\"", wad->filename);
+				ProgError( "Could Not Reopen File \"%s\"", wad->filename);
 			strcpy(wad->filename, outfile);
 			break;
 		}
@@ -198,8 +200,8 @@ char *GetWadFileName()
 
 void DisplayHelp( BCINT objtype, BCINT grid) /* SWAP! */
 {
-    BCINT x0 = 137;
-    BCINT y0 = 35;
+    BCINT x0 = (ScrMaxX - 8 * 45) /2;
+    BCINT y0 = (ScrMaxY - 10 * 41) /2;
     
     if (UseMouse)
 		HideMousePointer();
@@ -207,7 +209,7 @@ void DisplayHelp( BCINT objtype, BCINT grid) /* SWAP! */
     DrawScreenBox3D( x0, y0, x0 + 364, y0 + 408);
     SetColor( LIGHTCYAN);
     DrawScreenText( x0 + 60, y0 + 20, "Doom Editor for Total Headcases");
-    DrawScreenText( 269 - strlen(GetEditModeName( objtype)) * 4, y0 + 32, "- %s Editor -", GetEditModeName( objtype));
+    /*DrawScreenText( 269 - strlen(GetEditModeName( objtype)) * 4, y0 + 32, "- %s Editor -", GetEditModeName( objtype));*/
     SetColor( BLACK);
     DrawScreenText( x0 + 10, y0 + 60, "Use the mouse or the cursor keys to move");
     DrawScreenText( -1, -1, "around.  The map scrolls when the pointer");
@@ -224,33 +226,34 @@ void DisplayHelp( BCINT objtype, BCINT grid) /* SWAP! */
     DrawScreenText( -1, -1, "Tab   - Switch to the next editing mode");
     DrawScreenText( -1, -1, "Space - Change the move/scroll speed");
     DrawScreenText( -1, -1, "+/-   - Change the map scale (current: %d)", (BCINT) (1.0 / Scale + 0.5));
+	DrawScreenText( -1, -1, "C     - Clear all marks and redraw map");
+	DrawScreenText( -1, -1, "D     - Toggle drag mode");
+    DrawScreenText( -1, -1, "F     - Filter Things");
     DrawScreenText( -1, -1, "G     - Change the grid scale (cur.: %d)", grid);
     DrawScreenText( -1, -1, "H     - Hide the grid");
-    DrawScreenText( -1, -1, "K     - Kill the grid (set grid to 0)");
-    DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
-    DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
     DrawScreenText( -1, -1, "J, #  - Jump to a specific object (enter #)");
+    DrawScreenText( -1, -1, "K     - Kill the grid (set grid to 0)");
     DrawScreenText( -1, -1, "M     - Mark/unmark current object (select)");
-	DrawScreenText( -1, -1, "D     - Toggle drag mode");
-	DrawScreenText( -1, -1, "C     - Clear all marks and redraw map");
+    DrawScreenText( -1, -1, "N, >  - Jump to the next object.");
 	DrawScreenText( -1, -1, "O     - Copy Objects");
+    DrawScreenText( -1, -1, "P, <  - Jump to the previous object.");
 	DrawScreenText( -1, -1, ",     - Rotate Thing Clockwise");
 	DrawScreenText( -1, -1, ".     - Rotate Thing Anti-Clockwise");
     DrawScreenText( -1, -1, "Ins   - Insert a new object");
     DrawScreenText( -1, -1, "Del   - Delete the current object");
     DrawScreenText( -1, -1, "Enter - Edit the current/selected object(s)");
-    DrawScreenText( -1, y0 + 320, "Mouse buttons:");
+    DrawScreenText( -1, y0 + 330, "Mouse buttons:");
     if (SwapButtons) {
-		DrawScreenText( -1, y0 + 330, "Left  - Edit the current/selected object(s)");
+		DrawScreenText( -1, y0 + 340, "Left  - Edit the current/selected object(s)");
 		DrawScreenText( -1, -1, "Middle- Mark/unmark the current object.");
     }
     else {
-		DrawScreenText( -1, y0 + 330, "Left  - Mark/unmark the current object");
+		DrawScreenText( -1, y0 + 340, "Left  - Mark/unmark the current object");
 		DrawScreenText( -1, -1, "Middle- Edit the current/selected object(s)");
     }
     DrawScreenText( -1, -1, "Right - Drag the current/selected object(s)");
     SetColor( YELLOW);
-    DrawScreenText( -1, y0 + 390, "Press any key to return to the editor...");
+    DrawScreenText( -1, y0 + 390, " Press any key to return to the editor...");
     bioskey( 0);
     if (UseMouse)
 		ShowMousePointer();
@@ -266,7 +269,7 @@ void DisplayHelp( BCINT objtype, BCINT grid) /* SWAP! */
 #define REDRAW_QUICK		1
 #define REDRAW_ALL			2
 
-void EditorLoop() /* SWAP! */
+void EditorLoop()
 {
     BCINT  EditMode = OBJ_THINGS;
     BCINT  CurObject = -1;
@@ -472,7 +475,7 @@ void EditorLoop() /* SWAP! */
 		/* display the current pointer coordinates */
 		if (RedrawMap == REDRAW_ALL || PointerX != OldPointerX || PointerY != OldPointerY) {
 			SetColor(DARKGRAY);
-			DrawScreenBox( ScrMaxX - 170, 5, ScrMaxX - 50, 12);
+			DrawScreenBox( ScrMaxX - 170, 5, ScrMaxX - 70, 12);
 			SetColor( BLUE);
 			DrawScreenText( ScrMaxX - 170, 5, "%d, %d", MAPX( PointerX), MAPY( PointerY));
 			OldPointerX = PointerX;
@@ -493,46 +496,46 @@ void EditorLoop() /* SWAP! */
 			/* user wants to access the drop-down menus */
 			if (altkey & 0x08) {   /* if alt is pressed... */
 				if ((key & 0xFF00) == 0x2100)	   /* Scan code for F */
-					key = PullDownMenu( 18, 17,
+					key = PullDownMenu( -1, -1,
 									   "Save           F2", 0x3C00,    (BCINT) 'S', 1,
-										"Save As...     F3", 0x3D00,    (BCINT) 'A', 6,
+									   "Save As...     F3", 0x3D00,    (BCINT) 'A', 6,
 									   "Quit            Q", (BCINT) 'Q', (BCINT) 'Q', 1,
 									   NULL); 
 				else if ((key & 0xFF00) == 0x1200) {  /* Scan code for E */
 					
-					key = PullDownMenu( 66, 17,
-									   "Copy object(s)      O", (BCINT) 'O', (BCINT) 'C', 1,
-									   "Add object        Ins", 0x5200,    (BCINT) 'A', 1,
-									   "Delete object(s)  Del", 0x5300,    (BCINT) 'D', 1,
+					key = PullDownMenu( -1, -1,
+									   "Copy Object(s)      O", (BCINT) 'O', (BCINT) 'C', 1,
+									   "Add Object        Ins", 0x5200,    (BCINT) 'A', 1,
+									   "Delete Object(s)  Del", 0x5300,    (BCINT) 'D', 1,
 									   ((EditMode == OBJ_VERTEXES) ?
 										NULL :
 										"Preferences        F5"), 0x3F00,   (BCINT) 'P', 1,
 									   NULL);
 				}
 				else if ((key & 0xFF00) == 0x1F00)  /* Scan code for S */
-					key = PullDownMenu( 114, 17,
-									   "Find/Change       F4", 0x3e00,      (BCINT) 'F', 1,
-									   "Repeat last find   A", (BCINT) 'A', (BCINT) 'R', 1,
-									   "Next object        N", (BCINT) 'N', (BCINT) 'N', 1,
-									   "Prev object        P", (BCINT) 'P', (BCINT) 'P', 1,
-									   "Jump to object...  J", (BCINT) 'J', (BCINT) 'J', 1,
+					key = PullDownMenu( -1, -1,
+									   "Find/Mark         F4", 0x3e00,      (BCINT) 'F', 1,
+									   "Repeat Last Find   A", (BCINT) 'A', (BCINT) 'R', 1,
+									   "Next Object        N", (BCINT) 'N', (BCINT) 'N', 1,
+									   "Prev Object        P", (BCINT) 'P', (BCINT) 'P', 1,
+									   "Jump To Object...  J", (BCINT) 'J', (BCINT) 'J', 1,
 									   NULL);
 				else if ((key & 0xFF00) == 0x3200)  /* Scan code for M */
-					key = PullDownMenu( 178, 17,
+					key = PullDownMenu( -1, -1,
 									   ((EditMode == OBJ_THINGS) ?
 										"û Things              T" :
 										"  Things              T"), (BCINT) 'T', (BCINT) 'T', 3,
 									   ((EditMode == OBJ_LINEDEFS) ?
-										"û Linedefs+Sidedefs   L" :
-										"  Linedefs+Sidedefs   L"), (BCINT) 'L', (BCINT) 'L', 3,
+										"û LineDefs+SideDefs   L" :
+										"  LineDefs+SideDefs   L"), (BCINT) 'L', (BCINT) 'L', 3,
 									   ((EditMode == OBJ_VERTEXES) ?
 										"û Vertexes            V" :
 										"  Vertexes            V"), (BCINT) 'V', (BCINT) 'V', 3,
 									   ((EditMode == OBJ_SECTORS) ?
 										"û Sectors             S" :
 										"  Sectors             S"), (BCINT) 'S', (BCINT) 'S', 3,
-									   "  Next mode         Tab",  0x0009,    (BCINT) 'N', 3,
-									   "  Last mode   Shift+Tab",  0x0F00,    (BCINT) 'L', 3,
+									   "  Next Mode         Tab",  0x0009,    (BCINT) 'N', 3,
+									   "  Last Mode   Shift+Tab",  0x0F00,    (BCINT) 'L', 3,
 									   NULL);
 				else if ((key & 0xFF00) == 0x1700) { /* Scan code for I */
 					key = 0;
@@ -578,11 +581,11 @@ void EditorLoop() /* SWAP! */
 					CheckLevel( 354, 17);
 				}
 				else if ((key & 0xFF00) == 0x2300)  /* Scan code for H */
-					key = PullDownMenu( ScrMaxX, 17,
-									   "  Keyboard & mouse  F1",  0x3B00,    (BCINT) 'K', 3,
+					key = PullDownMenu( -1, -1,
+									   "  Keyboard & Mouse  F1",  0x3B00,    (BCINT) 'K', 3,
 									   (InfoShown ?
-										"û Info bar           I" :
-										"  Info bar           I"), (BCINT) 'I', (BCINT) 'I', 3,
+										"û Info Bar           I" :
+										"  Info Bar           I"), (BCINT) 'I', (BCINT) 'I', 3,
 									   "  About DETH...       ",  -1,	(BCINT) 'A', 3 ,
 									   NULL);
 				else {
@@ -597,9 +600,9 @@ void EditorLoop() /* SWAP! */
 				NotImplemented();
 				RedrawMap = REDRAW_ALL;
 			}
-
-
-			 /* simplify the checks later on */
+			
+			
+			/* simplify the checks later on */
 			if (isprint(key & 0x00ff)) 
 				keychar = toupper(key & 0x00ff);
 			else
@@ -612,21 +615,27 @@ void EditorLoop() /* SWAP! */
 				DrawPointer( ShowRulers);
 				ShowMousePointer();
 			}
-
+			
 			if(key == 0x3e00 && EditMode == OBJ_THINGS) {
-				FindThing(0);
+				FindThing(0, &Selected);
 				RedrawMap = REDRAW_ALL;
 			}
 			else if(keychar == 'A' && EditMode == OBJ_THINGS) {
-				FindThing(1);
+				FindThing(1, NULL);
 				RedrawMap = REDRAW_ALL;
 			}
+
+			else if(keychar == 'F' && EditMode == OBJ_THINGS) {
+				tff = SetThingFlagFilter(tff);
+				RedrawMap = REDRAW_ALL;
+			}
+			
 			
 			/* user wants to exit            AJB   */
 			else if (keychar == 'Q' && QisQuit == TRUE) {
 				if (!MadeChanges || Confirm(-1, -1,
-					"You have unsaved changes.  Do you really want to quit?",
-					NULL))
+											"You Have Unsaved Changes.  Do You Really Want To Quit?",
+											NULL))
 					break;
 				RedrawMap = REDRAW_ALL;
 			} 
@@ -638,8 +647,8 @@ void EditorLoop() /* SWAP! */
 				else {
 					ForgetSelection( &Selected);
 					if (!MadeChanges || Confirm(-1, -1,
-						"You have unsaved changes.  Do you really want to quit?",
-						NULL))
+												"You Have Unsaved Changes.  Do You Really Want To Quit?",
+												NULL))
 						break;
 					RedrawMap = REDRAW_ALL;
 				}
@@ -697,6 +706,7 @@ void EditorLoop() /* SWAP! */
 				Preferences( -1, -1);
 				RedrawMap = REDRAW_ALL;
 			}
+
 			
 			/* user wants to get the menu of misc. ops */
 			else if ((key & 0xFF00) == 0x4200) { /* 'F8' */
@@ -833,8 +843,11 @@ void EditorLoop() /* SWAP! */
 				MoveSpeed = MoveSpeed == 2 ? DefaultLargeScroll : 2;
 			
 			/* user wants to change the edit mode */
-			else if ((key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00 || keychar == 'T' || keychar == 'V' || keychar == 'L' || keychar == 'S') {
-				BCINT   PrevMode = EditMode;
+			else if ((key & 0x00FF) == 0x0009 ||
+					 (key & 0xFF00) == 0x0F00 ||
+					 keychar == 'T' || keychar == 'V'
+					 || keychar == 'L' || keychar == 'S') {
+				BCINT PrevMode = EditMode;
 				SelPtr NewSel;
 				
 				if ((key & 0x00FF) == 0x0009) { /* 'Tab' */
@@ -1155,7 +1168,216 @@ void EditorLoop() /* SWAP! */
 				RedrawMap = REDRAW_ALL;
 				StretchSelBox = FALSE;
 			}
+
+			else if (key == 5140) { /* CTRL 'T' */
+				char msg[ 80];
+				sprintf( msg, "Next Free Tag Number: %d", FindFreeTag());
+				Notify( -1, -1, msg, NULL); 
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if ((key == 9226 || key == 8196) && EditMode == OBJ_VERTEXES) { /* CTRL 'J or D' */
+				DeleteVerticesJoinLineDefs( Selected);
+				ForgetSelection ( &Selected);
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if ((key == 9226 || key == 8196) && EditMode == OBJ_LINEDEFS) { /* CTRL 'J or D' */
+				DeleteLineDefsJoinSectors ( &Selected);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+			else if (key == 12054 && EditMode == OBJ_LINEDEFS) { /* CTRL 'V' */
+				SplitLineDefs( Selected);
+				RedrawMap = REDRAW_ALL;
+			}
 			
+			else if (key == 8454 && EditMode == OBJ_LINEDEFS) { /* CTRL 'F' */
+				FlipLineDefs( Selected, TRUE);
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if (key == 7955 && EditMode == OBJ_LINEDEFS) { /* CTRL 'S' */
+				FlipLineDefs( Selected, FALSE);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+
+			else if (key == 12813 && EditMode == OBJ_VERTEXES) { /* CTRL 'M' */
+				MergeVertices ( &Selected);
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 11544 && EditMode == OBJ_LINEDEFS) { /* CTRL 'X' */
+				AlignTexturesX ( &Selected, TRUE, FALSE);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+			else if (key == 11640 && EditMode == OBJ_LINEDEFS) { /* 'X' */
+				AlignTexturesX ( &Selected, FALSE, FALSE);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+			else if (key == 5401 && EditMode == OBJ_LINEDEFS) { /* CTRL 'Y' */
+				AlignTexturesY ( &Selected, TRUE, FALSE);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+			else if (key == 5497 && EditMode == OBJ_LINEDEFS) { /* 'Y' */
+				AlignTexturesY ( &Selected, FALSE, FALSE);
+				RedrawMap = REDRAW_ALL; 
+			}
+
+			else if (key == 12813 && EditMode == OBJ_LINEDEFS) { /* CTRL 'M' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 0;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 6416 && EditMode == OBJ_LINEDEFS) { /* CTRL 'P' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 1;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 768 && EditMode == OBJ_LINEDEFS) { /* CTRL '2' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 2;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 5653 && EditMode == OBJ_LINEDEFS) { /* CTRL 'U' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 3;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 9740 && EditMode == OBJ_LINEDEFS) { /* CTRL 'L' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 4;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 4882 && EditMode == OBJ_LINEDEFS) { /* CTRL 'R' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 5;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 12290 && EditMode == OBJ_LINEDEFS) { /* CTRL 'B' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 6;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 8968 && EditMode == OBJ_LINEDEFS) {  /* CTRL 'H' */ 
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 7;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			}  
+
+			else if (key == 6159 && EditMode == OBJ_LINEDEFS) { /* CTRL 'O' */
+				SelPtr cur;
+				for(cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].flags ^= 0x01 << 8;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL; 
+			} 
+
+			else if (key == 12558 && EditMode == OBJ_LINEDEFS) { /* CTRL 'N' */
+				SelPtr cur;
+				for (cur = Selected; cur; cur = cur->next) {
+					LineDefs[ cur->objnum].type = 0;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if (key == 12558 && EditMode == OBJ_SECTORS) { /* CTRL 'N' */
+				SelPtr cur;
+				for (cur = Selected; cur; cur = cur->next) {
+					Sectors[ cur->objnum].special = 0;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if (key == 8196 && EditMode == OBJ_THINGS) { /* CTRL 'D' */
+				SelPtr cur;
+				for (cur = Selected; cur; cur = cur->next) {
+					Things[ cur->objnum].when ^= 0x08;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL;
+			}
+
+			else if (key == 12813 && EditMode == OBJ_THINGS) {  /* CTRL 'M' */ 
+				SelPtr cur;
+				for (cur = Selected; cur; cur = cur->next) {
+					Things[ cur->objnum].when ^= 0x10;
+				}
+				MadeChanges = TRUE;
+				RedrawMap = REDRAW_ALL;
+			}
+
+
+			else if (key == 7681 && EditMode == OBJ_LINEDEFS) { /* CTRL 'A' */
+				if (( Selected)->next == NULL || ( Selected)->next->next != NULL) {
+					Beep();
+					Notify( -1, -1, "You Must Select Exactly Two LineDefs", NULL);
+					RedrawMap = REDRAW_ALL;
+				}
+				else {
+					SplitLineDefsAndSector( ( Selected)->objnum, ( Selected)->next->objnum);
+					ForgetSelection( &Selected);
+					RedrawMap = REDRAW_ALL;
+				}
+			}
+
+			else if (key == 7681 && EditMode == OBJ_VERTEXES) { /* CTRL 'A' */
+				if (( Selected)->next == NULL || ( Selected)->next->next != NULL) {
+					Beep();
+					Notify( -1, -1, "You Must Select Exactly Two Vertices", NULL);
+					RedrawMap = REDRAW_ALL;
+				}
+				else {
+					SplitSector( ( Selected)->objnum, ( Selected)->next->objnum);
+					ForgetSelection( &Selected);
+					RedrawMap = REDRAW_ALL;
+				}
+			}
+
+
+
+
+
+
+
 			/* user wants to rotate things */
 			else if((keychar == ',') || (keychar == '.')) {
 				if(EditMode == OBJ_THINGS) {
@@ -1194,8 +1416,8 @@ void EditorLoop() /* SWAP! */
 			/* user wants to delete the current object */
 			else if ((key & 0xFF00) == 0x5300 && CurObject >= 0) { /* 'Del' */
 				if (EditMode == OBJ_THINGS || Expert || Confirm( -1, -1,
-																(Selected ? "Do you really want to delete these objects?" : "Do you really want to delete this object?"),
-																(Selected ? "This will also delete the objects bound to them." : "This will also delete the objects bound to it."))) {
+																(Selected ? "Do You Really Want To Delete These Objects?" : "Do You Really Want To Delete This Object?"),
+																(Selected ? "This Will Also Delete The Objects Bound To Them." : "This Will Also Delete The Objects Bound To It."))) {
 					if (Selected)
 						DeleteObjects( EditMode, &Selected);
 					else
@@ -1265,8 +1487,8 @@ void EditorLoop() /* SWAP! */
 							char msg[ 80];
 							
 							Beep();
-							sprintf( msg, "LineDef #%d already has two SideDefs", cur->objnum);
-							Notify( -1, -1, "Error: cannot add the new Sector", msg);
+							sprintf( msg, "LineDef #%d Already Has Two SideDefs", cur->objnum);
+							Notify( -1, -1, "Error: Cannot Add The New Sector", msg);
 							break;
 						}
 					if (cur == NULL) {
@@ -1309,7 +1531,7 @@ void EditorLoop() /* SWAP! */
 						InsertObject( EditMode, CurObject, MAPX( PointerX), MAPY( PointerY));
 					CurObject = GetMaxObjectNum( EditMode);
 					if (EditMode == OBJ_LINEDEFS) {
-						if (! Input2VertexNumbers( -1, -1, "Choose the two vertices for the new LineDef",
+						if (! Input2VertexNumbers( -1, -1, "Choose The Two Vertices For The New LineDef",
 												  &(LineDefs[ CurObject].start), &(LineDefs[ CurObject].end))) {
 							DeleteObject( EditMode, CurObject);
 							CurObject = -1;
@@ -1328,8 +1550,12 @@ void EditorLoop() /* SWAP! */
 			}
 			
 			/* user likes music */
-			else if (key)
+			else if (key) {
 				Beep();
+			}
+			/*
+				SetColor( BLUE);
+				DrawScreenText( ScrMaxX -370 , 5, "%d", key);  */
 			
 			/* redraw the (keyboard) pointer */
 			if (FakeCursor || ShowRulers) {
@@ -1415,7 +1641,7 @@ void DrawMapQuick()
 
 void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 {
-    BCINT  n, m;
+    BCINT  n, m, max;
     
     /* clear the screen */
 	/*AJB*/
@@ -1424,13 +1650,19 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 	else
 		ClearMapScreen(0);
     ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
+
+	if (InfoShown)
+		max = 13;
+	else
+		max = 0;
+
     
     /* draw the grid */
     if (drawgrid == TRUE && grid > 0) {					   
-		BCINT mapx0 = (BCINT)(((int)MAPX( 0)) & ((int)~(grid - 1)));
 		BCINT mapx1 = (BCINT)(((int)(MAPX( ScrMaxX) + grid)) & ((int)~(grid - 1)));
-		BCINT mapy0 = (BCINT)(((int)(MAPY( ScrMaxY) - grid)) & ((int)~(grid - 1)));
-		BCINT mapy1 = (BCINT)(((int)MAPY( 0)) & ((int)~(grid - 1)));
+		BCINT mapx0 = (BCINT)(((int)MAPX( 0)) & ((int)~(grid - 1)));
+		BCINT mapy1 = (BCINT)(((int)MAPY( 17)) & ((int)~(grid - 1)));
+		BCINT mapy0 = (BCINT)(((int)(MAPY( ScrMaxY - max) - grid)) & ((int)~(grid - 1)));
 		
 		SetColor(DARKBLUE);
 		for (n = mapx0; n <= mapx1; n += grid)
@@ -1448,16 +1680,16 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 			if (LineDefs[ n].flags & 1)
 				SetColor(LIGHTGRAY);
 			else if (LineDefs[ n].flags & 2)
-				SetColor(DARKGREEN);
+				SetColor(LINEDEFNOPASS);
 			else if (LineDefs[ n].flags & 32)
-				SetColor(DARKMAGENTA);
+				SetColor(LINEDEFSECRET);
 			else if (LineDefs[ n].flags & 64)
-				SetColor(DARKRED);
+				SetColor(LINEDEFNOSOUND);
 			else if (LineDefs[ n].flags & 128)
-				SetColor(ORANGE);
+				SetColor(LINEDEFNOMAP);
 			else
 				SetColor(DARKGRAY);
-			DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
+			DrawMapLine(Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
 						Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
 		}
 		break;
@@ -1473,23 +1705,23 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 		for (n = 0; n < NumLineDefs; n++) {
 			if (LineDefs[ n].type > 0) {
 				if (LineDefs[ n].tag > 0)
-					SetColor( LIGHTMAGENTA);
+					SetColor( LINEDEFTAGGED);
 				else
 					SetColor( LIGHTGREEN);
 			}
 			/*AJB*/
 			else if (LineDefs[ n].tag > 0)
-				SetColor( LIGHTRED);
+				SetColor( LINEDEFTAGGED);
 			else if (LineDefs[ n].flags & 1)
 				SetColor(LIGHTGRAY);
 			else if (LineDefs[ n].flags & 2)
-				SetColor(DARKGREEN);
+				SetColor(LINEDEFNOPASS);
 			else if (LineDefs[ n].flags & 32)
-				SetColor(DARKMAGENTA);
+				SetColor(LINEDEFSECRET);
 			else if (LineDefs[ n].flags & 64)
-				SetColor(DARKRED);
+				SetColor(LINEDEFNOSOUND);
 			else if (LineDefs[ n].flags & 128)
-				SetColor(ORANGE);
+				SetColor(LINEDEFNOMAP);
 			else
 				SetColor(DARKGRAY);
 			DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
@@ -1500,32 +1732,41 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 		ObjectsNeeded( OBJ_LINEDEFS, OBJ_SIDEDEFS, 0);
 		for (n = 0; n < NumLineDefs; n++) {
 			if ((m = LineDefs[ n].sidedef1) < 0 || (m = SideDefs[ m].sector) < 0)
-				SetColor( LIGHTRED);
+				SetColor( CYAN);
 			else {
 				/*AJB*/
 				if (Sectors[ m].tag > 0)
-					SetColor( LIGHTGREEN);
-				else if (Sectors[ m].special > 0)
-					SetColor( LIGHTCYAN);
+					SetColor( SECTORTAGGED);
+				else if (Sectors[ m].special == 7 || Sectors[ m].special == 5 || Sectors[ m].special == 16 || Sectors[ m].special == 4 || Sectors[ m].special == 11 || Sectors[ m].special == 6)
+				 	SetColor( SECTORPAINFUL);
+				else if (Sectors[ m].special == 9)
+					SetColor( SECTORSECRET);
+				else if (Sectors[ m].special == 2 || Sectors[ m].special == 3 || Sectors[ m].special == 13 || Sectors[ m].special == 12 || Sectors[ m].special == 1 || Sectors[ m].special == 8 || Sectors[ m].special == 17) 
+					SetColor( SECTORLIGHT);
 				else if (LineDefs[ n].flags & 1)
 					SetColor(LIGHTGRAY);
 				else if (LineDefs[ n].flags & 2)
-					SetColor(DARKGREEN);
+					SetColor(LINEDEFNOPASS);
 				else if (LineDefs[ n].flags & 32)
-					SetColor(DARKMAGENTA);
+					SetColor(LINEDEFSECRET);
 				else if (LineDefs[ n].flags & 64)
-					SetColor(DARKRED);
+					SetColor(LINEDEFNOSOUND);
 				else if (LineDefs[ n].flags & 128)
-					SetColor(ORANGE);
+					SetColor(LINEDEFNOMAP);
 				else
 					SetColor(DARKGRAY);
+
 				if ((m = LineDefs[ n].sidedef2) >= 0) {
 					if ((m = SideDefs[ m].sector) < 0)
-						SetColor( LIGHTRED);
+						SetColor( LIGHTBLUE);
 					else if (Sectors[ m].tag > 0)
-						SetColor( LIGHTGREEN);
-					else if (Sectors[ m].special > 0)
-						SetColor( LIGHTCYAN);
+						SetColor( SECTORTAGGED);
+					else if (Sectors[ m].special == 7 || Sectors[ m].special == 5 || Sectors[ m].special == 16 || Sectors[ m].special == 4 || Sectors[ m].special == 11 || Sectors[ m].special == 6)
+						SetColor( SECTORPAINFUL);
+					else if (Sectors[ m].special == 9)
+						SetColor( SECTORSECRET);
+					else if (Sectors[ m].special == 2 || Sectors[ m].special == 3 || Sectors[ m].special == 13 || Sectors[ m].special == 12 || Sectors[ m].special == 1 || Sectors[ m].special == 8 || Sectors[ m].special == 17) 
+						SetColor( SECTORLIGHT);
 				}
 			}
 			ObjectsNeeded( OBJ_LINEDEFS, OBJ_VERTEXES, 0);
@@ -1550,6 +1791,18 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
     ObjectsNeeded( OBJ_THINGS, 0);
     if (editmode == OBJ_THINGS) {
 		for (n = 0; n < NumThings; n++) {
+			if(!(Things[n].when & tff))
+				continue;
+			/* skip if the filter says so */
+
+			if(!((Things[n].when & TF_DM) ?
+				 (tff & TF_DM) : (tff & TF_NOT_DM)))
+				continue;
+			/* clear as mud:
+			   if this is a deathmatch thing and we are not displaying
+			   deathmatch things, skip it.
+			   same for non-deathmatch things. */
+			
 			m = GetThingRadius(Things[n].type);
 			SetColor( GetThingColour(Things[n].type));
 			if (ThingAngle == FALSE) {
@@ -1557,22 +1810,39 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
 				DrawMapLine( Things[n].xpos, Things[n].ypos - m, Things[n].xpos, Things[n].ypos + m);
 			}
 			if (ThingAngle == TRUE) {
-				if (Things[n].angle == 0) 
-					DrawMapVector(Things[n].xpos - m, Things[n].ypos, Things[n].xpos + m, Things[n].ypos);
-				if (Things[n].angle == 180) 
-					DrawMapVector(Things[n].xpos + m, Things[n].ypos, Things[n].xpos - m, Things[n].ypos);
-				if (Things[n].angle == 90) 
-					DrawMapVector(Things[n].xpos, Things[n].ypos - m, Things[n].xpos, Things[n].ypos + m);
-				if (Things[n].angle == 270) 
-					DrawMapVector(Things[n].xpos, Things[n].ypos + m, Things[n].xpos, Things[n].ypos - m);
-				if (Things[n].angle == 45) 
-					DrawMapVector(Things[n].xpos - m / 1.4, Things[n].ypos - m / 1.4, Things[n].xpos + m / 1.4, Things[n].ypos + m / 1.4);
-				if (Things[n].angle == 315) 
-					DrawMapVector(Things[n].xpos - m / 1.4, Things[n].ypos + m / 1.4, Things[n].xpos + m / 1.4, Things[n].ypos - m / 1.4);
-				if (Things[n].angle == 225) 
-					DrawMapVector(Things[n].xpos + m / 1.4, Things[n].ypos + m / 1.4, Things[n].xpos - m / 1.4, Things[n].ypos - m / 1.4);
-				if (Things[n].angle == 135) 
-					DrawMapVector(Things[n].xpos + m / 1.4, Things[n].ypos - m / 1.4, Things[n].xpos - m / 1.4, Things[n].ypos + m / 1.4);
+				switch(Things[n].angle) {
+				case 0:
+					DrawMapVector(Things[n].xpos - m, Things[n].ypos,
+								  Things[n].xpos + m, Things[n].ypos);
+					break;
+				case 180:
+					DrawMapVector(Things[n].xpos + m, Things[n].ypos,
+								  Things[n].xpos - m, Things[n].ypos);
+					break;
+				case 90:
+					DrawMapVector(Things[n].xpos, Things[n].ypos - m,
+								  Things[n].xpos, Things[n].ypos + m);
+					break;
+				case 270:
+					DrawMapVector(Things[n].xpos, Things[n].ypos + m,
+								  Things[n].xpos, Things[n].ypos - m);
+					break;
+				case 45:
+					DrawMapVector(Things[n].xpos - m / 1.4, Things[n].ypos - m / 1.4,
+								  Things[n].xpos + m / 1.4, Things[n].ypos + m / 1.4);
+					break;
+				case 315:
+					DrawMapVector(Things[n].xpos - m / 1.4, Things[n].ypos + m / 1.4,
+								  Things[n].xpos + m / 1.4, Things[n].ypos - m / 1.4);
+					break;
+				case 225:
+					DrawMapVector(Things[n].xpos + m / 1.4, Things[n].ypos + m / 1.4,
+								  Things[n].xpos - m / 1.4, Things[n].ypos - m / 1.4);
+					break;
+				case 135:
+					DrawMapVector(Things[n].xpos + m / 1.4, Things[n].ypos - m / 1.4,
+								  Things[n].xpos - m / 1.4, Things[n].ypos + m / 1.4);
+				}
 			}
 			DrawMapCircle( Things[ n].xpos, Things[ n].ypos, m);
 		}
@@ -1588,31 +1858,31 @@ void DrawMap( BCINT editmode, BCINT grid, Bool drawgrid) /* SWAP! */
     /* draw in the title bar */
     DrawScreenBox3D( 0, 0, ScrMaxX, 16);
     SetColor( WHITE);
-    DrawScreenText( 20,  4, "File  Edit  Search  Modes  Misc  Objects  Check");
-    DrawScreenText( 20,  6, "_     _     _       _       _    _        _    ");
-    DrawScreenText( ScrMaxX - 45, 4, "Help");
-    DrawScreenText( ScrMaxX - 45, 6, "_   ");
+    DrawScreenText( 7,  4, "File  Edit  Search  Mode  Misc(F8) Objects(F9) Check(F10)");
+    DrawScreenText( 7,  6, "_     _     _       _      _       _           _");
+    DrawScreenText( ScrMaxX - 66, 4, "Help(F1)");
+    DrawScreenText( ScrMaxX - 66, 6, "_"); 
     
     /* draw the bottom line, if needed */
     if (InfoShown) {
 		DrawScreenBox3D( 0, ScrMaxY - 12, ScrMaxX, ScrMaxY);
 		if (MadeMapChanges == TRUE)
-			DrawScreenText( 5, ScrMaxY - 9, "Editing %s on %s #", GetEditModeName( editmode), Level->dir.name);
+			DrawScreenText( 5, ScrMaxY - 9, "Editing %s On %s #", GetEditModeName( editmode), Level->dir.name);
 		else if (MadeChanges == TRUE)
-			DrawScreenText( 5, ScrMaxY - 9, "Editing %s on %s *", GetEditModeName( editmode), Level->dir.name);
+			DrawScreenText( 5, ScrMaxY - 9, "Editing %s On %s *", GetEditModeName( editmode), Level->dir.name);
 		else
-			DrawScreenText( 5, ScrMaxY - 9, "Editing %s on %s", GetEditModeName( editmode), Level->dir.name);
+			DrawScreenText( 5, ScrMaxY - 9, "Editing %s On %s", GetEditModeName( editmode), Level->dir.name);
 		if (Scale < 1.0)
 			DrawScreenText( ScrMaxX - 176, ScrMaxY - 9, "Scale: 1/%d  Grid: %d", (BCINT) (1.0 / Scale + 0.5), grid);
 		else
 			DrawScreenText( ScrMaxX - 176, ScrMaxY - 9, "Scale: %d/1  Grid: %d", (BCINT) Scale, grid);
 		if (farcoreleft() < 50000L) {
 			if (farcoreleft() < 20000L)
-				SetColor( LIGHTRED);
+				SetColor( CYAN);
 			else
 				SetColor( RED);
 		}
-		DrawScreenText( ScrCenterX - ((editmode == OBJ_LINEDEFS) ? 10 : 50), ScrMaxY - 9, "Free mem: %lu", farcoreleft());
+		DrawScreenText( ScrCenterX - ((editmode == OBJ_LINEDEFS) ? 10 : 50), ScrMaxY - 9, "Free Mem: %lu", farcoreleft());
     }
 }
 
@@ -1694,59 +1964,98 @@ void GoToObject( BCINT objtype, BCINT objnum) /* SWAP! */
 
 
 
-void FindThing(int mode)
+void FindThing(int mode, SelPtr *List)
 {
-	static int thing_no = 0, last = 0;
+	static int thing_no = 0, last = -1;
 	static BCINT type = -1;
+	int action = 0;
+	Bool mark = FALSE;
+	static thing_class *c = NULL;
+	thing_type *t = NULL;
+	
+	if(List) {
+		action = DisplayMenu(-1, -1, "Find/Mark",
+							 "Find Things",
+							 "Find & Mark Things",
+							 "Mark By Thing Class",NULL);
 
+		if(action == 2)
+			mark = TRUE;
+		
+		if(action == 3) {
+			c = SelectThingClass();
+			if(c)
+				for(t = c->types; t; t = t->next)
+					for(thing_no = 0; thing_no < NumThings; thing_no++)
+						if(Things[thing_no].type == t->type)
+							SelectObject(List, thing_no);
+			return;
+		}
+
+ 		if(action == 0)
+			return;
+
+	}
+	
 	if(mode == 0 || type == -1) {
 		type = SelectThingType();
 		thing_no = 0;
 	}
-
+	
 	if(type == -1)
 		return;
+	
+	if(mark) {
+		for(thing_no = 0; thing_no < NumThings; thing_no++)
+			if(Things[thing_no].type == type)
+				SelectObject(List, thing_no);
+		
+		return;
+	}
 
 	thing_no = last + 1;
-	while(thing_no != last) {
+	if(last == -1)
+		last = 0;
+		
+	do {
 		if(thing_no == NumThings)
 			thing_no = 0;
-
-		if(Things[thing_no].type == type) {
-			last = thing_no;
-			GoToObject(OBJ_THINGS, thing_no);
-			return;
+		else {
+			if(Things[thing_no].type == type) {
+				last = thing_no;
+				GoToObject(OBJ_THINGS, thing_no);
+				return;
+			}
+			thing_no++;
 		}
-
-		thing_no++;
-	}
+	} while(thing_no != last);
 }
 
 
 void CopyFile(const char *from, const char *to)
 {
-	FILE *f, *t;
+	FILE *f = NULL, *t = NULL;
 	char *buffer;
 	long bytes, left;
-
+	
 	if(!((buffer = malloc(65536)) &&
 	     (f = fopen(from, "rb")) &&
 	     (t = fopen(to, "wb"))))
-		ProgError("Unable to copy file");
-
+		ProgError("Unable To Copy File");
+	
 	fseek(f, 0, SEEK_END);
 	left = ftell(f);
 	fseek(f, 0, SEEK_SET);
-
+	
 	while(left > 0) {
 		bytes = fread(buffer, 1, 65536, f);
 		fwrite(buffer, 1, bytes, t);
 		left -= bytes;
 	}
-
+	
 	fclose(f);
 	fclose(t);
-
+	
 	free(buffer);
 } 
 

@@ -17,7 +17,6 @@
    Forget the above, use GCC - you don't have to worry about memory models!
    
    If you have GNU Make just type: make
-   
    */
 
 
@@ -27,13 +26,13 @@
 
 /* global variables */
 FILE  *logfile =		NULL;		/* filepointer to the error log */
+Bool  ShowConfig = 		TRUE;
 Bool  Registered = 		FALSE;		/* registered or shareware game? */
 Bool  Debug = 			FALSE;		/* are we debugging? */
 Bool  SwapButtons = 		FALSE;		/* swap right and middle mouse buttons */
 Bool  Quiet = 			FALSE;		/* don't play a sound when an object is selected */
 Bool  Quieter =			FALSE;		/* don't play any sound, even when an error occurs */
 Bool  Expert = 			FALSE;		/* don't ask for confirmation for some operations */
-Bool  VertConf = 		FALSE;		/* don't ask for confirmation for some operations */
 char  *CfgFile = 		DEU_CONFIG_FILE;	/* name of the configuration file */
 BCINT InitialScale = 		8;		/* initial zoom factor for map */
 BCINT VideoMode = 		2;		/* default video mode for VESA/SuperVGA */
@@ -56,6 +55,9 @@ char  *DefaultDoorTexture = 	"MARBFAC3";	/* default door texture */
 BCINT DefaultFloorHeight = 	0;		/* default floor height */
 BCINT DefaultCeilingHeight = 	128;		/* default ceiling height */
 BCINT DefaultLargeScroll = 	10;		/* default large scroll factor */
+BCINT CloseToLine = 	2;	
+Bool  VertConf = 		FALSE;		/* don't ask for confirmation for some operations */
+
 Bool  Select0 = 		TRUE;		/* select object 0 by default when switching modes */
 Bool  Reminder = 		TRUE;		/* display a funny message when DETH starts */
 char  *MainWad = 		"DOOM.WAD"; 	/* name of the main wad file */
@@ -70,11 +72,11 @@ char *RegTest = 		NULL;
 OptDesc options[] =				/* description of the command line options */
 {
 	/*  short & long names     type            message if true/changed        message if false              where to store the value */
+    { "",   "showconfig",  OPT_BOOLEAN,    "",							  NULL,							&ShowConfig },
     { "d",  "debug",       OPT_BOOLEAN,    "Debug mode ON",               "Debug mode OFF",             &Debug },
     { "q",  "quiet",       OPT_BOOLEAN,    "Quiet mode ON",               "Quiet mode OFF",             &Quiet },
     { "qq", "quieter",     OPT_BOOLEAN,    "Quieter mode ON",             "Quieter mode OFF",           &Quieter },
     { "e",  "expert",      OPT_BOOLEAN,    "Expert mode ON",              "Expert mode OFF",            &Expert },
-    { "",   "vertconf",    OPT_BOOLEAN,    "Confirm Vertices Merge",      NULL,            		&VertConf },
     { "qi",  "qisquit",    OPT_BOOLEAN,    "Quit on Q",                   "Save on Q",                  &QisQuit },
     { "sb", "swapbuttons", OPT_BOOLEAN,    "Mouse buttons swapped",       "Mouse buttons restored",     &SwapButtons },
     { "w",  "main",        OPT_STRING,     "Main WAD file",               NULL,                         &MainWad },
@@ -82,6 +84,8 @@ OptDesc options[] =				/* description of the command line options */
     { "pw", "pwad",        OPT_STRINGACC,  "Patch WAD file",              NULL,                         &PatchWads },
     { "",   "config",      OPT_STRING,     "Config file",                 NULL,                         &CfgFile },
     { "z",  "zoom",        OPT_INTEGER,    "Initial zoom factor",         NULL,                         &InitialScale },
+    { "", "closetoline",   OPT_INTEGER,    "Close to Line to Split",	  NULL,                         &CloseToLine },
+    { "",   "vertconf",    OPT_BOOLEAN,    "Confirm Vertices Merge",      NULL,            				&VertConf },
     { "v",  "video",       OPT_INTEGER,    "Default video mode",          NULL,                         &VideoMode },
     { "",   "bgi",         OPT_STRING,     "Default video driver",        NULL,                         &BGIDriver },
     { "fc", "fakecursor",  OPT_BOOLEAN,    "Fake cursor ON",              "Fake cursor OFF",            &FakeCursor },
@@ -90,7 +94,7 @@ OptDesc options[] =				/* description of the command line options */
     { "i",  "infobar",     OPT_BOOLEAN,    "Info bar shown",              "Info bar hidden",            &InfoShown },
     { "a",  "addselbox",   OPT_BOOLEAN,    "Additive selection box",      "Select objects in box only", &AdditiveSelBox },
     { "sf", "splitfactor", OPT_INTEGER,    "Split factor",                NULL,                         &SplitFactor },
-    { "sq", "squarecircles",OPT_BOOLEAN,   "Drawing ruler with squares",  NULL, 			&square_circles },
+    { "sq", "squarecircles",OPT_BOOLEAN,   "Drawing ruler with squares",  NULL, 						&square_circles },
     { "",   "walltexture", OPT_STRING,     "Default wall texture",        NULL,                         &DefaultWallTexture },
     { "",   "lowertexture",OPT_STRING,     "Default lower wall texture",  NULL,                         &DefaultLowerTexture },
     { "",   "uppertexture",OPT_STRING,     "Default upper wall texture",  NULL,                         &DefaultUpperTexture },
@@ -213,13 +217,17 @@ void ParseCommandLineOptions( int argc, char *argv[])
 				case OPT_BOOLEAN:
 					if (argv[ 0][ 0] == '-') {
 						*((Bool *) (options[ optnum].data_ptr)) = TRUE;
-						if (options[ optnum].msg_if_true)
-							printf("%s\n", options[ optnum].msg_if_true);
+						if (options[ optnum].msg_if_true) {
+							if (ShowConfig)
+								printf("%s\n", options[ optnum].msg_if_true);
+						}
 					}
 					else {
 						*((Bool *) (options[ optnum].data_ptr)) = FALSE;
-						if (options[ optnum].msg_if_false)
-							printf("%s\n", options[ optnum].msg_if_false);
+						if (options[ optnum].msg_if_false) {
+							if (ShowConfig)
+								printf("%s\n", options[ optnum].msg_if_false);
+						}
 					}
 					break;
 				case OPT_INTEGER:
@@ -228,8 +236,10 @@ void ParseCommandLineOptions( int argc, char *argv[])
 					argv++;
 					argc--;
 					*((BCINT *) (options[ optnum].data_ptr)) = atoi( argv[ 0]);
-					if (options[ optnum].msg_if_true)
-						printf("%s: %d\n", options[ optnum].msg_if_true, atoi( argv[ 0]));
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %d\n", options[ optnum].msg_if_true, atoi( argv[ 0]));
+					}
 					break;
 				case OPT_STRING:
 					if (argc <= 1)
@@ -237,8 +247,10 @@ void ParseCommandLineOptions( int argc, char *argv[])
 					argv++;
 					argc--;
 					*((char **) (options[ optnum].data_ptr)) = argv[ 0];
-					if (options[ optnum].msg_if_true)
-						printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+					}
 					break;
 				case OPT_STRINGACC:
 					if (argc <= 1)
@@ -246,8 +258,10 @@ void ParseCommandLineOptions( int argc, char *argv[])
 					argv++;
 					argc--;
 					AppendItemToList( (char ***) options[ optnum].data_ptr, argv[ 0]);
-					if (options[ optnum].msg_if_true)
-						printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+					}
 					break;
 				case OPT_STRINGLIST:
 					if (argc <= 1)
@@ -256,8 +270,10 @@ void ParseCommandLineOptions( int argc, char *argv[])
 						argv++;
 						argc--;
 						AppendItemToList( (char ***) options[ optnum].data_ptr, argv[ 0]);
-						if (options[ optnum].msg_if_true)
-							printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+						if (options[ optnum].msg_if_true) {
+							if (ShowConfig)
+								printf("%s: %s\n", options[ optnum].msg_if_true, argv[ 0]);
+						}
 					}
 					break;
 				default:
@@ -329,35 +345,45 @@ void ParseConfigFileOptions( char *filename)
 				case OPT_BOOLEAN:
 					if (!stricmp(value, "yes") || !stricmp(value, "true") || !stricmp(value, "on") || !stricmp(value, "1")) {
 						*((Bool *) (options[ optnum].data_ptr)) = TRUE;
-						if (options[ optnum].msg_if_true)
-							printf("%s\n", options[ optnum].msg_if_true);
+						if (options[ optnum].msg_if_true) {
+							if (ShowConfig)
+								printf("%s\n", options[ optnum].msg_if_true);
+						}
 					}
 					else if (!stricmp(value, "no") || !stricmp(value, "false") || !stricmp(value, "off") || !stricmp(value, "0")) {
 						*((Bool *) (options[ optnum].data_ptr)) = FALSE;
-						if (options[ optnum].msg_if_false)
-							printf("%s\n", options[ optnum].msg_if_false);
+						if (options[ optnum].msg_if_false) {
+							if (ShowConfig)
+								printf("%s\n", options[ optnum].msg_if_false);
+						}
 					}
 					else
 						ProgError( "invalid value for option %s: \"%s\"", option, value);
 					break;
 				case OPT_INTEGER:
 					*((BCINT *) (options[ optnum].data_ptr)) = atoi( value);
-					if (options[ optnum].msg_if_true)
-						printf("%s: %d\n", options[ optnum].msg_if_true, atoi( value));
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %d\n", options[ optnum].msg_if_true, atoi( value)); 
+					}
 					break;
 				case OPT_STRING:
 					p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 					strcpy( p, value);
 					*((char **) (options[ optnum].data_ptr)) = p;
-					if (options[ optnum].msg_if_true)
-						printf("%s: %s\n", options[ optnum].msg_if_true, value);
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %s\n", options[ optnum].msg_if_true, value); 
+					}
 					break;
 				case OPT_STRINGACC:
 					p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 					strcpy( p, value);
 					AppendItemToList( (char ***) options[ optnum].data_ptr, p);
-					if (options[ optnum].msg_if_true)
-						printf("%s: %s\n", options[ optnum].msg_if_true, value);
+					if (options[ optnum].msg_if_true) {
+						if (ShowConfig)
+							printf("%s: %s\n", options[ optnum].msg_if_true, value);
+					}
 					break;
 				case OPT_STRINGLIST:
 					while (value[ 0]) {
@@ -371,8 +397,10 @@ void ParseConfigFileOptions( char *filename)
 						p = (char*)GetMemory( (strlen( value) + 1) * sizeof( char));
 						strcpy( p, value);
 						AppendItemToList( (char ***) options[ optnum].data_ptr, p);
-						if (options[ optnum].msg_if_true)
-							printf("%s: %s\n", options[ optnum].msg_if_true, value);
+						if (options[ optnum].msg_if_true) {
+							if (ShowConfig)
+								printf("%s: %s\n", options[ optnum].msg_if_true, value);
+						}
 						value = option;
 					}
 					break;
@@ -422,9 +450,17 @@ void Usage( FILE *where)
 /* output the credits of the program to the specified file */
 
 void Credits( FILE *where) {
+
+
+  fprintf( where, "\n     DDDDDDD   EEEEEEE  TTTTTTT  H     H        22222      5555555\n");
+    fprintf( where, "     D      D  E           T     H     H       2     2     5\n");
+    fprintf( where, "     D      D  EEEEEE      T     HHHHHHH           22      555555\n");
+    fprintf( where, "     D      D  E           T     H     H         22              5\n");
+    fprintf( where, "     DDDDDDD   EEEEEEE     T     H     H       2222222  .  555555\n");
     fprintf( where, "\nDETH: Doom Editor for Total Headcases, ver %s.\n", DETH_VERSION);
-    fprintf( where,   " By Simon Oke and Antony Burden. (cserve 100141,277)\n\n");
-    fprintf( where,   " Thanks to John Anderson and Jim F Flynn for support and bug hunting.\n\n");
+    fprintf( where,   " By Simon Oke and Antony J. Burden. (cserve 100141,277)\n\n");
+    fprintf( where,   " Thanks to John W. Anderson for Support and Testing,\n");
+    fprintf( where,	  "   and Jim F. Flynn for Advice and Suggestions.\n\n");
     fprintf( where,   "Derived from DEU, ver %s.\n", DEU_VERSION);
     fprintf( where,   " By Rapha‰l Quinet and Brendon J Wyber, Per Allansson and Per Kofod.\n\n");
 }
@@ -608,8 +644,11 @@ void MainLoop()
 		else if (!strcmp( com, "EDIT") || !strcmp( com, "E") ||
 				 !strcmp( com, "CREATE") || !strcmp( com, "C")) {
 			SList tokens, t;
-			Bool new = (strcmp( com, "EDIT") && strcmp( com, "E"));
-
+			
+			Bool new = (strcmp(com, "EDIT") && strcmp(com, "E"));
+			/* if com is neither of these, the user wants
+			   to start from scratch */
+			
 			tokens = NULL;
 			com = strtok( NULL, " ");
 			while(com) {
@@ -618,7 +657,7 @@ void MainLoop()
 			}
 			if(tokens) {
 				MakeLevelName(tokens);
-
+				
 				/* now forget the token list */
 				while(tokens) {
 					t = tokens->next;
@@ -627,7 +666,7 @@ void MainLoop()
 					tokens = t;
 				}
 			}
-				
+			
 			EditLevel(new);
 		}
 		

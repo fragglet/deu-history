@@ -23,7 +23,7 @@ clean:
 	del deth.exe
 
 zip:
-	zip -u source.zip *.c *.h makefile *.cfg *.dm? *.her *.dm
+	zip -r -u source.zip *.c *.h makefile *.cfg *.dm? *.her *.dm
 
 tags: dummy
 	ctags -r -v *.c *.h

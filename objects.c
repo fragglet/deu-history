@@ -169,7 +169,11 @@ BCINT GetCurObject( BCINT objtype, BCINT x0, BCINT y0, BCINT x1, BCINT y1) /* SW
     case OBJ_THINGS:
 		ObjectsNeeded( OBJ_THINGS, 0);
 		for (n = 0; n < NumThings; n++)
-			if (Things[ n].xpos >= x0 && Things[ n].xpos <= x1 && Things[ n].ypos >= y0 && Things[ n].ypos <= y1) {
+			if (Things[n].when & tff &&
+				((Things[n].when & TF_DM) ?
+				(tff & TF_DM) : (tff & TF_NOT_DM)) &&
+				Things[ n].xpos >= x0 && Things[ n].xpos <= x1 &&
+				Things[ n].ypos >= y0 && Things[ n].ypos <= y1) {
 				cur = n;
 				break;
 			}
@@ -344,10 +348,10 @@ void HighlightObject( BCINT objtype, BCINT objnum, BCINT color) /* SWAP! */
 		setlinestyle(SOLID_LINE, 0, 2 );  /* AJB */
 		DrawMapVector( Vertexes[ LineDefs[ objnum].start].x, Vertexes[ LineDefs[ objnum].start].y,
 					  Vertexes[ LineDefs[ objnum].end].x, Vertexes[ LineDefs[ objnum].end].y);
-		if (color != LIGHTRED && LineDefs[ objnum].tag > 0) {
+		if (color != LINEDEFTAGGED && LineDefs[ objnum].tag > 0) {
 			for (m = 0; m < NumSectors; m++)
 				if (Sectors[ m].tag == LineDefs[ objnum].tag)
-					HighlightObject( OBJ_SECTORS, m, LIGHTRED);
+					HighlightObject( OBJ_SECTORS, m, LINEDEFTAGGED);
 		}
 		setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
 		break;
@@ -366,11 +370,11 @@ void HighlightObject( BCINT objtype, BCINT objnum, BCINT color) /* SWAP! */
 				(LineDefs[n].sidedef2>=0 && SideDefs[LineDefs[n].sidedef2].sector == objnum ))
 				DrawMapLine( Vertexes[ LineDefs[ n].start].x, Vertexes[ LineDefs[ n].start].y,
 							Vertexes[ LineDefs[ n].end].x, Vertexes[ LineDefs[ n].end].y);
-		if (color != LIGHTRED && Sectors[ objnum].tag > 0) {
+		if (color != LINEDEFTAGGED && Sectors[ objnum].tag > 0) {
 			for (m = 0; m < NumLineDefs; m++)
 				if (LineDefs[ m].tag == Sectors[ objnum].tag) {
 					setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
-					HighlightObject( OBJ_LINEDEFS, m, LIGHTRED);
+					HighlightObject( OBJ_LINEDEFS, m, LINEDEFTAGGED);
 				}
 		} 
 		setlinestyle(SOLID_LINE, 0, NORM_WIDTH);
@@ -1341,8 +1345,8 @@ void DeleteVerticesJoinLineDefs( SelPtr obj) /* SWAP! */
 		}
 		if (lstart < 0 || lend < 0) {
 			Beep();
-			sprintf(msg, "Cannot delete Vertex #%d and join the LineDefs", cur->objnum);
-			Notify( -1, -1, msg, "The Vertex must be the start of one LineDef and the end of another one");
+			sprintf(msg, "Cannot Delete Vertex #%d And Join The LineDefs", cur->objnum);
+			Notify( -1, -1, msg, "The Vertex Must Be The Start Of One LineDef And The End Of Another One");
 			continue;
 		}
 		LineDefs[ lend].end = LineDefs[ lstart].end;
@@ -1368,7 +1372,7 @@ void MergeVertices( SelPtr *list) /* SWAP! */
     UnSelectObject( list, v);
     if (*list == NULL) {
 		Beep();
-		Notify( -1, -1, "You must select at least two vertices", NULL);
+		Notify( -1, -1, "You Must Select At Least Two Vertices", NULL);
 		return;
     }
     /* change the LineDefs starts & ends */
@@ -1415,7 +1419,7 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
 		for (v = 0; v < NumVertexes; v++)
 			if (v != refv && Vertexes[ refv].x == Vertexes[ v].x && Vertexes[ refv].y == Vertexes[ v].y) {
 				redraw = TRUE;
-				if (confirmed || (Expert && !VertConf) || Confirm( -1, -1, "Some Vertices occupy the same position", "Do you want to merge them into one?")) {
+				if (confirmed || (Expert && !VertConf) || Confirm( -1, -1, "Some Vertices Occupy The Same Position", "Do You Want To Merge Them Into One?")) {
 					/* don't ask for confirmation twice */
 					confirmed = TRUE;
 					/* merge the two vertices */
@@ -1456,9 +1460,9 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
 				/* one Vertex had a LineDef bound to it -- check it later */
 				isldend = TRUE;
 			}
-			else if (IsLineDefInside( ld, Vertexes[ refv].x - 0, Vertexes[ refv].y - 0, Vertexes[ refv].x + 0, Vertexes[ refv].y + 0)) {
+			else if (IsLineDefInside( ld, Vertexes[ refv].x - CloseToLine, Vertexes[ refv].y - CloseToLine, Vertexes[ refv].x + CloseToLine, Vertexes[ refv].y + CloseToLine)) {
 				redraw = TRUE;
-				if (confirmed || Expert || Confirm( -1, -1, "Some Vertices are on a LineDef", "Do you want to split the LineDef there?")) {
+				if (confirmed || Expert || Confirm( -1, -1, "Some Vertices Are On A LineDef", "Do You Want To Split The LineDef There?")) {
 					/* don't ask for confirmation twice */
 					confirmed = TRUE;
 					/* split the LineDef */
@@ -1497,7 +1501,7 @@ Bool AutoMergeVertices( SelPtr *list) /* SWAP! */
 			if ((LineDefs[ v].start == LineDefs[ ld].start && LineDefs[ v].end == LineDefs[ ld].end)
 				|| (LineDefs[ v].start == LineDefs[ ld].end && LineDefs[ v].end == LineDefs[ ld].start)) {
 				redraw = TRUE;
-				if (confirmed || Expert || Confirm( -1, -1, "Some LineDefs are superimposed", "Do you want to merge them into one?")) {
+				if (confirmed || Expert || Confirm( -1, -1, "Some LineDefs Are Superimposed", "Do You Want To Merge Them Into One?")) {
 					/* don't ask for confirmation twice */
 					confirmed = TRUE;
 					/* test if the LineDefs have the same orientation */
@@ -1586,7 +1590,7 @@ void SplitSector( BCINT vertex1, BCINT vertex2) /* SWAP! */
     s = GetCurObject( OBJ_SECTORS, Vertexes[ vertex1].x, Vertexes[ vertex1].y, Vertexes[ vertex2].x, Vertexes[ vertex2].y);
     if (s < 0) {
 		Beep();
-		sprintf( msg1, "There is no Sector between Vertex #%d and Vertex #%d", vertex1, vertex2);
+		sprintf( msg1, "There Is No Sector Between Vertex #%d And Vertex #%d", vertex1, vertex2);
 		Notify( -1, -1, msg1, NULL);
 		return;
     }
@@ -1612,18 +1616,18 @@ void SplitSector( BCINT vertex1, BCINT vertex2) /* SWAP! */
 		}
 		if (l >= NumLineDefs) {
 			Beep();
-			sprintf( msg1, "Cannot find a closed path from Vertex #%d to Vertex #%d", vertex1, vertex2);
+			sprintf( msg1, "Cannot Find A Closed Path From Vertex #%d To Vertex #%d", vertex1, vertex2);
 			if (curv == vertex1)
 				sprintf( msg2, "There is no SideDef starting from Vertex #%d on Sector #%d", vertex1, s);
 			else
-				sprintf( msg2, "Check if Sector #%d is closed (cannot go past Vertex #%d)", s, curv);
+				sprintf( msg2, "Check If Sector #%d Is Closed (Cannot Go Past Vertex #%d)", s, curv);
 			Notify( -1, -1, msg1, msg2);
 			ForgetSelection( &llist);
 			return;
 		}
 		if (curv == vertex1) {
 			Beep();    
-			sprintf( msg1, "Vertex #%d is not on the same Sector (#%d) as Vertex #%d", vertex2, s, vertex1);
+			sprintf( msg1, "Vertex #%d Is Not On The Same Sector (#%d) As Vertex #%d", vertex2, s, vertex1);
 			Notify( -1, -1, msg1, NULL);
 			ForgetSelection( &llist);
 			return;
@@ -1708,7 +1712,7 @@ void SplitLineDefsAndSector( BCINT linedef1, BCINT linedef2) /* SWAP! */
 		s4 = SideDefs[ s4].sector;
     if ((s1 < 0 || (s1 != s3 && s1 != s4)) && (s2 < 0 || (s2 != s3 && s2 != s4))) {
 		Beep();
-		sprintf( msg, "LineDefs #%d and #%d are not adjacent to the same Sector", linedef1, linedef2);
+		sprintf( msg, "LineDefs #%d And #%d Are Not Adjacent To The Same Sector", linedef1, linedef2);
 		Notify( -1, -1, msg, NULL);
 		return;
     }
@@ -1772,7 +1776,7 @@ void DeleteLineDefsJoinSectors( SelPtr *ldlist) /* SWAP! */
 		sd2 = LineDefs[ cur->objnum].sidedef2;
 		if (sd1 < 0 || sd2 < 0) {
 			Beep();
-			sprintf( msg, "ERROR: LineDef #%d has only one side", cur->objnum);
+			sprintf( msg, "ERROR: LineDef #%d Has Only One Side", cur->objnum);
 			Notify( -1, -1, msg, NULL);
 			return;
 		}
@@ -1781,8 +1785,8 @@ void DeleteLineDefsJoinSectors( SelPtr *ldlist) /* SWAP! */
 		s2 = SideDefs[ sd2].sector;
 		if (s1 < 0 || s2 < 0) {
 			Beep();
-			sprintf( msg, "ERROR: LineDef #%d has two sides, but one", cur->objnum);
-			Notify( -1, -1, msg, "side is not bound to any Sector");
+			sprintf( msg, "ERROR: LineDef #%d Has Two Sides, But One", cur->objnum);
+			Notify( -1, -1, msg, "Side Is Not Bound To Any Sector");
 			return;
 		}
     }
@@ -1846,13 +1850,13 @@ void MakeDoorFromSector( BCINT sector) /* SWAP! */
     /* a normal door has two sides... */
     if (s < 2) {
 		Beep();
-		Notify( -1, -1, "The door must be connected to two other Sectors.", NULL);
+		Notify( -1, -1, "The Door Must Be Connected To Two Other Sectors.", NULL);
 		ForgetSelection( &ldok);
 		ForgetSelection( &ldflip);
 		ForgetSelection( &ld1s);
 		return;
     }
-    if ((s > 2) && !(Expert || Confirm( -1, -1, "The door will have more than two sides.", "Do you still want to create it?"))) {
+    if ((s > 2) && !(Expert || Confirm( -1, -1, "The Door Will Have More Than Two Sides.", "Do You Still Want To Create It?"))) {
 		ForgetSelection( &ldok);
 		ForgetSelection( &ldflip);
 		ForgetSelection( &ld1s);
@@ -1954,7 +1958,7 @@ void MakeLiftFromSector( BCINT sector) /* SWAP! */
     /* there must be a way to go on the lift... */
     if (sect == NULL) {
 		Beep();
-		Notify( -1, -1, "The lift must be connected to at least one other Sector.", NULL);
+		Notify( -1, -1, "The Lift Must Be Connected To At Least One Other Sector.", NULL);
 		ForgetSelection( &ldok);
 		ForgetSelection( &ldflip);
 		ForgetSelection( &ld1s);
@@ -2194,7 +2198,7 @@ void AlignTexturesY( SelPtr *list, Bool NoChecking, Bool UseOffset)
 				if(UseMouse)
 					HideMousePointer();
 				
-				sprintf(prompt, "Enter initial offset between 0 and 127");
+				sprintf(prompt, "Enter Initial Offset Between 0 And 127");
 				
 				x0 = (ScrMaxX - 25 - 8 * strlen(prompt)) / 2;
 				y0 = (ScrMaxY - 55) / 2;
@@ -2203,7 +2207,7 @@ void AlignTexturesY( SelPtr *list, Bool NoChecking, Bool UseOffset)
 				SetColor(WHITE);
 				DrawScreenText( x0 + 10, y0 + 8, prompt);
 				
-				while (((key=InputInteger(x0+10, y0+28, &InitOffset, 0, 127)) & 0x00FF)!=0x000D
+				while (((key=InputInteger(-1, -1, &InitOffset, 0, 127)) & 0x00FF)!=0x000D
 					   && (key & 0x00FF) != 0x001B)
 					Beep();
 				
@@ -2353,7 +2357,7 @@ void AlignTexturesX( SelPtr *list, Bool NoChecking, Bool UseOffset)
 				if(UseMouse)
 					HideMousePointer();
 				
-				sprintf(prompt, "Enter initial offset between 0 and %d", TextureWidth - 1);
+				sprintf(prompt, "Enter Initial Offset Between 0 And %d", TextureWidth - 1);
 				
 				x0 = (ScrMaxX - 25 - 8 * strlen(prompt)) / 2;
 				y0 = (ScrMaxY - 55) / 2;
@@ -2362,7 +2366,7 @@ void AlignTexturesX( SelPtr *list, Bool NoChecking, Bool UseOffset)
 				SetColor(WHITE);
 				DrawScreenText( x0 + 10, y0 + 8, prompt);
 				
-				while (((key=InputInteger(x0+10, y0+28, &InitOffset, 0, TextureWidth))&0x00FF)!=0x000D
+				while (((key=InputInteger(-1, -1, &InitOffset, 0, TextureWidth))&0x00FF)!=0x000D
 					   && (key & 0x00FF) != 0x001B)
 					Beep();
 				
@@ -2450,7 +2454,7 @@ BCINT CommonVertex(BCINT ld1, BCINT ld2)
 		return ld1e;
 	
 	Beep();
-	sprintf( errormessage, "LineDefs #%d and #%d are not joined", ld1, ld2);
+	sprintf( errormessage, "LineDefs #%d And #%d Are Not Joined", ld1, ld2);
 	Notify( -1, -1, errormessage, NULL);
 	return -1;
 }
@@ -2485,30 +2489,25 @@ void DistributeLightLevels( SelPtr obj) /* SWAP! */
 
 
 /*
-   Distribute sector floor heights
+   Change sector ceiling heights by a value 
    */
 
-void DistributeSectorFloors( SelPtr obj) /* SWAP! */
+void ChangeCeilingHeights( SelPtr obj) /* SWAP! */
 {
     SelPtr cur;
-    BCINT  n, num, floor1h, floor2h;
+    BCINT  val = 0;
     
     ObjectsNeeded( OBJ_SECTORS, 0);
     
-    num = 0;
-    for (cur = obj; cur->next; cur = cur->next)
-		num++;
+	val = InputIntegerValue(-1, -1, -16384, 16383, 0);
     
-    floor1h = Sectors[ obj->objnum].floorh;
-    floor2h = Sectors[ cur->objnum].floorh;
-    
-    n = 0;
     for (cur = obj; cur; cur = cur->next) {
-		Sectors[ cur->objnum].floorh = floor1h + n * (floor2h - floor1h) / num;
-		n++;
+		Sectors[ cur->objnum].ceilh = Sectors[ cur->objnum].ceilh + val;
     }
     MadeChanges = TRUE;
 }
+
+
 
 
 

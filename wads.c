@@ -30,7 +30,8 @@ void OpenMainWad( char *filename)
     WadPtr wad;
     
     /* open the wad file */
-    printf( "Loading main WAD file: %s...\n", filename);
+    if	(ShowConfig)
+		printf( "Loading main WAD file: %s...\n", filename);
     wad = BasicWadOpen( filename);
     if (strncmp( wad->type, "IWAD", 4))
         ProgError( "\"%s\" is not the main WAD file", filename);
@@ -101,7 +102,8 @@ void OpenPatchWad( char *filename)
     ForgetAllResources();
     
     /* open the wad file */
-    printf( "Loading patch WAD file: %s...\n", filename);
+    if (ShowConfig)
+		printf( "Loading patch WAD file: %s...\n", filename);
     LogMessage( "Loading patch WAD file: %s...\n", filename);
     wad = BasicWadOpen( filename);
     if (strncmp( wad->type, "PWAD", 4))

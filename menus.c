@@ -106,7 +106,8 @@ BCINT DisplayMenuArray( BCINT x0, BCINT y0, char *menutitle, BCINT numitems, BCI
 			else if (buttons == 0x0001 && PointerX >= x0 && PointerX <= x0 + maxlen * 8 + 53)
 				line = (PointerY - y0 - (menutitle ? 24 : 8)) / 10;
 			/* release left button = accept selection */
-			else if (buttons == 0x0000 && oldbuttons == 0x0001)
+			else if (buttons == 0x0000 && oldbuttons == 0x0001 &&
+					 PointerY >= 16)
 				ok = TRUE;
 			oldbuttons = buttons;
 		}
@@ -269,7 +270,10 @@ BCINT InputInteger( BCINT x0, BCINT y0, BCINT *valp, BCINT minv, BCINT maxv)
 {
     BCINT  key, val;
     Bool neg, ok, firstkey;
-    
+   	if (x0 < 0)
+   		x0 = (ScrMaxX - 74) / 2;
+   	if (y0 < 0)
+   		y0 = (ScrMaxY) / 2;
     DrawScreenBoxHollow( x0, y0, x0 + 61, y0 + 13);
     neg = (*valp < 0);
     val = neg ? -(*valp) : *valp;
@@ -332,16 +336,16 @@ BCINT InputIntegerValue( BCINT x0, BCINT y0, BCINT minv, BCINT maxv, BCINT defv)
     
     if (UseMouse)
 		HideMousePointer();
-    sprintf( prompt, "Enter a Decimal Value between %d and %d:", minv, maxv);
-    if (x0 < 0)
-		x0 = (ScrMaxX - 25 - 8 * strlen( prompt)) / 2;
-    if (y0 < 0)
-		y0 = (ScrMaxY - 55) / 2;
+    sprintf( prompt, "Enter A Decimal Value Between %d And %d:", minv, maxv);
+ 	if (x0 < 0)
+   		x0 = (ScrMaxX - 25 - 8 * strlen( prompt)) / 2;
+   	if (y0 < 0)
+   		y0 = (ScrMaxY - 55) / 2;
     DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
     SetColor( WHITE);
     DrawScreenText( x0 + 10, y0 + 8, prompt);
     val = defv;
-    while (((key = InputInteger( x0 + 10, y0 + 28, &val, minv, maxv)) & 0x00FF) != 0x000D && (key & 0x00FF) != 0x001B)
+    while (((key = InputInteger( -1, -1, &val, minv, maxv)) & 0x00FF) != 0x000D && (key & 0x00FF) != 0x001B)
 		Beep();
     if (UseMouse)
 		ShowMousePointer();
@@ -624,7 +628,7 @@ Bool Confirm( BCINT x0, BCINT y0, char *prompt1, char *prompt2)
     if (prompt2 != NULL)
 		DrawScreenText( x0 + 10, y0 + 18, prompt2);
     SetColor( YELLOW);
-    DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press Y to Confirm, or any other key to Cancel");
+    DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press Y To Confirm, Or Any Other Key To Cancel");
     key = bioskey( 0);
     if (UseMouse)
 		ShowMousePointer();
@@ -655,7 +659,7 @@ void Notify( BCINT x0, BCINT y0, char *prompt1, char *prompt2)
     if (prompt2 != NULL)
 		DrawScreenText( x0 + 10, y0 + 18, prompt2);
     SetColor( YELLOW);
-    DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press any key to Continue...");
+    DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press Any Key To Continue...");
     bioskey( 0);
     if (UseMouse)
 		ShowMousePointer();
@@ -695,9 +699,9 @@ void NotImplemented()
 		HideMousePointer();
     DrawScreenBox3D( 140, 220, 500, 260);
     SetColor( RED);
-    DrawScreenText( 150, 230, "This function is not implemented... Yet!");
+    DrawScreenText( 150, 230, "This Function Is Not Implemented... Yet!");
     SetColor( YELLOW);
-    DrawScreenText( 150, 245, "Press any key to return to the Editor.");
+    DrawScreenText( 150, 245, "Press Any Key To Return To The Editor.");
     Beep();
     bioskey( 0);
     if (UseMouse)

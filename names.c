@@ -223,21 +223,21 @@ char *GetLineDefFlagsName( BCINT flags)
 char *GetLineDefFlagsLongName( BCINT flags)
 {
     if (flags & 0x0100)
-		return "Already on the map at startup";
+		return "Already On The Map At Startup";
     if (flags & 0x80)
-		return "Invisible on the map";
+		return "Invisible On The Map";
     if (flags & 0x40)
-		return "Blocks sound";
+		return "Blocks Sound";
     if (flags & 0x20)
-		return "Secret (shown as normal on the map)";
+		return "Secret (Normal On Map)";
     if (flags & 0x10)
-		return "Lower texture is \"unpegged\"";
+		return "Lower Texture Is \"Unpegged\"";
     if (flags & 0x08)
-		return "Upper texture is \"unpegged\"";
+		return "Upper Texture Is \"Unpegged\"";
     if (flags & 0x04)
-		return "Two-sided (may be transparent)";
+		return "Two-Sided (May Be Transparent)";
     if (flags & 0x02)
-		return "Monsters cannot cross this line";
+		return "Monsters Cannot Cross This Line";
     if (flags & 0x01)
 		return "Impassible";
     return "UNKNOWN";

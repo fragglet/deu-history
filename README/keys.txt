@@ -1,0 +1,124 @@
+Function Keys
+~~~~~~~~~~~~~
+F1		-	Help Screen
+F2		-	Save Pwad
+F3		-	Save Pwad As...
+F4		-	Mark and find menu
+F5		-	Preferences menu
+F8		-	Miscellaneous menu (operations available depend on mode)
+F9		-	Pre-defined objects menu
+F10		-	Check level consistency and report on number of objects
+
+
+Control Keys
+~~~~~~~~~~~~
+CTRL+A		-	Split selected LineDefs and Add a Sector
+CTRL+A		-	Add LineDef between 2 selected Vertexes and Add a Sector
+CTRL+B		-	Toggle selected LineDefs Blocks sounds flag
+CTRL+D		-	Delete selected LineDef(s) and join Sectors (same as CTRL+J)
+CTRL+D		-	Delete selected Vertex(es) and join LineDefs (same as CTRL+J)
+CRTL+D		-	Toggle selected Things Deaf flag
+CTRL+F		-	Flip selected LineDef(s)
+CTRL+H		-	Toggle selected SideDefs Hidden on Map flag
+CTRL+J		-	Delete selected LineDef(s) and Join Sectors (same as CTRL+D)
+CTRL+J		-	Delete selected Vertex(es) and Join LineDefs (same as CTRL+D)
+CTRL+L		-	Toggle selected SideDefs Lower Texture unpegged flag
+CTRL+M		-	Merge several selected Vertex(es) and join LineDefs
+CRTL+M		-	Toggle selected Things Multiplayer flag
+CTRL+M		-	Toggle selected SideDefs iMpassable flag
+CTRL+N		-	Set selected Sectors type to Normal
+CTRL+N		-	Set selected LineDefs type to Normal
+CTRL+O		-	Toggle selected SideDefs Allready On map flag
+CTRL+P		-	Toggle selected LineDefs monsters can't Pass flag
+CTRL+R		-	Toggle selected SideDefs secRet flag
+CTRL+S		-	Swap selected SideDef(s)
+CTRL+T		-	Next free Tag number
+CTRL+U		-	Toggle selected SideDefs Upper Texture unpegged flag
+CTRL+V		-	Split selected LineDef(s) and add Vertex(es)
+CTRL+X		-	Align selected LineDefs Textures on X axis without Texture checking
+CTRL+Y		-	Align selected LineDefs Textures on Y axis without Texture checking
+
+CTRL+2          -       Toggle selected SideDefs 2 sided flag
+
+
+
+
+Alt Keys
+~~~~~~~~	
+ALT+E		-	Edit menu
+ALT+F		-	File menu
+ALT+H		-	Help screen
+ALT+I		-	Miscellaneous menu (operations available depend on mode)
+ALT+M		-	Mode menu
+ALT+0		-	Pre-defined Objects menu
+ALT+S		-	Search menu
+
+
+Normal Keys
+~~~~~~~~~~~
+A		-	Repeat last find Again
+C		-	Clear selected objects
+D		-	Drag highlighted/selected object(s)
+F		-	Filter Things menu
+G		-	Decrease Grid scale
+Shift+G		-	Increase Grid scale
+H		-	Hide grid
+Shift+H		-	Hide grid and set grid scale to 0
+I		-	Toggle Information bar on/off
+J		-	Jump to object number
+K		-	Kill grid (set grid scale to 0)
+L		-	Line mode
+M		-	Mark highlighted object
+N		-	Jump to Next object	
+O		-	Copy highlighted/selected Object(s)	
+P		-	Jump to Previous object	
+Q		-	Quit (brings up SaveAs box if QisQuit is set to false)
+R		-	Ruler on/off
+S		-	Sector mode
+T		-	Thing mode
+V		-	Vertex mode
+X		-	Align selected LineDefs Textures on X axis with Texture checking
+Y		-	Align selected LineDefs Textures on Y axis with Texture checking
+
+-		-	Zoom out
++		-	Zoom in
+,		-	Rotate highlighted/selected Thing(s) anti-clockwise
+.		-	Rotate highlighted/selected Thing(s) clockwise
+>		-	Jump to next object	
+<		-	Jump to previous object	
+
+1,2,3,...,0	-	Change zoom
+	
+
+Miscellaneous Keys
+~~~~~~~~~~~~~~~~~~
+Cursors		-	Move mouse pointer
+Delete		-	Delete highlighted/selected object(s)
+End		-	Move screen right
+Enter		-	Edit highlighted/selected object(s)
+Escape		-	Quit
+Home		-	Move screen left
+Insert		-	Add a Thing, make Sector from LineDefs, add LineDefs between Vertexes and
+			add a Vertex etc.
+Shift+Insert	-	Same as Insert but closes LineDefs, Inserts 2 Sided Sectors etc.
+PageUp		-	Move screen up
+PageDown	-	Move screen down
+ScrollLock	-	Toggle screen from scrolling/not scrolling when mouse is near edge of screen
+Spacebar	-	Toggle screen scroll between slow & fast
+Shift		-	Enabled multiple selection of objects with mouse
+Tab		-	Next mode
+Shift+Tab	-	Previous mode and select bound objects (not Thing mode)
+
+
+Mouse
+~~~~~
+Move mouse	-	highlights objects and scrolls screen when near edge
+Left Button	-	Select object
+Middle Button	-	Edit object
+Right Button	-	Drag highlighted/selected objects
+
+
+
+
+
+-end-

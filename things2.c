@@ -7,7 +7,9 @@
    
    This program comes with absolutely no warranty.
    
-   THINGS.C - Thing name and type routines.
+   THINGS2.C - Thing name and type routines.
+
+   Majorly re-written for DETH by Simon Oke.
    */
 
 /* the includes */
@@ -198,8 +200,36 @@ char *GetWhenName( BCINT when)
 		strcat( temp, "Multi ");
     return temp;
 }
+int SetThingFlagFilter(int old)
+{
+	int new = old;
+	/* war == peace */
+	
+	int selection;
+	
 
+	do {
+		selection = DisplayMenu(-1, -1, "Set Filter for Things",
+								(new & TF_EASY) ? "û Easy" : "  Easy",
+								(new & TF_MEDIUM) ? "û Medium" : "  Medium",
+								(new & TF_HARD) ? "û Hard" : "  Hard",
+								(new & TF_DM) ? "û Show Multi Player Things"
+								: "  Show Multi Player Things",
+								(new & TF_NOT_DM) ? "û Show non Multi Player Things"
+								: "  Show non Multi Player Things",
+								"  Cancel", NULL);
 
+		switch(selection) {
+		case 0: return new;
+		case 1:	new ^= TF_EASY; break;
+		case 2:	new ^= TF_MEDIUM; break;
+		case 3:	new ^= TF_HARD; break;
+		case 4: new ^= TF_DM; break;
+		case 5: new ^= TF_NOT_DM; break;
+		case 6:	return old;
+		}
+	} while(1);
+}
 
 /* end of file */
 

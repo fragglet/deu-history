@@ -1,68 +1,81 @@
 files included in deth.zip:
 
 .\
-bsp.exe		- node builder for those large wads you're going to make!
-deth.exe	- the main executable
-deth.ini	- initialization file, contains options for using DETH
-go32.exe	- dos extender for 32 bit processing
-readme.1st	- this file
-runme.bat	- batch file to setup go32 for use with DETH
+bsp.exe         - node builder for those large wads you're going to make!
+deth.exe        - the main executable
+deth.ini        - initialization file, contains options for using DETH
+go32.exe        - dos extender for 32 bit processing
+readme.1st      - this file
+runme1st.bat    - batch file to setup go32 environment
+edit.bat        - batch file to launch DETH and edit a pwad
+test.bat        - a batch file to automate node building & testing of your pwad
+ed.bat          - enhanced batch file for people with NDOS or 4DOS shells
 
 .\readme\
-bsp12x.txt	- stuff about Colin Reeds node builder
-changes.txt	- history of versions complete with bugs removed and additions
-dethgo32.txt	- info on getting DETH started, written by Dr. Sleep
-texture.txt	- information on how our Intelligent Texture Aligning works
-copying		- Copyright stuff for GNU GCC
-copying.dj	- go32.exe Copyright information
+bsp12x.txt      - stuff about Colin Reed's node builder
+changes.txt     - history of versions complete with bugs removed and additions
+dethgo32.txt    - info on getting DETH started, written by Dr Sleep
+texture.txt     - information on how our Intelligent Texture Aligning works
+copying         - Copyright stuff for GNU GCC
+copying.dj      - go32.exe Copyright information
+keys.txt	- guide to all keys, inc new hotkeys
+keys.doc	- as above but in Word 6 format (for printing)
 
 .\config\
-doom.cfg	- configuration file for Doom, includes path to main IWAD
-doom2.cfg	- configuration file for Doom 2 includes path to main IWAD
-heretic.cfg	- configuration file for Heretic, includes path to main IWAD
-ldtypes.dm	- LineDefs in Doom - must be included in doom.cfg and doom2.cfg
-ldtypes.her	- LineDefs in Heretic - must be included in heretic.cfg
-things.dm1	- Things in Doom - must be included in doom.cfg and doom2.cfg
-things.dm2	- Things in Doom 2 - must be included in doom2.cfg
-things.her	- Things in Heretic - must be included in heretic.cfg
+doom.cfg        - configuration file for Doom, includes path to main IWAD
+doom2.cfg       - configuration file for Doom 2 includes path to main IWAD
+heretic.cfg     - configuration file for Heretic, includes path to main IWAD
+ldtypes.dm      - LineDefs in Doom - must be included in doom.cfg and doom2.cfg
+ldtypes.her     - LineDefs in Heretic - must be included in heretic.cfg
+things.dm1      - Things in Doom - must be included in doom.cfg and doom2.cfg
+things.dm2      - Things in Doom 2 - must be included in doom2.cfg
+things.her      - Things in Heretic - must be included in heretic.cfg
 
-.\drivers\	- video drivers, see dethgo32.txt for more information
-.\source\	- source files for people that want to hack, written for GCC
+.\palette\
+showpal.exe     - program to display palette for selecting colors in cfg files
+showpal.txt     - info on how to use showpal
+playpal.d       - Doom color palette
+playpal.h       - Heretic color palette
+
+.\drivers\      - video drivers, see dethgo32.txt for more information
+.\source\       - source files for people that want to hack, written for GCC
+
 
 
 The things.??? and ldtypes.??? files can be changed to reflect the users
 preference, new sub menus may be created in the same fashion as the
-existing ones.
+existing ones. Likewise, one can define the colours for special sector and 
+LineDef in doom.cfg, doom2.cfg, and heretic.cfg.
+
 If two files are used in one game (i.e things.dm1 and things.dm2 are both used
 in Doom2), ensure that the menu titles are identical.
 
 --------------------------------------------------------------------------------
 
-From the authors,
-
+From the authors:
 
 DETH is a version of GCC DEU 5.2.
 It has been written by wad editors, so the features we've added and changed
 should reflect what a wad creator both needs and requires.
 
-It now edits Doom2 and Heretic as well as Doom.
+It now edits Doom2 and Heretic as well as Doom and Ultimate Doom.
 
 A lot of the Texture and Sprite handling routines have been re-written for
 extra stability and lightning speed.
 
-The main display has also be greatly improved both cosmetically and in speed.
+The main display has also been greatly improved both cosmetically and in speed.
 
 Lots of bugs that were present in DEU have also been removed.
 
 Both the X and Y alignment routines have been completely changed, they now
-including intelligent routines to align either SideDef regardless of what is
-or isn't present, you will not get any messages returned to you just because
+include intelligent routines to align either SideDef, regardless of what is
+or isn't present. You will not get any messages returned to you just because
 a texture is missing.
 
 With the addition of config, things and linedef files we can almost guarantee
 that DETH is future proof - meaning that, if Heretic 2 is released (or any
-other Doom clone), just by adding/changing the files, DETH should quiet happily
-edit them. obviously this depends upon how far from the track the game creators
+other Doom clone), just by adding/changing the files, DETH should quite happily
+edit them. Obviously this depends upon how far from the track the game creators
 have wandered! - WARNING - unless you are absolutely sure in what you are doing
 do not change any part of the config files except the [wad] entry.
 
@@ -73,7 +86,7 @@ Thanks to:
 id and Raven soft for 3 excellent games.
 Brendon J Wyber and Raphael Quinet for the original, first, and best DEU.
 Colin Reed for his Binary Space Partition builder (BSP).
-John W. Anderson (aka Dr. Sleep) and Jim F Flynn for all of their suggestions,
+John W. Anderson (aka Dr Sleep) and Jim F. Flynn for all of their suggestions,
  patience and bug hunting.
 Everyone currently using and supporting DETH.
 

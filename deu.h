@@ -38,23 +38,39 @@ typedef unsigned int   UBCINT;
 typedef short int            BCINT;
 typedef unsigned short int   UBCINT;
 
-#define DETH_VERSION	"2.3"
+#define DETH_VERSION	"2.5 - The Best Just Got Better"
 
 #endif
 
 /* define some new colors */
-#define DARKBLUE	16
-#define DARKGREEN	17
-#define DARKRED		18
-#define DARKMAGENTA	19
-#define GRAY		20
-#define DARKERGRAY	21
-#define	ORANGE		22
+#define DARKBLUE		16
+#define DARKGREEN		17
+#define DARKRED			18
+#define DARKMAGENTA		19
+#define GRAY			20
+#define DARKERGRAY		21
+#define	ORANGE			22
+#define	SECTORTAGGED	23
+#define	SECTORSECRET	24
+#define SECTORPAINFUL	25
+#define	SECTORLIGHT		26
+#define LINEDEFTAGGED	27
+#define LINEDEFSECRET	28
+#define LINEDEFNOSOUND	29
+#define LINEDEFNOPASS	30
+#define LINEDEFNOMAP	31
 
 typedef unsigned char BYTE;
 
 /* now safe to include this, as it uses BCINTs */
 #include "wstructs.h"
+
+/* constants for filtering out things based on difficulty */
+#define TF_EASY		1
+#define TF_MEDIUM	2
+#define TF_HARD		4
+#define TF_DM		16
+#define TF_NOT_DM   32
 
 
 /*
@@ -134,14 +150,13 @@ typedef struct
 {
     char *short_name;		/* abbreviated command line argument */
     char *long_name;		/* command line arg. or keyword */
-    enum                        /* type of this option */
-	    {
-			OPT_BOOLEAN,                     /* boolean (toggle) */
-			OPT_INTEGER,                     /* integer number */
-			OPT_STRING,                      /* character string */
-			OPT_STRINGACC,                   /* character string, but store in a list */
-			OPT_STRINGLIST,                  /* list of character strings */
-			OPT_END                          /* end of the options description */
+    enum {                        /* type of this option */
+		OPT_BOOLEAN,                     /* boolean (toggle) */
+		OPT_INTEGER,                     /* integer number */
+		OPT_STRING,                      /* character string */
+		OPT_STRINGACC,                   /* character string, but store in a list */
+		OPT_STRINGLIST,                  /* list of character strings */
+		OPT_END                          /* end of the options description */
 	    } opt_type;                    
     char *msg_if_true;		/* message printed if option is true */
     char *msg_if_false;		/* message printed if option is false */
@@ -241,6 +256,7 @@ typedef struct _thing_class {
 /* the interfile global variables */
 
 /* from deu.c */
+extern Bool ShowConfig; 
 extern Bool CirrusCursor;      	/* use hardware cursor on Cirrus Logic VGA cards */
 extern Bool Select0;           	/* select object 0 by default when switching modes */
 extern Bool Debug;		/* are we debugging? */
@@ -248,9 +264,10 @@ extern Bool SwapButtons;	/* swap right and middle mouse buttons */
 extern Bool Quiet;		/* don't play a sound when an object is selected */
 extern Bool Quieter;		/* don't play any sound, even when an error occurs */
 extern Bool Expert;		/* don't ask for confirmation for some operations */
-extern Bool VertConf;		/* don't ask for confirmation on Vertices merging even if in expert mode */
 extern Bool QisQuit;		
 extern BCINT InitialScale;	/* initial zoom factor for map */
+extern BCINT CloseToLine;	
+extern Bool VertConf;		/* don't ask for confirmation on Vertices merging even if in expert mode */
 extern BCINT VideoMode;	  	/* default video mode for VESA cards */
 extern char *BGIDriver;		/* default extended BGI driver */
 extern Bool FakeCursor;	/* use a "fake" mouse cursor */
@@ -275,6 +292,7 @@ int isalev(char *);
 
 /* from edit.c */
 extern Bool InfoShown;          /* is the bottom line displayed? */
+extern int tff;					/* what things to show, based on difficulty level */
 
 /* from gfx.c */
 extern BCINT GfxMode;		/* current graphics mode, or 0 for text */
@@ -366,7 +384,7 @@ void EditorLoop();
 void DrawMap( BCINT , BCINT, Bool ); /* SWAP! */
 void CenterMapAroundCoords( BCINT , BCINT );
 void GoToObject( BCINT , BCINT ); /* SWAP! */
-void FindThing(int);
+void FindThing(int, SelPtr *);
 void SaveAs(int);
 void CopyFile(const char *, const char *);
 
@@ -404,6 +422,7 @@ char *GetThingName( BCINT );
 BCINT  GetThingRadius( BCINT );
 char *GetAngleName( BCINT );
 char *GetWhenName( BCINT );
+int SetThingFlagFilter(int);
 
 /* from names.c */
 char *GetObjectTypeName( BCINT );
@@ -495,6 +514,7 @@ void InsertStandardObject( BCINT , BCINT , BCINT , BCINT ); /* SWAP! */
 void MiscOperations( BCINT , BCINT , BCINT , SelPtr *); /* SWAP! */
 void Preferences( BCINT , BCINT );
 BCINT SelectThingType(void);
+thing_class *SelectThingClass(void);
 
 /* from nodes.c */
 void ShowProgress( BCINT );
@@ -523,3 +543,12 @@ void ObjectsNeeded( BCINT , ...);
 #endif
 
 /* end of file */
+
+
+
+
+
+
+
+
+
