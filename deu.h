@@ -21,7 +21,7 @@
    the version information
 */
 
-#define DEU_VERSION    "4.10"       /* the version number */
+#define DEU_VERSION    "4.20"       /* the version number */
 
 
 
@@ -108,15 +108,15 @@ struct MasterDirectory
 */
 
 /* from deu.c */
-extern int Registered;        /* registered or shareware game? */
+extern int Registered;        /* registered or shareware WAD file? */
 
 /* from wads.c */
 extern WadPtr  WadFileList;   /* list of wad files */
 extern MDirPtr MasterDir;     /* the master directory */
 
 /* from edit.c */
-extern int NumTexture1;       /* number of wall textures */
-extern char **Texture1;       /* wall texture names */
+extern int NumWTexture;       /* number of wall textures */
+extern char **WTexture;       /* wall texture names */
 extern int NumFTexture;       /* number of floor/ceiling textures */
 extern char **FTexture;       /* floor/ceiling texture names */
 
@@ -139,7 +139,6 @@ extern int UseMouse;          /* is there a mouse driver? */
 /* from deu.c */
 int main( int, char *[]);
 void Credits( FILE *);
-void ParseArgs( int, char *[]);
 void Beep( void);
 void ProgError( char *, ...);
 void *GetMemory( size_t);
@@ -149,6 +148,7 @@ void MainLoop( void);
 /* from wads.c */
 void OpenWadFiles( int, char *[]);
 void CloseWadFiles( void);
+void CloseUnusedWadFiles( void);
 void OpenMainWad( char *);
 void OpenPatchWad( char *);
 WadPtr BasicWadOpen( char *);
@@ -161,18 +161,17 @@ void BuildNewMainWad( char *);
 void WriteBytes( FILE *, void *, long);
 
 /* from edit.c */
-void EditLevel( int, int, char *);
+void EditLevel( int, int);
+void SelectLevel( int *, int *);
 void ReadLevelData( int, int);
 void ForgetLevelData( void);
 void SaveLevelData( char *);
-void ReadTexture1Names( void);
+void ReadWTextureNames( void);
 void ForgetFTextureNames( void);
 void ReadFTextureNames( void);
-void ForgetTexture1Names( void);
+void ForgetWTextureNames( void);
 void EditorLoop( void);
 void DrawMap( int);
-void EditThingInfo( int *, int *, int *);
-void EditObjectInfo( int, int);
 
 /* from gfx.c */
 void InitGfx( void);
@@ -183,12 +182,12 @@ void DrawMapVector( int, int, int, int);
 void DrawMapArrow( int, int, int);
 void DrawScreenLine( int, int, int, int);
 void DrawScreenBox( int, int, int, int);
-void DrawScreenText( int, int, char *, ...);
 void DrawScreenBox3D( int, int, int, int);
+void DrawScreenText( int, int, char *, ...);
 void DrawPointer( void);
 int ComputeAngle( int, int);
 
-/* from thing.c */
+/* from things.c */
 int GetThingColour( int);
 char *GetThingName( int);
 char *GetAngleName( int);
@@ -206,18 +205,31 @@ void ResetMouseLimits( void);
 /* from menus.c */
 int DisplayMenuArray( int, int, char *, int, char *[ 30]);
 int DisplayMenu( int, int, char *, ...);
-int DisplayThingsMenu( int, int, char *, ...);
+int InputInteger( int, int, int *, int, int);
 int InputIntegerValue( int, int, int, int, int);
 void InputNameFromList( int, int, char *, int, char **, char *);
+void InputFileName( int, int, char *, int, char *);
+int Confirm( int, int, char *, char *);
+void DisplayMessage( int, int, char *, ...);
 void NotImplemented( void);
 
 /* from objects.c */
-char *GetObjectType( int);
+char *GetObjectTypeName( int);
+char *GetEditModeName( int);
 int GetCurObject( int);
-void HighlightObject( int, int);
+void HighlightObject( int, int, int);
 void DisplayObjectInfo( int, int);
 void DeleteObject( int, int);
 void InsertObject( int, int);
+int DisplayThingsMenu( int, int, char *, ...);
+int InputObjectNumber( int, int, int, int);
+int InputObjectXRef( int, int, int, int, int);
+void EditObjectInfo( int, int);
+int IsLineDefInside( int, double, double, double, double);
 
+/* from names.c */
+char *GetLineDefTypeName( int);
+char *GetLineDefFlagsName( int);
+char *GetSectorTypeName( int);
 
 /* end of file */

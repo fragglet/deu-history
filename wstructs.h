@@ -31,8 +31,8 @@ struct LineDef
 {
    int start;     /* from this vertex ... */
    int end;       /* ... to this vertex */
-   int flags1;    /* ? 1 = solid */
-   int flags2;    /* ? 1 = door, 11 = switch */
+   int flags;     /* ? 1 = solid */
+   int type;      /* ? 1 = door, 11 = switch */
    int tag;       /* crossing this linedef activates the sector with the same tag */
    int sidedef1;  /* sidedef */
    int sidedef2;  /* only if this line adjoins 2 sectors */
@@ -77,9 +77,9 @@ struct Seg
    int start;     /* from this vertex ... */
    int end;       /* ... to this vertex */
    int angle;     /* angle (0 = east, 16384 = north, ...) */
-   int linedef;   /* linedef */
-   int flip;      /* flip start and end (don't know why...) */
-   int flags;     /* ? */
+   int linedef;   /* linedef that this seg goes along*/
+   int flip;      /* true if not the same direction as linedef */
+   int dist;      /* distance from starting point */
 };
 typedef struct Seg *SEPtr;
 
@@ -102,13 +102,13 @@ typedef struct SSector *SSPtr;
 */
 struct Node
 {
-   int x;         /* ? */
-   int y;         /* ? */
-   int flags1;    /* ? */
-   int flags2;    /* ? */
-   int junk[8];   /* ? */
-   int sector1;   /* ? */
-   int sector2;   /* ? */
+   int x, y;                         /* starting point */
+   int dx, dy;                       /* offset to ending point */
+   int miny1, maxy1, minx1, maxx1;   /* bounding rectangle 1 */
+   int miny2, maxy2, minx2, maxx2;   /* bounding rectangle 2 */
+   int tree1, tree2;                 /* node or ssector (if high bit is set) */
+   /* the following fields are not in the WAD file: */
+   int vertex1, vertex2;
 };
 typedef struct Node *NPtr;
 

@@ -7,7 +7,7 @@
    DEU.C - Main program execution routines.
 
    compile with command
-      tcc -Z -mc -r -G -O -f -enewdeu *.c \tc\lib\graphics.lib
+      tcc -Z -ml -r -G -O -f -enewdeu *.c \tc\lib\graphics.lib
 
 */
 
@@ -23,8 +23,8 @@
 int main( int argc, char *argv[])
 {
    Credits( stdout);
-   ParseArgs( argc, argv);
    OpenWadFiles( argc - 1, argv + 1);
+   CloseUnusedWadFiles();
    MainLoop();
    CloseWadFiles();
    return 0;
@@ -41,21 +41,6 @@ void Credits( FILE *where)
    fprintf( where, "New DEU: Doom Editor Utility, ver %s.\n", DEU_VERSION);
    fprintf( where, "By Rapha‰l Quinet (quinet@montefiore.ulg.ac.be).\n");
    fprintf( where, "Based on DEU by Brendon J Wyber (b.wyber@csc.canterbury.ac.nz),\n\n");
-}
-
-
-
-/*
-   parse the command arguements
-*/
-
-void ParseArgs( int argc, char *argv[])
-{
-   if (argc < 2)
-   {
-      printf( "Usage:   %s  <wadfile> [<patchwadfile1> <patchwadfile2> ...]\n", argv[ 0]);
-      exit( 1);
-   }
 }
 
 
@@ -132,7 +117,7 @@ void MainLoop()
    char *com, *out;
    FILE *file;
    WadPtr wad;
-   int game, level;
+   int episode, level;
 
    for (;;)
    {
@@ -147,7 +132,7 @@ void MainLoop()
 
       /* user just hit return */
       if (com == NULL)
-         printf( "[Please enter a command.]\n");
+	 printf( "[Please enter a command.]\n");
 
       /* user inputting for help */
       else if (!strcmp( com, "?"))
@@ -155,11 +140,12 @@ void MainLoop()
 	 printf( "?                                 -- to display this text\n");
 	 printf( "B[uild] <WadFile>                 -- to build a new main WAD file\n");
 	 printf( "D[ump] <DirEntry> [outfile]       -- to dump a directory entry in hex\n");
-	 printf( "E[dit] <game> <level> <WadFile>   -- to edit a game level saving results to\n");
+	 printf( "E[dit] [episode [level]]          -- to edit a game level saving results to\n");
 	 printf( "                                          a patch wad file\n");
 	 printf( "L[ist] <WadFile> [outfile]        -- to list the directory of a wadfile\n");
 	 printf( "M[aster] [outfile]                -- to list the master directory\n");
 	 printf( "Q[uit]                            -- to quit\n");
+	 printf( "R[ead] <WadFile>                  -- to read a new wad patch file\n");
 	 printf( "W[ads]                            -- to display the open wads\n");
       }
 
@@ -168,7 +154,7 @@ void MainLoop()
       {
 	 printf( "%-20s  IWAD  (Main wad file)\n", WadFileList->filename);
 	 for (wad = WadFileList->next; wad; wad = wad->next)
-	    printf( "%-20s  PWAD  (Patch wad file for game %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
+	    printf( "%-20s  PWAD  (Patch wad file for episode %c level %c)\n", wad->filename, wad->directory[ 0].name[ 1], wad->directory[ 0].name[ 3]);
       }
 
       /* user asked to quit */
@@ -183,45 +169,29 @@ void MainLoop()
       /* user asked to edit a level */
       else if (!strcmp( com, "EDIT") || !strcmp( com, "E"))
       {
+	 episode = 0;
+	 level = 0;
 	 com = strtok( NULL, " ");
-	 if (com == NULL)
-         {
-	    printf( "[Game episode number missing.]\n");
-	    continue;
-         }
-         game = atoi( com);
-         com = strtok( NULL, " ");
-	 if (com == NULL)
+	 if (com != NULL)
 	 {
-            printf( "[Game level number missing.]\n");
-            continue;
-         }
-	 if (game < 1 || game > 3)
-	 {
-	    printf( "[Invalid game episode number (%s).]\n", com);
-	    continue;
+	    episode = atoi( com);
+	    if (episode < 1 || episode > 3)
+	    {
+	       printf( "[Invalid game episode number (%s).]\n", com);
+	       continue;
+	    }
+	    com = strtok( NULL, " ");
+	    if (com != NULL)
+	    {
+	       level = atoi( com);
+	       if (level < 1 || level> 9)
+	       {
+		  printf( "[Invalid game level number (%s).]\n", com);
+		  continue;
+	       }
+	    }
 	 }
-	 level = atoi( com);
-	 if (level < 1 || level> 9)
-	 {
-	    printf( "[Invalid game level number (%s).]\n", com);
-	    continue;
-	 }
-	 out = strtok( NULL, " ");
-	 if (out == NULL)
-	 {
-	    printf( "[Resulting Patch Wadfile name missing.]\n");
-	    continue;
-	 }
-	 for (wad = WadFileList; wad; wad = wad->next)
-	    if (!stricmp( out, wad->filename))
-	       break;
-	 if (wad)
-	 {
-	    printf( "[File \"%s\" is opened and cannot be overwritten.]\n", out);
-	    continue;
-	 }
-	 EditLevel( game, level, out);
+	 EditLevel( episode, level);
       }
 
       /* user asked to build a new main WAD file */
@@ -294,6 +264,25 @@ void MainLoop()
 	    ListMasterDirectory( stdout);
       }
 
+      /* user asked to read a new patch WAD file */
+      else if (!strcmp( com, "READ") || !strcmp( com, "R"))
+      {
+	 com = strtok( NULL, " ");
+	 if (com == NULL)
+	 {
+	    printf( "[Wad file name argument missing.]\n");
+	    continue;
+	 }
+	 out = strtok( NULL, " ");
+	 if (out)
+	   *out = '\0';
+	 out = GetMemory( (strlen( com) + 1) * sizeof( char));
+	 strcpy( out, com);
+	 OpenPatchWad( out);
+	 CloseUnusedWadFiles();
+      }
+
+      /* user asked to dump the contents of a WAD file */
       else if (!strcmp( com, "DUMP") || !strcmp( com, "D"))
       {
 	 com = strtok( NULL, " ");

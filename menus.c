@@ -165,32 +165,65 @@ int DisplayMenu( int x0, int y0, char *menutitle, ...)
 
 
 /*
-   display and execute a "things" menu
+   display the integer input box
 */
-int DisplayThingsMenu( int x0, int y0, char *menutitle, ...)
+int InputInteger( int x0, int y0, int *valp, int minv, int maxv)
 {
-   va_list args;
-   int val, num;
-   int thingid[ 30];
-   char *menustr[ 30];
+   int key, val, neg;
+   int ok, firstkey;
 
-   /* put the va_args in the menustr table */
-   num = 0;
-   va_start( args, menutitle);
-   while ((num < 30) && ((thingid[ num] = va_arg( args, int)) != 0))
+   setcolor( WHITE);
+   DrawScreenBox( x0 + 1, y0 + 1, x0 + 61, y0 + 13);
+   setcolor( DARKGRAY);
+   DrawScreenBox( x0, y0, x0 + 60, y0 + 12);
+   neg = (*valp < 0);
+   val = neg ? -(*valp) : *valp;
+   firstkey = TRUE;
+   for (;;)
    {
-      menustr[ num] = GetThingName( thingid[ num]);
-      num++;
+      ok = (neg ? -val : val) >= minv && (neg ? -val : val) <= maxv;
+      setcolor( BLACK);
+      DrawScreenBox( x0 + 1, y0 + 1, x0 + 60, y0 + 12);
+      if (ok)
+	 setcolor( WHITE);
+      else
+	 setcolor( LIGHTGRAY);
+      if (neg)
+	 DrawScreenText( x0 + 2, y0 + 2, "-%d", val);
+      else
+	 DrawScreenText( x0 + 2, y0 + 2, "%d", val);
+      key = bioskey( 0);
+      if (firstkey && (key & 0x00FF) > ' ')
+      {
+	 val = 0;
+	 neg = FALSE;
+      }
+      firstkey = FALSE;
+      if (val < 3275 && (key & 0x00FF) >= '0' && (key & 0x00FF) <= '9')
+	 val = val * 10 + (key & 0x00FF) - '0';
+      else if (val > 0 && (key & 0x00FF) == 0x0008)
+	 val = val / 10;
+      else if (neg && (key & 0x00FF) == 0x0008)
+	 neg = FALSE;
+      else if ((key & 0x00FF) == '-')
+	 neg = !neg;
+      else if (ok && (key & 0x00FF) == 0x000D)
+	 break; /* return "val" */
+      else if ((key & 0xFF00) == 0x4800 || (key & 0xFF00) == 0x5000 || (key & 0x00FF) == 0x0009 || (key & 0xFF00) == 0x0F00)
+	 break; /* return "val", even if not valid */
+      else if ((key & 0x00FF) == 0x001B)
+      {
+	 val = -32768; /* return a value out of range */
+	 break;
+      }
+      else
+	 Beep();
    }
-   va_end( args);
-
-   /* display the menu */
-   val = DisplayMenuArray( x0, y0, menutitle, num, menustr) - 1;
-
-   /* return the thing id, if valid */
-   if (val < 0 || val >= num)
-     return -1;
-   return thingid[ val];
+   if (neg)
+      *valp = -val;
+   else
+      *valp = val;
+   return key;
 }
 
 
@@ -200,52 +233,25 @@ int DisplayThingsMenu( int x0, int y0, char *menutitle, ...)
 */
 int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 {
-   int key, val, neg;
-   int ok;
+   int val, key;
+   char prompt[ 80];
 
    if (UseMouse)
       HideMousePointer();
-   DrawScreenBox3D( x0, y0, x0 + 380, y0 + 55);
+   sprintf( prompt, "Enter a decimal number between %d and %d:", minv, maxv);
+   if (x0 < 0)
+      x0 = 307 - 4 * strlen( prompt);
+   if (y0 < 0)
+      y0 = 212;
+   DrawScreenBox3D( x0, y0, x0 + 25 + 8 * strlen( prompt), y0 + 55);
    setcolor( WHITE);
-   DrawScreenText( x0 + 10, y0 + 8, "Enter a decimal number between %d and %d:", minv, maxv);
-   DrawScreenBox( x0 + 11, y0 + 29, x0 + 71, y0 + 41);
-   setcolor( DARKGRAY);
-   DrawScreenBox( x0 + 10, y0 + 28, x0 + 70, y0 + 40);
-   neg = (defv < 0);
-   val = neg ? -defv : defv;
-   for (;;)
-   {
-     ok = (neg ? -val : val) >= minv && (neg ? -val : val) <= maxv;
-     setcolor( BLACK);
-     DrawScreenBox( x0 + 11, y0 + 29, x0 + 70, y0 + 40);
-     if (ok)
-	setcolor( WHITE);
-     else
-	setcolor( LIGHTGRAY);
-     if (neg)
-	DrawScreenText( x0 + 13, y0 + 31, "-%d", val);
-     else
-	DrawScreenText( x0 + 13, y0 + 31, "%d", val);
-     key = bioskey( 0);
-     if (val < 3275 && (key & 0x00FF) >= '0' && (key & 0x00FF) <= '9')
-	val = val * 10 + (key & 0x00FF) - '0';
-     else if (val > 0 && (key & 0x00FF) == 0x0008)
-	val = val / 10;
-     else if ((key & 0x00FF) == '-')
-	neg = !neg;
-     else if (ok && (key & 0x00FF) == 0x000D)
-	break; /* return "val" */
-     else if ((key & 0x00FF) == 0x001B)
-     {
-	val = -32768; /* return a value out of range */
-	break;
-     }
-     else
-	Beep();
-   }
+   DrawScreenText( x0 + 10, y0 + 8, prompt);
+   val = defv;
+   while (((key = InputInteger( x0 + 10, y0 + 28, &val, minv, maxv)) & 0x00FF) != 0x000D && (key & 0x00FF) != 0x001B)
+      Beep();
    if (UseMouse)
       ShowMousePointer();
-   return neg ? -val : val;
+   return val;
 }
 
 
@@ -256,22 +262,25 @@ int InputIntegerValue( int x0, int y0, int minv, int maxv, int defv)
 void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list, char *name)
 {
    int key, n, l;
-   int maxlen, ok;
+   int maxlen, ok, firstkey;
 
    if (UseMouse)
       HideMousePointer();
-   name[ 8] = '\0';
-   for (n = strlen(name); n < 9; n++)
-      name[ n] = '\0';
    /* compute maxlen */
    maxlen = 1;
    for (n = 0; n < listsize; n++)
       if (strlen( list[ n]) > maxlen)
 	 maxlen = strlen( list[ n]);
+   for (n = strlen(name) + 1; n <= maxlen; n++)
+      name[ n] = '\0';
    /* compute the minimum width of the dialog box */
    l = maxlen;
    if (strlen( prompt) - 13 > l)
      l = strlen( prompt) - 13;
+   if (x0 < 0)
+      x0 = 259 - 4 * l;
+   if (y0 < 0)
+      y0 = 197;
    /* draw the dialog box */
    DrawScreenBox3D( x0, y0, x0 + 120 + 8 * l, y0 + 85);
    setcolor( WHITE);
@@ -279,46 +288,234 @@ void InputNameFromList( int x0, int y0, char *prompt, int listsize, char **list,
    DrawScreenBox( x0 + 11, y0 + 29, x0 + 101, y0 + 41);
    setcolor( DARKGRAY);
    DrawScreenBox( x0 + 10, y0 + 28, x0 + 100, y0 + 40);
+   firstkey = TRUE;
    for (;;)
    {
-     /* test if "name" is in the list */
-     for (n = 0; n < listsize; n++)
-	if (strcmp( name, list[ n]) <= 0)
-	   break;
-     ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
-     if (n > listsize - 5)
-	n = listsize - 5;
-     /* display the five next items in the list */
-     setcolor( LIGHTGRAY);
-     DrawScreenBox( x0 + 120, y0 + 30, x0 + 120 + 8 * maxlen, y0 + 80);
-     setcolor( BLACK);
-     for (l = 0; l < 5; l++)
-	DrawScreenText( x0 + 120, y0 + 30 + l * 10, list[ n + l]);
-     l = strlen( name);
-     setcolor( BLACK);
-     DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
-     if (ok)
-	setcolor( WHITE);
-     else
-	setcolor( LIGHTGRAY);
-     DrawScreenText( x0 + 13, y0 + 31, name);
-     key = bioskey( 0);
-     if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
-	name[ l] = key & 0x00FF + 'A' - 'a';
-     else if (l < maxlen && (key & 0x00FF) > ' ')
-	name[ l] = key & 0x00FF;
-     else if (l > 0 && (key & 0x00FF) == 0x0008)
-	name[ l - 1] = '\0';
-     else if (ok && (key & 0x00FF) == 0x000D)
-	break; /* return "name" */
-     else if ((key & 0x00FF) == 0x001B)
-     {
-	name[ 0] = '\0'; /* return an empty string */
-	break;
-     }
-     else
-	Beep();
+      /* test if "name" is in the list */
+      for (n = 0; n < listsize; n++)
+	 if (strcmp( name, list[ n]) <= 0)
+	    break;
+      ok = n < listsize ? !strcmp( name, list[ n]) : FALSE;
+      if (n > listsize - 5)
+	 n = listsize - 5;
+      /* display the five next items in the list */
+      setcolor( LIGHTGRAY);
+      DrawScreenBox( x0 + 120, y0 + 30, x0 + 120 + 8 * maxlen, y0 + 80);
+      setcolor( BLACK);
+      for (l = 0; l < 5; l++)
+	 DrawScreenText( x0 + 120, y0 + 30 + l * 10, list[ n + l]);
+      l = strlen( name);
+      setcolor( BLACK);
+      DrawScreenBox( x0 + 11, y0 + 29, x0 + 100, y0 + 40);
+      if (ok)
+	 setcolor( WHITE);
+      else
+	 setcolor( LIGHTGRAY);
+      DrawScreenText( x0 + 13, y0 + 31, name);
+      key = bioskey( 0);
+      if (firstkey && (key & 0x00FF) > ' ')
+      {
+	 for (l = 0; l <= maxlen; l++)
+	    name[ l] = '\0';
+	 l = 0;
+      }
+      firstkey = FALSE;
+      if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
+      {
+	 name[ l] = key & 0x00FF + 'A' - 'a';
+	 name[ l + 1] = '\0';
+      }
+      else if (l < maxlen && (key & 0x00FF) > ' ')
+      {
+	 name[ l] = key & 0x00FF;
+	 name[ l + 1] = '\0';
+      }
+      else if (l > 0 && (key & 0x00FF) == 0x0008)
+	 name[ l - 1] = '\0';
+      else if (n < listsize && (key & 0xFF00) == 0x5000)
+	 strcpy(name, list[ n + 1]);
+      else if (n > 0 && (key & 0xFF00) == 0x4800)
+	 strcpy(name, list[ n - 1]);
+      else if ((key & 0x00FF) == 0x0009)
+	 strcpy(name, list[ n]);
+      else if (ok && (key & 0x00FF) == 0x000D)
+	 break; /* return "name" */
+      else if ((key & 0x00FF) == 0x001B)
+      {
+	 name[ 0] = '\0'; /* return an empty string */
+	 break;
+      }
+      else
+	 Beep();
    }
+   if (UseMouse)
+      ShowMousePointer();
+}
+
+
+
+/*
+   ask for a filename
+*/
+void InputFileName( int x0, int y0, char *prompt, int maxlen, char *filename)
+{
+   int key, l, boxlen;
+   int ok, firstkey;
+   char *p;
+
+   if (UseMouse)
+      HideMousePointer();
+   for (l = strlen(filename) + 1; l <= maxlen; l++)
+      filename[ l] = '\0';
+   /* compute the width of the input box */
+   if (maxlen > 20)
+      boxlen = 20;
+   else
+      boxlen = maxlen;
+   /* compute the width of the dialog box */
+   if (strlen( prompt) > boxlen)
+      l = strlen( prompt);
+   else
+      l = boxlen;
+   if (x0 < 0)
+      x0 = 306 - 4 * l;
+   if (y0 < 0)
+      y0 = 214;
+   /* draw the dialog box */
+   DrawScreenBox3D( x0, y0, x0 + 26 + 8 * l, y0 + 50);
+   setcolor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt);
+   DrawScreenBox( x0 + 11, y0 + 29, x0 + 15 + 8 * boxlen, y0 + 41);
+   setcolor( DARKGRAY);
+   DrawScreenBox( x0 + 10, y0 + 28, x0 + 14 + 8 * boxlen, y0 + 40);
+   firstkey = TRUE;
+   for (;;)
+   {
+      /* check that "filename" looks like a valid file name */
+      ok = TRUE;
+      if (filename[ 1] == ':')
+	 p = filename + 2;
+      else
+	 p = filename;
+      for (l = 8; *p; p++)
+      {
+	 if (*p == '.')
+	    l = 3;
+	 else if (*p == '\\')
+	    l = 8;
+	 else
+	    l--;
+	 if (l < 0)
+	 {
+	    ok = FALSE;
+	    break;
+	 }
+      }
+
+      l = strlen( filename);
+      setcolor( BLACK);
+      DrawScreenBox( x0 + 11, y0 + 29, x0 + 14 + 8 * boxlen, y0 + 40);
+      if (ok)
+	 setcolor( WHITE);
+      else
+	 setcolor( LIGHTGRAY);
+      if (l > boxlen)
+      {
+	 DrawScreenText( x0 + 11, y0 + 31, "<");
+	 DrawScreenText( x0 + 13, y0 + 31, "<%s", filename + (l - boxlen + 1));
+      }
+      else
+	 DrawScreenText( x0 + 13, y0 + 31, filename);
+      key = bioskey( 0);
+      if (firstkey && (key & 0x00FF) > ' ')
+      {
+	 for (l = 0; l <= maxlen; l++)
+	    filename[ l] = '\0';
+	 l = 0;
+      }
+      firstkey = FALSE;
+      if (l < maxlen && (key & 0x00FF) >= 'a' && (key & 0x00FF) <= 'z')
+      {
+	 filename[ l] = key & 0x00FF + 'A' - 'a';
+	 filename[ l + 1] = '\0';
+      }
+      else if (l < maxlen && (key & 0x00FF) > ' ')
+      {
+	 filename[ l] = key & 0x00FF;
+	 filename[ l + 1] = '\0';
+      }
+      else if (l > 0 && (key & 0x00FF) == 0x0008)
+	 filename[ l - 1] = '\0';
+      else if (ok && (key & 0x00FF) == 0x000D)
+	 break; /* return "filename" */
+      else if ((key & 0x00FF) == 0x001B)
+      {
+	 filename[ 0] = '\0'; /* return an empty string */
+	 break;
+      }
+      else
+	 Beep();
+   }
+   if (UseMouse)
+      ShowMousePointer();
+}
+
+
+
+/*
+   ask for confirmation (prompt2 may be NULL)
+*/
+int Confirm( int x0, int y0, char *prompt1, char *prompt2)
+{
+   int key;
+   int maxlen = 46;
+
+   if (UseMouse)
+      HideMousePointer();
+   if (strlen( prompt1) > maxlen)
+      maxlen = strlen( prompt1);
+   if (prompt2 != NULL && strlen( prompt2) > maxlen)
+      maxlen = strlen( prompt2);
+   if (x0 < 0)
+      x0 = 308 - 4 * maxlen;
+   if (y0 < 0)
+      y0 = prompt2 ? 213 : 218;
+   DrawScreenBox3D( x0, y0, x0 + 22 + 8 * maxlen, y0 + (prompt2 ? 53 : 43));
+   setcolor( WHITE);
+   DrawScreenText( x0 + 10, y0 + 8, prompt1);
+   if (prompt2 != NULL)
+      DrawScreenText( x0 + 10, y0 + 18, prompt2);
+   setcolor( YELLOW);
+   DrawScreenText( x0 + 10, y0 + (prompt2 ? 38 : 28), "Press Y to confirm, or any other key to cancel");
+   key = bioskey( 0);
+   if (UseMouse)
+      ShowMousePointer();
+   return ((key & 0x00FF) == 'Y' || (key & 0x00FF) == 'y');
+}
+
+
+
+/*
+   clear the screen and display a message
+*/
+void DisplayMessage( int x0, int y0, char *msg, ...)
+{
+   char prompt[ 120];
+   va_list args;
+
+   va_start( args, msg);
+   vsprintf( prompt, msg, args);
+   va_end( args);
+
+   if (UseMouse)
+      HideMousePointer();
+   ClearScreen();
+   if (x0 < 0)
+      x0 = 299 - 4 * strlen( prompt);
+   if (y0 < 0)
+      y0 = 219;
+   DrawScreenBox3D( x0, y0, x0 + 40 + 8 * strlen( prompt), y0 + 40);
+   DrawScreenText( x0 + 20, y0 + 17, prompt);
    if (UseMouse)
       ShowMousePointer();
 }

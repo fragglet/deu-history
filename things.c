@@ -4,7 +4,7 @@
    If you use any part of this code in one of your programs,
    please make it clear that you borrowed it from here...
 
-   THING.C - Thing name and type routines.
+   THINGS.C - Thing name and type routines.
 */
 
 /* the includes */
@@ -13,7 +13,7 @@
 
 
 /*
-   get the colour of a thing (green players, red enemies, else white)
+   get the colour of a thing
 */
 
 int GetThingColour( int type)
@@ -33,13 +33,16 @@ int GetThingColour( int type)
    case THING_SPECTOR:
    case THING_BARON:
    case THING_LOSTSOUL:
-   case THING_COCADEMON:
+   case THING_CACODEMON:
    case THING_SPIDERBOSS:
    case THING_CYBERDEMON:
       return LIGHTRED;
    case THING_BLUECARD:
    case THING_YELLOWCARD:
    case THING_REDCARD:
+   case THING_BLUESKULLKEY:
+   case THING_YELLOWSKULLKEY:
+   case THING_REDSKULLKEY:
    case THING_ARMBONUS1:
    case THING_HLTBONUS1:
    case THING_GREENARMOR:
@@ -98,13 +101,41 @@ char *GetThingName( int type)
    case THING_DEATHMATCH:
       return "DEATHMATCH Start";
 
+   /* enemies */
+   case THING_SARGEANT:
+      return "Sargeant";
+   case THING_TROOPER:
+      return "Trooper";
+   case THING_IMP:
+      return "Imp";
+   case THING_DEMON:
+      return "Demon";
+   case THING_BARON:
+      return "Baron";
+   case THING_SPECTOR:
+      return "Spector";
+   case THING_LOSTSOUL:
+      return "Lost Soul";
+   case THING_CACODEMON:
+      return "Cacodemon";
+   case THING_SPIDERBOSS:
+      return "Spider Boss";
+   case THING_CYBERDEMON:
+      return "Cyber Demon";
+
    /* enhancements */
    case THING_BLUECARD:
-      return "Blue Card";
+      return "Blue KeyCard";
    case THING_YELLOWCARD:
-      return "Yellow Card";
+      return "Yellow KeyCard";
    case THING_REDCARD:
-      return "Red Card";
+      return "Red KeyCard";
+   case THING_BLUESKULLKEY:
+      return "Blue Skull Key";
+   case THING_YELLOWSKULLKEY:
+      return "Yellow Skull Key";
+   case THING_REDSKULLKEY:
+      return "Red Skull Key";
    case THING_ARMBONUS1:
       return "Armour Helmet";
    case THING_HLTBONUS1:
@@ -167,46 +198,103 @@ char *GetThingName( int type)
    /* decorations */
    case THING_BARREL:
       return "Barrel";
+   case THING_TECHCOLUMN:
+      return "Technical Column";
+   case THING_TGREENPILLAR:
+      return "Tall Green Pillar";
+   case THING_TREDPILLAR:
+      return "Tall Red Pillar";
+   case THING_SGREENPILLAR:
+      return "Short Green Pillar";
+   case THING_SREDPILLAR:
+      return "Short Red Pillar";
+   case THING_PILLARHEARTH:
+      return "Pillar w/Hearth";
+   case THING_PILLARSKULL:
+      return "Red Pillar w/Skull";
+   case THING_EYEINSYMBOL:
+      return "Eye in Symbol";
+   case THING_GREYTREE:
+      return "Grey Tree";
+   case THING_BROWNSTUB:
+      return "Brown Stub";
+   case THING_BROWNTREE:
+      return "Tall Brown Tree";
+
    case THING_LAMP:
       return "Lamp";
    case THING_CANDLE:
       return "Candle";
-   case THING_CANDLESTICK:
-      return "Candlestick";
-   case THING_TORCH:
-      return "Torch";
-   case THING_TECHCOLUMN:
-      return "Technical Column";
+   case THING_CANDELABRA:
+      return "Candelabra";
+   case THING_TBLUETORCH:
+      return "Tall Blue Torch";
+   case THING_TGREENTORCH:
+      return "Tall Green Torch";
+   case THING_TREDTORCH:
+      return "Tall Red Torch";
+   case THING_SBLUETORCH:
+      return "Short Blue Torch";
+   case THING_SGREENTORCH:
+      return "Short Green Torch";
+   case THING_SREDTORCH:
+      return "Short Red Torch";
+
+   case THING_DEADPLAYER:
+      return "Dead Player (Green)";
+   case THING_DEADTROOPER:
+      return "Dead Trooper";
+   case THING_DEADSARGEANT:
+      return "Dead Sargeant";
+   case THING_DEADIMP:
+      return "Dead Imp";
+   case THING_DEADDEMON:
+      return "Dead Demon";
+   case THING_DEADCACODEMON:
+      return "Dead CacoDemon";
    case THING_BONES:
       return "Guts and Bones";
    case THING_BONES2:
       return "Guts and Bones 2";
-   case THING_DEADBUDDY:
-      return "Dead Guy (Green)";
    case THING_POOLOFBLOOD:
       return "Pool of Blood";
+   case THING_SKULLTOPPOLE:
+      return "Pole with Skull";
+   case THING_HEADSKEWER:
+      return "Skewer with Heads";
+   case THING_PILEOFSKULLS:
+      return "Pile of Skulls";
+   case THING_IMPALEDBODY:
+      return "Impaled body";
+   case THING_IMPALEDBODY2:
+      return "Twitching Impaled Body";
+   case THING_SKULLSINFLAMES:
+      return "Skulls in Flames";
 
-   /* enemies */
-   case THING_SARGEANT:
-      return "Sargeant";
-   case THING_TROOPER:
-      return "Trooper";
-   case THING_IMP:
-      return "Imp";
-   case THING_DEMON:
-      return "Demon";
-   case THING_BARON:
-      return "Baron";
-   case THING_SPECTOR:
-      return "Spector";
-   case THING_LOSTSOUL:
-      return "Lost Soul";
-   case THING_COCADEMON:
-      return "Cocademon";
-   case THING_SPIDERBOSS:
-      return "Spider Boss";
-   case THING_CYBERDEMON:
-      return "Cyber Demon";
+   case THING_HANGINGSWAYING:
+      return "Swaying Body";
+   case THING_HANGINGARMSOUT:
+      return "Hanging Arms Out";
+   case THING_HANGINGONELEG:
+      return "One-legged Body";
+   case THING_HANGINGTORSO:
+      return "Hanging Torso";
+   case THING_HANGINGLEG:
+      return "Hanging Leg";
+   case THING_HANGINGSWAYING2:
+      return "Swaying Body 2";
+   case THING_HANGINGARMSOUT2:
+      return "Hanging Arms Out 2";
+   case THING_HANGINGONELEG2:
+      return "One-legged Body 2";
+   case THING_HANGINGTORSO2:
+      return "Hanging Torso 2";
+   case THING_HANGINGLEG2:
+      return "Hanging Leg 2";
+
+   /* teleport */
+   case THING_TELEPORT:
+      return "Teleport exit";
    }
 
    /* unknown */
@@ -225,21 +313,21 @@ char *GetAngleName( int angle)
    switch (angle)
    {
    case 0:
-      return "West";
+      return "East";
    case 45:
-      return "NorthWest";
+      return "NorthEast";
    case 90:
       return "North";
    case 135:
-      return "NorthEast";
+      return "NorthWest";
    case 180:
-      return "East";
+      return "West";
    case 225:
-      return "SouthEast";
+      return "SouthWest";
    case 270:
       return "South";
    case 315:
-      return "SouthWest";
+      return "SouthEast";
    }
    return "<ILLEGAL ANGLE>";
 }
@@ -247,7 +335,7 @@ char *GetAngleName( int angle)
 
 
 /*
-   get string of when something wil appear
+   get string of when something will appear
 */
 
 char *GetWhenName( int when)
@@ -261,9 +349,9 @@ char *GetWhenName( int when)
    if (when & 0x04)
       strcat( temp, "D4 ");
    if (when & 0x08)
-      strcat( temp, "Net? ");
+      strcat( temp, "Deaf? ");
    if (when & 0x10)
-      strcat( temp, "Reg? ");
+      strcat( temp, "Multi ");
    return temp;
 }
 

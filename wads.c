@@ -17,7 +17,7 @@ int Registered = FALSE;          /* registered or shareware game? */
 
 
 /*
-   open the wad file
+   open the wad files
 
    the first file in the list is the main wad file, the rest will be
    patch wad files.
@@ -26,9 +26,17 @@ int Registered = FALSE;          /* registered or shareware game? */
 void OpenWadFiles( int number, char *list[])
 {
    int n;
-   OpenMainWad( list[ 0]);
-   for (n = 1; n < number; n++)
-      OpenPatchWad( list[ n]);
+
+   if (number < 1)
+      OpenMainWad( "DOOM.WAD");
+   else
+   {
+      for (n = 0; n < number; n++)
+	 strupr( list[ n]);
+      OpenMainWad( list[ 0]);
+      for (n = 1; n < number; n++)
+	 OpenPatchWad( list[ n]);
+   }
 }
 
 
@@ -49,12 +57,12 @@ void CloseWadFiles()
    {
       nextw = curw->next;
       fclose( curw->fileinfo);
-      free (curw->directory);
+      free( curw->directory);
       free( curw);
       curw = nextw;
    }
 
-   /* delete the master dictionary */
+   /* delete the master directory */
    curd = MasterDir;
    MasterDir = NULL;
    while (curd)
@@ -62,6 +70,42 @@ void CloseWadFiles()
       nextd = curd->next;
       free( curd);
       curd = nextd;
+   }
+}
+
+
+
+/*
+   forget unused patch wad files
+*/
+
+void CloseUnusedWadFiles()
+{
+   WadPtr curw, prevw;
+   MDirPtr mdir;
+
+   prevw = NULL;
+   curw = WadFileList;
+   while (curw)
+   {
+      /* check if the wad file is used by a directory entry */
+      mdir = MasterDir;
+      while (mdir && mdir->wadfile != curw)
+	 mdir = mdir->next;
+      if (mdir)
+	 prevw = curw;
+      else
+      {
+	 /* if this wad file is never used, close it */
+	 if (prevw)
+	    prevw->next = curw->next;
+	 else
+	    WadFileList = curw->next;
+	 fclose( curw->fileinfo);
+	 free( curw->directory);
+	 free( curw);
+      }
+      curw = prevw->next;
    }
 }
 
@@ -82,7 +126,7 @@ void OpenMainWad( char *filename)
    printf( "Loading main WAD file: %s...\n", filename);
    wad = BasicWadOpen( filename);
    if (strncmp( wad->type, "IWAD", 4))
-      ProgError( "\"%s\" is not the main WAD file");
+      ProgError( "\"%s\" is not the main WAD file", filename);
 
    /* create the master directory */
    last = NULL;
@@ -100,13 +144,13 @@ void OpenMainWad( char *filename)
    }
 
    /* check if registered version */
-   if (FindMasterDir( MasterDir, "E2M2") == NULL)
+   if (FindMasterDir( MasterDir, "E2M1") == NULL)
    {
-      printf( "  *-------------------------------------------------*\n");
-      printf( "  | Warning: this is the shareware version of DOOM. |\n");
-      printf( "  |   You won't be allowed to save your changes.    |\n");
-      printf( "  |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
-      printf( "  *-------------------------------------------------*\n");
+      printf( "   *-------------------------------------------------*\n");
+      printf( "   | Warning: this is the shareware version of DOOM. |\n");
+      printf( "   |   You won't be allowed to save your changes.    |\n");
+      printf( "   |     PLEASE REGISTER YOUR COPY OF THE GAME.      |\n");
+      printf( "   *-------------------------------------------------*\n");
       Registered = FALSE; /* If you change this, bad things will happen to you... */
    }
    else
@@ -124,25 +168,54 @@ void OpenPatchWad( char *filename)
 {
    WadPtr wad;
    MDirPtr mdir;
-   int n;
+   int n, l;
+   char entryname[9];
 
    /* open the wad file */
    printf( "Loading patch WAD file: %s...\n", filename);
    wad = BasicWadOpen( filename);
    if (strncmp( wad->type, "PWAD", 4))
-      ProgError( "\"%s\" is not a patch WAD file");
-
-   /* check PWAD file just contains a level */
-   if (wad->dirsize != 11 || wad->directory[ 0].name[ 0] != 'E' || wad->directory[ 0].name[ 2] != 'M' || wad->directory[ 0].name[ 4] != '\0')
-      ProgError( "\%s\" is not a understandable PWAD file");
+      ProgError( "\"%s\" is not a patch WAD file", filename);
 
    /* alter the master directory */
-   mdir = FindMasterDir( MasterDir, wad->directory[ 0].name);
-   for (n = 0; n < 11; n++)
+   l = 0;
+   for (n = 0; n < wad->dirsize; n++)
    {
+      strncpy( entryname, wad->directory[ n].name, 8);
+      entryname[8] = '\0';
+      if (l > 0)
+      {
+	 mdir = mdir->next;
+	 /* the level data should replace an existing level */
+	 if (mdir == NULL || strncmp(mdir->dir.name, wad->directory[ n].name, 8))
+	    ProgError( "\%s\" is not an understandable PWAD file (error with %s)", filename, entryname);
+	 l--;
+      }
+      else
+      {
+	 mdir = FindMasterDir( MasterDir, wad->directory[ n].name);
+	 /* if this entry is not in the master directory, then add it */
+	 if (mdir == NULL)
+	 {
+	    printf( "   [Adding new entry %s]\n", entryname);
+	    mdir = MasterDir;
+	    while (mdir->next)
+	       mdir = mdir->next;
+	    mdir->next = GetMemory( sizeof( struct MasterDirectory));
+	    mdir = mdir->next;
+	    mdir->next = NULL;
+	 }
+	 /* if this is a level, then copy this entry and the next 10 */
+	 else if (wad->directory[ n].name[ 0] == 'E' && wad->directory[ n].name[ 2] == 'M' && wad->directory[ n].name[ 4] == '\0')
+	 {
+	    printf( "   [Updating level %s]\n", entryname);
+	    l = 10;
+	 }
+	 else
+	    printf( "   [Updating entry %s]\n", entryname);
+      }
       mdir->wadfile = wad;
       memcpy( &(mdir->dir), &(wad->directory[ n]), sizeof( struct Directory));
-      mdir = mdir->next;
    }
 }
 
@@ -154,35 +227,52 @@ void OpenPatchWad( char *filename)
 
 WadPtr BasicWadOpen( char *filename)
 {
-   WadPtr *list;
+   WadPtr curw, prevw;
 
-   /* find last link in wad file list */
-   for (list = &WadFileList; *list; list = &(*list)->next)
-      ;
+   /* find the wad file in the wad file list */
+   prevw = WadFileList;
+   if (prevw)
+   {
+      curw = prevw->next;
+      while (curw && strcmp( filename, curw->filename))
+      {
+	 prevw = curw;
+	 curw = prevw->next;
+      }
+   }
+   else
+      curw = NULL;
 
-   /* create the new WadFileList structure and fill in the values */
-   *list = GetMemory( sizeof( struct WadFileInfo));
-   (*list)->next = NULL;
-   (*list)->filename = filename;
+   /* if this entry doesn't exist, add it to the WadFileList */
+   if (curw == NULL)
+   {
+      curw = GetMemory( sizeof( struct WadFileInfo));
+      if (prevw == NULL)
+	 WadFileList = curw;
+      else
+	 prevw->next = curw;
+      curw->next = NULL;
+      curw->filename = filename;
+   }
 
    /* open the file */
-   if (((*list)->fileinfo = fopen( filename, "rb")) == NULL)
+   if ((curw->fileinfo = fopen( filename, "rb")) == NULL)
       ProgError( "error opening \"%s\"", filename);
 
    /* read in the WAD directory info */
-   BasicWadRead( *list, (*list)->type, 4);
-   if (strncmp( (*list)->type, "IWAD", 4) && strncmp( (*list)->type, "PWAD", 4))
+   BasicWadRead( curw, curw->type, 4);
+   if (strncmp( curw->type, "IWAD", 4) && strncmp( curw->type, "PWAD", 4))
       ProgError( "\"%s\" is not a valid WAD file", filename);
-   BasicWadRead( *list, &(*list)->dirsize, sizeof( (*list)->dirsize));
-   BasicWadRead( *list, &(*list)->dirstart, sizeof( (*list)->dirstart));
+   BasicWadRead( curw, &curw->dirsize, sizeof( curw->dirsize));
+   BasicWadRead( curw, &curw->dirstart, sizeof( curw->dirstart));
 
    /* read in the WAD directory itself */
-   (*list)->directory = GetMemory( sizeof( struct Directory) * (*list)->dirsize);
-   BasicWadSeek( *list, (*list)->dirstart);
-   BasicWadRead( *list, (*list)->directory, sizeof( struct Directory) * (*list)->dirsize);
+   curw->directory = GetMemory( sizeof( struct Directory) * curw->dirsize);
+   BasicWadSeek( curw, curw->dirstart);
+   BasicWadRead( curw, curw->directory, sizeof( struct Directory) * curw->dirsize);
 
    /* all done */
-   return *list;
+   return curw;
 }
 
 
